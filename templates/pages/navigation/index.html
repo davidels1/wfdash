@@ -1,0 +1,119 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<!-- [ Main Content ] start -->
+<div class="row">
+    <!-- Welcome Card -->
+    <div class="col-md-12 col-xl-8 mx-auto">
+        <div class="card">
+            <div class="card-body text-center">
+                <img src="{% static 'assets/images/logo.png' %}" alt="Company Logo" class="img-fluid mb-4" style="max-height: 120px;">
+                <h2 class="mb-4">Welcome to WF Sales Dashboard</h2>
+                <p class="lead mb-4">Your complete solution for sales management and tracking</p>
+                
+                <!-- Add Company Profile Download Button -->
+                <div class="mt-4">
+                    <a href="{% static 'assets/docs/company_profile.pdf' %}" 
+                       class="btn btn-outline-info btn-lg" 
+                       target="_blank">
+                        <i class="feather icon-download me-2"></i>
+                        Download Company Profile
+                    </a>
+                </div>
+                
+                {% if not request.user.is_authenticated %}
+              <div class="mt-4">
+                    <a href="{% url 'account_login' %}" class="btn btn-primary btn-lg me-3">Sign In</a>
+                    <a href="{% url 'account_signup' %}" class="btn btn-outline-primary btn-lg">Register</a>
+                </div> -->
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="col-12">
+        <div class="row">
+            <!-- Feature 1 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="feather icon-file-text text-primary f-36 mb-3"></i>
+                        <h4>Quote Management</h4>
+                        <p>Create and manage quotes efficiently</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="feather icon-box text-success f-36 mb-3"></i>
+                        <h4>Delivery Tracking</h4>
+                        <p>Track your deliveries in real-time</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="feather icon-bar-chart-2 text-warning f-36 mb-3"></i>
+                        <h4>Sales Analytics</h4>
+                        <p>Detailed insights and reporting</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weather Widget -->
+    <!-- <div class="col-md-6 mx-auto">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title text-white">Today's Weather</h5>
+                <div id="weather-widget" class="py-3">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <i class="feather icon-sun f-36 me-3"></i>
+                        <div class="text-start">
+                            <h2 class="mb-0" id="temperature">Loading...</h2>
+                            <p class="mb-0" id="weather-description">Fetching weather data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> -->
+<!-- [ Main Content ] end -->
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+// Simple weather widget using OpenWeatherMap API
+const getWeather = async () => {
+    try {
+        // Replace with your OpenWeatherMap API key and desired city
+        const city = 'Johannesburg';
+        const apiKey = 'YOUR_API_KEY';
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`);
+        const data = await response.json();
+
+        document.getElementById('temperature').textContent = `${Math.round(data.main.temp)}°C`;
+        document.getElementById('weather-description').textContent = data.weather[0].description;
+    } catch (error) {
+        console.error('Error fetching weather:', error);
+        document.getElementById('temperature').textContent = 'N/A';
+        document.getElementById('weather-description').textContent = 'Weather data unavailable';
+    }
+};
+
+// Load weather data when page loads
+document.addEventListener('DOMContentLoaded', getWeather);
+</script>
+{% endblock extra_js %}

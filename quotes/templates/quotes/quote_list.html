@@ -1,0 +1,148 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pb-5">
+    <!-- Search Bar -->
+    <div class="search-bar-sticky">
+        <form method="get" class="mb-3">
+            <div class="input-group">
+                <input type="text" 
+                       class="form-control form-control-lg" 
+                       name="search" 
+                       placeholder="Search quotes, items, customers..." 
+                       value="{{ search_query }}"
+                       autocomplete="off">
+                <div class="input-group-append">
+                    <button class="btn btn-primary btn-lg" type="submit">
+                        <i class="feather icon-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Quote Groups -->
+    {% if quotes_by_status %}
+        {% for status, data in quotes_by_status.items %}
+            <div class="status-group mb-4">
+                <div class="status-header">
+                    <h6 class="status-title">
+                        {{ status }}
+                        <span class="badge badge-pill badge-info ml-2">{{ data.count }}</span>
+                    </h6>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Quote #</th>
+                                <th>Customer</th>
+                                <th>Description</th>
+                                <th>Items</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for quote in data.quotes %}
+                                <tr>
+                                    <td>{{ quote.quote_number }}</td>
+                                    <td>{{ quote.customer.company }}</td>
+                                    <td>{{ quote.description|truncatechars:50 }}</td>
+                                    <td>
+                                        <span class="badge badge-info">
+                                            {{ quote.items.count }} items
+                                        </span>
+                                    </td>
+                                    <td>{{ quote.created_at|date:"d M Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'quotes:quote_detail' quote.pk %}" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="feather icon-eye"></i> View
+                                        </a>
+                                        {% if not quote.is_complete %}
+                                            <a href="{% url 'quotes:quote_edit' quote.pk %}" 
+                                               class="btn btn-secondary btn-sm">
+                                                <i class="feather icon-edit"></i> Edit
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center p-5">
+            <i class="feather icon-search h1 text-muted"></i>
+            <p class="mt-3">No quotes found</p>
+            {% if search_query %}
+                <small class="text-muted">Try different search terms</small>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- Add Quote Button -->
+    <a href="{% url 'quotes:quote_create' %}" 
+       class="btn btn-primary btn-lg rounded-circle position-fixed"
+       style="bottom: 30px; right: 30px; width: 60px; height: 60px;">
+        <i class="feather icon-plus"></i>
+    </a>
+</div>
+
+<style>
+/* Sticky Search Bar */
+.search-bar-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: white;
+    padding: 10px 0;
+    margin: -16px -16px 16px -16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Status Groups */
+.status-group {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.status-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Status Colors */
+.status-group:nth-child(1) .status-header { background: #e3f2fd; } /* New */
+.status-group:nth-child(2) .status-header { background: #fff3e0; } /* In Progress */
+.status-group:nth-child(3) .status-header { background: #e8f5e9; } /* Complete */
+.status-group:nth-child(4) .status-header { background: #ffebee; } /* Cancelled */
+
+/* Table Styling */
+.table {
+    margin-bottom: 0;
+}
+
+.table td, .table th {
+    vertical-align: middle;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .table-responsive {
+        border: 0;
+    }
+    
+    .container-fluid {
+        padding-bottom: 80px;
+    }
+}
+</style>
+{% endblock %}

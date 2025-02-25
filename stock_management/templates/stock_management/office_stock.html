@@ -1,0 +1,48 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5>Office Stock</h5>
+        </div>
+        <div class="card-body">
+            {% if stock_items %}
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Quantity</th>
+                            <th>Supplier</th>
+                            <th>Original PO</th>
+                            <th>Date Received</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in stock_items %}
+                        <tr>
+                            <td>{{ item.order_item.description }}</td>
+                            <td>{{ item.received_qty }}</td>
+                            <td>{{ item.collection.supplier.suppliername }}</td>
+                            <td>{{ item.order_item.purchase_order.po_number }}</td>
+                            <td>{{ item.external_invoice_date }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" 
+                                        onclick="reallocateStock({{ item.id }})">
+                                    Reallocate
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center">No office stock items found</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

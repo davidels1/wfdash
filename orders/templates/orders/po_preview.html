@@ -1,0 +1,32 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>Preview Purchase Order - {{ po.po_number }}</h5>
+                <div>
+                    <a href="{% url 'orders:download_po' po.id %}" class="btn btn-primary">
+                        <i class="feather icon-download"></i> Download PDF
+                    </a>
+                    <a href="{% url 'orders:email_po' po.id %}" class="btn btn-success">
+                        <i class="feather icon-mail"></i> Send Email
+                    </a>
+                    <a href="{% url 'orders:order_detail' po.order.id %}" class="btn btn-secondary">
+                        <i class="feather icon-arrow-left"></i> Back to Order
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if po.pdf_file %}
+                <embed src="{{ po.pdf_file.url }}" type="application/pdf" width="100%" height="600px">
+            {% else %}
+                <div class="alert alert-warning">PDF file not found</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

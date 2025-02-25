@@ -1,0 +1,144 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="alert alert-primary" role="alert">
+				<p>Use our extra helper file for quick setup Advance Components in your page - <a
+						href="#" target="_blank" class="alert-link">CHECKOUT</a>
+				</p>
+				<label class="text-muted">Copy/paste source code in your page in just couples of
+					seconds.</label>
+			</div>
+		</div>
+		<!-- [ single-light ] start -->
+		<div class="col-sm-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Single Images ( light box 2 )</h5>
+				</div>
+				<div class="card-block">
+					<p> Add this code <code>data-lightbox="&lt;&lt;image path&gt;&gt;"</code> to see
+						roadtrip gallery
+						in lightbox popup.</p>
+					<div class="row text-center">
+						<div class="col-xl-2 col-lg-3 col-sm-4 col-xs-12">
+							<a data-lightbox="{% static 'assets/images/light-box/l3.jpg' %}"><img
+									src="{% static 'assets/images/light-box/sl3.jpg' %}" class="img-fluid m-b-10" alt=""></a>
+						</div>
+						<div class="col-xl-2 col-lg-3 col-sm-4 col-xs-12">
+							<a data-lightbox="{% static 'assets/images/light-box/l4.jpg' %}"
+								data-title="Lorem ipsum dolor sit amet, consectetur adipiscing lorem impus dolorsit.onsectetur adipiscing.">
+								<img src="{% static 'assets/images/light-box/sl4.jpg' %}" class="img-fluid m-b-10" alt=""></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- [ single-light ] end -->
+
+		<!-- [ multiple-light ] start -->
+		<div class="col-sm-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Multiple Images Or Image Set (light box 2)</h5>
+				</div>
+				<div class="card-block">
+					<p> Add this code <code>data-lightbox="example-set"</code> to see roadtrip
+						gallery in lightbox popup.</p>
+					<div class="row  text-center">
+						<div class="col-xl-2 col-lg-3 col-sm-4 col-xs-12">
+							<a data-lightbox="{% static 'assets/images/light-box/l1.jpg' %}"><img
+									src="{% static 'assets/images/light-box/sl1.jpg' %}" class="img-fluid m-b-10" alt=""></a>
+						</div>
+						<div class="col-xl-2 col-lg-3 col-sm-4 col-xs-12">
+							<a data-lightbox="{% static 'assets/images/light-box/l2.jpg' %}"><img
+									src="{% static 'assets/images/light-box/sl2.jpg' %}" class="img-fluid m-b-10" alt=""></a>
+						</div>
+						<div class="col-xl-2 col-lg-3 col-sm-4 col-xs-12">
+							<a data-lightbox="{% static 'assets/images/light-box/l5.jpg' %}"><img
+									src="{% static 'assets/images/light-box/sl5.jpg' %}" class="img-fluid m-b-10" alt=""></a>
+						</div>
+						<div class="col-xl-2 col-lg-3 col-sm-4 col-xs-12">
+							<a data-lightbox="{% static 'assets/images/light-box/l6.jpg' %}"><img
+									src="{% static 'assets/images/light-box/sl6.jpg' %}" class="img-fluid m-b-10" alt=""></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- [ multiple-light ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+	<div class="modal fade modal-lightbox" id="lightboxModal" tabindex="-1" aria-labelledby="lightboxModalLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content border-0">
+				<button type=" button"
+					class="btn-close btn-close-white position-absolute bottom-100 start-100 translate-middle1"
+					data-bs-dismiss="modal" aria-label="Close"></button>
+				<div class="modal-body p-0">
+					<img src="" alt="images" class="modal-image img-fluid">
+				</div>
+			</div>
+		</div>
+	</div>
+
+{% endblock content %}
+
+{% block extra_js %}
+
+	<script>
+		var lightboxModal = new bootstrap.Modal(document.getElementById('lightboxModal'));
+		var elem = document.querySelectorAll("[data-lightbox]");
+		for (var j = 0; j < elem.length; j++) {
+			elem[j].addEventListener('click', function () {
+				var imagespath = event.target;
+				if (imagespath.tagName == "IMG") {
+					imagespath = imagespath.parentNode;
+				}
+				var recipient = imagespath.getAttribute('data-lightbox');
+				var image = document.querySelector('.modal-image');
+				image.setAttribute('src', recipient);
+				lightboxModal.show();
+			});
+		}
+
+		// document.querySelector(".header-chat").classList.add('open');
+		// if (document.querySelector(".header-user-list").classList.contains('msg-open')) {
+		// document.querySelector(".header-user-list").classList.remove('msg-open');
+		// } else {
+		// document.querySelector(".header-user-list").classList.add('msg-open');
+		// }
+
+		// lightboxModal.addEventListener('show.bs.modal', function (event) {
+		//     var button = event.relatedTarget
+		//     var recipient = button.getAttribute('data-pc-animate')
+		//     var modalTitle = lightboxModal.querySelector('.modal-title')
+		//     modalTitle.textContent = 'Animate Modal : ' + recipient
+		//     lightboxModal.classList.add('anim-' + recipient);
+		//     // if (recipient == "let-me-in" || recipient == "make-way" || recipient ==
+		//     // "slip-from-top") {
+		//     // document.body.classList.add('anim-' + recipient);
+		//     // }
+		// });
+		// lightboxModal.addEventListener('hidden.bs.modal', function (event) {
+		//     // removeClassByPrefix(lightboxModal, 'anim-');
+		//     // removeClassByPrefix(document.body, 'anim-');
+		// });
+
+		function removeClassByPrefix(node, prefix) {
+			for (let i = 0; i < node.classList.length; i++) {
+				let value = node.classList[i];
+				if (value.startsWith(prefix)) {
+					node.classList.remove(value);
+				}
+			}
+		}
+	</script>
+
+{% endblock extra_js %}

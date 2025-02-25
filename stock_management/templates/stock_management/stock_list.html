@@ -1,0 +1,205 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5>Current Stock</h5>
+        </div>
+        <div class="card-body">
+            {% if grouped_items %}
+                {% for order_number, items in grouped_items.items %}
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2">Order #{{ order_number }}</h6>
+                    <div class="row">
+                        {% for item in items %}
+                        <div class="col-12 col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">{{ item.order_item.description }}</h6>
+                                    <p class="mb-1"><strong>Quantity:</strong> {{ item.received_qty }}</p>
+                                    <p class="mb-2"><strong>Supplier:</strong> {{ item.collection.supplier.suppliername }}</p>
+                                    <button type="button" 
+                                            class="btn btn-primary w-100 invoice-btn"
+                                            data-item-id="{{ item.id }}">
+                                        Add Invoice
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center">No stock items found</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Single Invoice Modal -->
+<div class="modal fade" id="invoiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Invoice Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="invoiceForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Invoice Number *</label>
+                        <input type="text" class="form-control" id="invoice_number" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Invoice Date *</label>
+                        <input type="date" class="form-control" id="invoice_date" required>
+                    </div>
+                    <input type="hidden" id="itemId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveInvoiceBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modal styles for mobile */
+    .modal {
+        z-index: 1050 !important;
+    }
+    .modal-backdrop {
+        z-index: 1040 !important;
+    }
+    .modal-dialog {
+        margin: 1rem auto;
+        max-width: 95%;
+    }
+    @media (min-width: 576px) {
+        .modal-dialog {
+            max-width: 500px;
+        }
+    }
+    
+    /* Form improvements for mobile */
+    .modal-body input {
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+    
+    /* Card and button styling */
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .invoice-btn {
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+    const invoiceForm = document.getElementById('invoiceForm');
+    
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('invoice_date').value = today;
+    
+    // Handle invoice button clicks
+    document.querySelectorAll('.invoice-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            document.getElementById('itemId').value = itemId;
+            document.getElementById('invoice_number').value = '';
+            
+            // Show modal with slight delay for better mobile response
+            setTimeout(() => modal.show(), 50);
+        });
+    });
+    
+    // Handle form submission
+    document.getElementById('saveInvoiceBtn').addEventListener('click', async function() {
+        try {
+            if (!invoiceForm.checkValidity()) {
+                invoiceForm.reportValidity();
+                return;
+            }
+
+            const itemId = document.getElementById('itemId').value;
+            const formData = new FormData();
+            
+            formData.append('invoice_number', document.getElementById('invoice_number').value);
+            formData.append('invoice_date', document.getElementById('invoice_date').value);
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Disable button and show loading state
+            this.disabled = true;
+            this.textContent = 'Saving...';
+            
+            const response = await fetch(`/stock/update-invoice/${itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const textContent = await response.text();
+                console.error('Non-JSON response:', textContent);
+                throw new Error('Server returned an invalid response format');
+            }
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || `Error: ${response.status}`);
+            }
+            
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                throw new Error(data.message || 'Failed to update invoice');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error updating invoice: ' + error.message);
+        } finally {
+            this.disabled = false;
+            this.textContent = 'Save';
+            modal.hide();
+        }
+    });
+
+    // Handle modal events for iOS
+    const modalElement = document.getElementById('invoiceModal');
+    modalElement.addEventListener('shown.bs.modal', function() {
+        // Fix body scrolling on iOS
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${window.scrollY}px`;
+    });
+
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        // Restore body scrolling on iOS
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    });
+});
+</script>
+{% endblock %}

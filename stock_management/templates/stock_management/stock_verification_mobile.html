@@ -1,0 +1,138 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="card border-0">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Stock Verification</h5>
+        </div>
+        <div class="card-body p-2">
+            {% if collections %}
+            <div class="collection-list">
+                {% for collection in collections %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Order #{{ collection.order_item.order.order_number }}</h6>
+                        <p class="mb-1"><strong>PO:</strong> {{ collection.order_item.purchase_order.po_number }}</p>
+                        <p class="mb-1"><strong>Description:</strong> {{ collection.order_item.description }}</p>
+                        <p class="mb-1"><strong>Supplier:</strong> {{ collection.supplier.suppliername }}</p>
+                        <p class="mb-1"><strong>Qty:</strong> {{ collection.received_qty }}</p>
+                        <p class="mb-1"><strong>Driver:</strong> {{ collection.driver.get_full_name }}</p>
+                        <p class="mb-2"><strong>Date:</strong> {{ collection.actual_date|date:"d/m/Y" }}</p>
+                        <button type="button" 
+                                class="btn btn-primary w-100" 
+                                onclick="showVerifyForm({{ collection.id }})">
+                            Verify Stock
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-center py-3">No collections to verify</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Full Screen Verification Form -->
+<div id="verifyFormContainer" class="verify-form-container d-none">
+    {% for collection in collections %}
+    <div id="verifyForm{{ collection.id }}" class="verify-form-content d-none">
+        <form method="POST" action="{% url 'stock_management:verify_stock' collection.id %}" class="verify-form h-100">
+            {% csrf_token %}
+            <div class="form-header bg-primary text-white p-3">
+                <h5 class="mb-0 float-start">Verify Stock</h5>
+                <button type="button" class="btn-close btn-close-white float-end" onclick="hideVerifyForm()"></button>
+                <div class="clearfix"></div>
+            </div>
+            <div class="form-body p-3">
+                <div class="mb-3">
+                    <label class="form-label">External Invoice Number *</label>
+                    <input type="text" name="external_invoice_number" class="form-control form-control-lg" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">External Invoice Date *</label>
+                    <input type="date" name="external_invoice_date" class="form-control form-control-lg" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Verify Quantity (Received: {{ collection.received_qty }}) *</label>
+                    <input type="number" 
+                           name="verified_quantity" 
+                           class="form-control form-control-lg" 
+                           step="0.01"
+                           value="{{ collection.received_qty }}"
+                           required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes" class="form-control form-control-lg" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="form-footer p-3 bg-light">
+                <button type="submit" class="btn btn-primary btn-lg w-100 verify-btn">Verify Stock</button>
+            </div>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body.modal-open {
+        overflow: hidden;
+    }
+    .verify-form-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #fff;
+        z-index: 1060;
+        overflow-y: auto;
+    }
+    .verify-form-content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .form-body {
+        flex: 1;
+        overflow-y: auto;
+    }
+    .form-control-lg {
+        font-size: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showVerifyForm(collectionId) {
+    document.body.classList.add('modal-open');
+    document.getElementById('verifyFormContainer').classList.remove('d-none');
+    document.getElementById(`verifyForm${collectionId}`).classList.remove('d-none');
+}
+
+function hideVerifyForm() {
+    document.body.classList.remove('modal-open');
+    document.getElementById('verifyFormContainer').classList.add('d-none');
+    document.querySelectorAll('.verify-form-content').forEach(form => {
+        form.classList.add('d-none');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const verifyForms = document.querySelectorAll('.verify-form');
+    verifyForms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('.verify-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Verifying...';
+        });
+    });
+});
+</script>
+{% endblock %}

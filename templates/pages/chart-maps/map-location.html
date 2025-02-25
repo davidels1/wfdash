@@ -1,0 +1,59 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block extrastyle %}
+<link href='https://api.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.css' rel='stylesheet' />
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.js"></script>
+<style>
+	#map {
+		width: 100%;
+		height: 600px;
+	}
+</style>
+{% endblock extrastyle %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<!-- [ Map-location ] start -->
+		<div class="col-xs-12 col-sm-12 col-lg-12">
+			<div class="card">
+				<div class="card-block">
+					<div id="map"></div>
+				</div>
+			</div>
+		</div>
+		<!-- [ Map-location ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+{% block extra_js %}
+
+	<!-- Map-location Js -->
+	<script>
+		setTimeout(function () {
+			mapboxgl.accessToken = 'pk.eyJ1IjoiY29kZWR0aGVtZXMiLCJhIjoiY2xicTNtdDFzMGVrcjNubGVsdmcya2pqNCJ9.jWoEAf1VTJoKBQysbZUw9w';
+			const map = new mapboxgl.Map({
+				container: 'map',
+				// Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+				style: 'mapbox://styles/mapbox/streets-v12',
+				center: [12.550343, 55.665957],
+				zoom: 8
+			});
+
+			// Create a default Marker and add it to the map.
+			const marker1 = new mapboxgl.Marker()
+				.setLngLat([12.554729, 55.70651])
+				.addTo(map);
+
+			// Create a default Marker, colored black, rotated 45 degrees.
+			const marker2 = new mapboxgl.Marker({ color: 'black', rotation: 45 })
+				.setLngLat([12.65147, 55.608166])
+				.addTo(map);
+		}, 350);
+	</script>
+
+{% endblock extra_js %}

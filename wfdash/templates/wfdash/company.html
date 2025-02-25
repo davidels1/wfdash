@@ -1,0 +1,68 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %} Add Company {% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex align-items-center">
+                        <i class="feather icon-briefcase h4 mb-0 me-2"></i>
+                        <h4 class="card-title mb-0">Add New Company</h4>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="form-horizontal">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="form-group row mb-4">
+                            <label class="col-sm-3 col-form-label">
+                                {% if field.name == 'company' %}
+                                    <i class="feather icon-briefcase me-2"></i>
+                                {% elif field.name == 'address' %}
+                                    <i class="feather icon-map-pin me-2"></i>
+                                {% endif %}
+                                {{ field.label }}
+                            </label>
+                            <div class="col-sm-9">
+                                {{ field }}
+                                {% if field.errors %}
+                                <div class="invalid-feedback d-block">{{ field.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <div class="row">
+                            <div class="col-sm-9 offset-sm-3">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="feather icon-save me-1"></i>Add Company
+                                </button>
+                                <a href="{% url 'wfdash:company_list' %}" class="btn btn-light btn-sm">
+                                    <i class="feather icon-list me-1"></i>View All Companies
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/plugins/notifier.js' %}"></script>
+<script>
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                notifier.show('Success!', '{{ message }}', 'success', 'img/notification/ok.png', 4000);
+                $('form')[0].reset();
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</script>
+{% endblock extra_js %}

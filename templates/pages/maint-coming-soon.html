@@ -1,0 +1,26 @@
+{% extends 'layouts/base-auth.html' %}
+{% load static %}
+
+{% block title %}Coming Soon{% endblock title %}
+
+{% block content %}
+
+    <!-- [ offline-ui ] start -->
+    <div class="auth-wrapper maintance">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="text-center">
+                        <img src="{% static 'assets/images/error/maintance.png' %}" alt="" class="img-fluid">
+                        <h5 class="text-muted my-4">Site Under Maintenance!, Visit after some times</h5>
+                        <form action="{% url 'index' %}">
+                            <button class="btn  btn-primary mb-4"><i class="feather icon-refresh-ccw me-2"></i>Reload</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- [ offline-ui ] end -->
+
+{% endblock content %}

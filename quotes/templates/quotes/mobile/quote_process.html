@@ -1,0 +1,111 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container-fluid pb-5">
+    <div class="card mb-3">
+        <div class="card-header">
+            <h6 class="mb-0">Process Quote #{{ quote.quote_number }}</h6>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        {% for item in items %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="mb-3">{{ item.description }}</h6>
+                <div class="mb-3">
+                    <label class="form-label">Quote Number</label>
+                    <input type="text" name="quote_number_{{ item.id }}" 
+                           class="form-control" value="{{ item.quote_number|default:'' }}">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Quote Reference</label>
+                    <input type="text" name="quote_reference_{{ item.id }}"
+                           class="form-control" value="{{ item.quote_reference|default:'' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Supplier</label>
+                    <select name="supplier_{{ item.id }}" class="form-control">
+                        <option value="">Select Supplier</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" 
+                                {% if item.supplier_id == supplier.id %}selected{% endif %}>
+                            {{ supplier.suppliername }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <label class="form-label">Cost Price</label>
+                            <input type="number" step="0.01" 
+                                   id="cost_price_{{ item.id }}"
+                                   name="cost_price_{{ item.id }}" 
+                                   onchange="calculateMarkup({{ item.id }})"
+                                   class="form-control" 
+                                   value="{{ item.cost_price|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <label class="form-label">Selling Price</label>
+                            <input type="number" step="0.01" 
+                                   id="selling_price_{{ item.id }}"
+                                   name="selling_price_{{ item.id }}"
+                                   onchange="calculateMarkup({{ item.id }})"
+                                   class="form-control" 
+                                   value="{{ item.selling_price|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Markup %</label>
+                    <input type="number" readonly 
+                           id="markup_{{ item.id }}"
+                           name="markup_{{ item.id }}" 
+                           class="form-control" 
+                           value="{{ item.markup|default:'' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes_{{ item.id }}" 
+                              class="form-control">{{ item.notes }}</textarea>
+                </div>
+
+                <div class="text-end">
+                    <span class="badge {% if item.is_complete %}bg-success{% else %}bg-warning{% endif %}">
+                        {% if item.is_complete %}Complete{% else %}Pending{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Fixed Bottom Save Button -->
+        <div class="fixed-bottom bg-white border-top p-3">
+            <button type="submit" class="btn btn-primary w-100">Save Items</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function calculateMarkup(itemId) {
+    const costPrice = parseFloat(document.getElementById(`cost_price_${itemId}`).value) || 0;
+    const sellingPrice = parseFloat(document.getElementById(`selling_price_${itemId}`).value) || 0;
+    
+    if (costPrice > 0 && sellingPrice > 0) {
+        const markup = ((sellingPrice - costPrice) / costPrice) * 100;
+        document.getElementById(`markup_${itemId}`).value = markup.toFixed(2);
+    } else {
+        document.getElementById(`markup_${itemId}`).value = '';
+    }
+}
+</script>
+{% endblock %}

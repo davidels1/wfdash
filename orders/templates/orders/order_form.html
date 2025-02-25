@@ -1,0 +1,222 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" id="orderForm">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <!-- Order Details -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Order Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label>Order Number *</label>
+                            {{ form.order_number }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label>Company *</label>
+                            {{ form.company }}
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label>Notes</label>
+                    {{ form.notes }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Items -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Order Items</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="itemsList">
+                    <div class="item-row border-bottom p-3">
+                        <div class="mb-2">
+                            <label>Description *</label>
+                            <input type="text" name="description[]" class="form-control" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label>Quantity</label>
+                                    <input type="number" name="quantity[]" class="form-control" value="1" min="1">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label>Selling Price</label>
+                                    <input type="number" name="selling_price[]" class="form-control" step="0.01" min="0.01" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label>Notes</label>
+                            <textarea name="notes[]" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">
+                                <i class="feather icon-trash-2"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-secondary w-100 mb-2" onclick="addItem()">
+                    <i class="feather icon-plus"></i> Add Another Item
+                </button>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg">Create Order</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.item-row {
+    background: #fff;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #dee2e6;
+    position: relative;
+}
+.item-row:hover {
+    background: #f8f9fa;
+}
+.item-number {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 4px 8px;
+    background: #e9ecef;
+    border-bottom-right-radius: 4px;
+    font-size: 0.875rem;
+    color: #495057;
+}
+.item-content {
+    padding-top: 1rem;
+}
+.card-footer {
+    background: none;
+    border-top: none;
+    padding-top: 0;
+}
+@media (max-width: 768px) {
+    .card-body {
+        padding: 0;
+    }
+    form {
+        padding-bottom: 80px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateItemNumbers() {
+    document.querySelectorAll('.item-row').forEach((row, index) => {
+        let numberElement = row.querySelector('.item-number');
+        if (!numberElement) {
+            numberElement = document.createElement('div');
+            numberElement.className = 'item-number';
+            row.insertBefore(numberElement, row.firstChild);
+        }
+        numberElement.textContent = `Item ${index + 1}`;
+    });
+}
+
+function addItem() {
+    const template = `
+        <div class="item-row p-3">
+            <div class="item-number"></div>
+            <div class="item-content">
+                <div class="mb-2">
+                    <label>Description *</label>
+                    <input type="text" name="description[]" class="form-control" required>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <label>Quantity</label>
+                            <input type="number" name="quantity[]" class="form-control" value="1" min="1">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <label>Selling Price</label>
+                            <input type="number" name="selling_price[]" class="form-control" step="0.01" min="0.01" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label>Notes</label>
+                    <textarea name="notes[]" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="text-end">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">
+                        <i class="feather icon-trash-2"></i> Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('itemsList').insertAdjacentHTML('beforeend', template);
+    updateItemNumbers();
+    
+    // Scroll to the new item
+    const newItem = document.querySelector('.item-row:last-child');
+    newItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function removeItem(button) {
+    const itemRow = button.closest('.item-row');
+    itemRow.style.opacity = '0';
+    itemRow.style.transform = 'translateX(20px)';
+    setTimeout(() => {
+        itemRow.remove();
+        updateItemNumbers();
+    }, 300);
+}
+
+// Initialize item numbers on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateItemNumbers();
+});
+
+// Prevent form submission if no items
+document.getElementById('orderForm').addEventListener('submit', function(e) {
+    const items = document.querySelectorAll('.item-row');
+    if (items.length === 0) {
+        e.preventDefault();
+        alert('Please add at least one item to the order.');
+    }
+});
+</script>
+{% endblock %}

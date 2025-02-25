@@ -1,0 +1,76 @@
+
+
+<!-- Company Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-briefcase"></i></span>
+        <span class="pcoded-mtext">Company Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'wfdash:company' %}"><i class="feather icon-plus me-2"></i>Add Company</a></li>
+        <li><a href="{% url 'wfdash:company_list' %}"><i class="feather icon-list me-2"></i>Companies List</a></li>
+    </ul>
+</li>
+
+<!-- Customer Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-users"></i></span>
+        <span class="pcoded-mtext">Customers</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'wfdash:customers' %}"><i class="feather icon-user-plus me-2"></i>Add Customer</a></li>
+        <li><a href="{% url 'wfdash:customers_list' %}"><i class="feather icon-list me-2"></i>Customer List</a></li>
+    </ul>
+</li>
+
+<!-- Supplier Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-smartphone"></i></span>
+        <span class="pcoded-mtext">Suppliers</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'wfdash:suppliers' %}"><i class="feather icon-plus-square me-2"></i>Add Supplier</a></li>
+        <li><a href="{% url 'wfdash:suppliers_list' %}"><i class="feather icon-list me-2"></i>Supplier List</a></li>
+    </ul>
+</li>
+
+<!-- Quote Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-file-text"></i></span>
+        <span class="pcoded-mtext">Quote Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'quotes:quote_create' %}"><i class="feather icon-plus-circle me-2"></i>New Quote</a></li>
+        <li><a href="{% url 'quotes:quote_list' %}"><i class="feather icon-list me-2"></i>Quote List</a></li>
+        <li><a href="{% url 'quotes:generated_quotes' %}"><i class="feather icon-box me-2"></i>Generated Quotes</a></li>
+    </ul>
+</li>
+
+<!-- Order Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-shopping-cart"></i></span>
+        <span class="pcoded-mtext">Order Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+ 
+        <li><a href="{% url 'orders:order_list' %}"><i class="feather icon-list me-2"></i>Order List</a></li>
+
+    </ul>
+</li>
+
+
+
+<!-- Reports & Analytics -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-bar-chart-2"></i></span>
+        <span class="pcoded-mtext">Reports</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'dashboard:index' %}"><i class="feather icon-pie-chart me-2"></i>Dashboard</a></li>
+    </ul>
+</li>

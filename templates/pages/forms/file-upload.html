@@ -1,0 +1,42 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block extrastyle %}
+	<!-- fileupload-custom css -->
+	<link rel="stylesheet" href="{% static 'assets/css/plugins/dropzone.min.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<!-- [ file-upload ] start -->
+		<div class="col-sm-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>File Upload</h5>
+				</div>
+				<div class="card-body">
+					<form action="#" class="dropzone">
+						<div class="fallback">
+							<input name="file" type="file" multiple />
+						</div>
+					</form>
+					<div class="text-center m-t-20">
+						<button class="btn btn-primary">Upload Now</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- [ file-upload ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+{% block extra_js %}
+
+	<!-- file-upload Js -->
+	<script src="{% static 'assets/js/plugins/dropzone-amd-module.min.js' %}"></script>
+
+{% endblock extra_js %}

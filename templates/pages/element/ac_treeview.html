@@ -1,0 +1,45 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block extrastyle %}
+	<!-- jstree css -->
+	<link rel="stylesheet" href="{% static 'assets/css/plugins/vanillatree.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="alert alert-primary" role="alert">
+				<p>Use our extra helper file for quick setup Advance Components in your page - <a
+						href="#" target="_blank" class="alert-link">CHECKOUT</a></p>
+				<label class="text-muted">Copy/paste source code in your page in just couples of seconds.</label>
+			</div>
+		</div>
+		<!-- [ treeview ] start -->
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>HTML Demo</h5>
+				</div>
+				<div class="card-block">
+					<div id="tree-demo">
+					</div>
+					<p id="tree-msg"></p>
+				</div>
+			</div>
+		</div>
+		<!-- [ treeview ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+{% block extra_js %}
+
+	<!-- jstree Js -->
+	<script src="{% static 'assets/js/plugins/vanillatree.min.js' %}"></script>
+	<script src="{% static 'assets/js/pages/ac-treeview.js' %}"></script>
+
+{% endblock extra_js %}

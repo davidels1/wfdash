@@ -1,0 +1,814 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block extrastyle %}
+	<!-- pnotify-custom css -->
+	<link href="{% static 'assets/css/plugins/PNotify.css' %}" rel="stylesheet" type="text/css" />
+	<link href="{% static 'assets/css/plugins/BrightTheme.css' %}" rel="stylesheet" type="text/css" />
+	<link href="{% static 'assets/css/plugins/PNotifyMobile.css' %}" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="{% static 'assets/js/plugins/PNotifyMobile.js' %}"></script>
+	<script type="text/javascript" src="{% static 'assets/js/plugins/PNotifyAnimate.js' %}"></script>
+	<script type="text/javascript" src="{% static 'assets/js/plugins/PNotify.js' %}"></script>
+{% endblock extrastyle %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="alert alert-primary" role="alert">
+				<p>Use our extra helper file for quick setup Advance Components in your page - <a
+						href="#" target="_blank" class="alert-link">CHECKOUT</a>
+				</p>
+				<label class="text-muted">Copy/paste source code in your page in just couples of
+					seconds.</label>
+			</div>
+		</div>
+		<!-- [ notification-alert ] start -->
+		<div class="col-sm-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>PNotify Core</h5>
+				</div>
+				<div class="card-body">
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Regular Notice',
+		text: 'Check me out! I\'m a notice.'
+	});
+	">
+						Notice
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.info({
+		title: 'New Thing',
+		text: 'Just to let you know, something happened.'
+	});
+	">
+						Info Message
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.success({
+		title: 'Success!',
+		text: 'That thing that you were trying to do worked.'
+	});
+	">
+						Success Message
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.error({
+		title: 'Oh No!',
+		text: 'Something terrible happened.'
+	});
+	">
+						Error Message
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Font Awesome Icon',
+		text: 'I have an icon that uses the Font Awesome icon styles.',
+		icon: 'far fa-envelope'
+	});
+	">
+						Custom Icon (Font Awesome)
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'No Icon Notice',
+		text: 'I have no icon.',
+		icon: false
+	});
+	">
+						No Icon
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'There\'s No Time to Explain',
+		text: 'OMG READ ME FAST, I\'M ABOUT TO GO AWAY!',
+		delay: 1000
+	});
+	">
+						Fast Notice
+					</button>
+					<hr />
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Sticky Notice',
+		text: 'Check me out! I\'m a sticky (pinned) notice. You\'ll have to close me yourself.',
+		hide: false
+	});
+	">
+						Sticky Notice
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.info({
+		title: 'Sticky Info',
+		text: 'Sticky info, you know, like a newspaper covered in honey.',
+		hide: false
+	});
+	">
+						Sticky Info
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.success({
+		title: 'Sticky Success',
+		text: 'Sticky success... I\'m not even gonna make a joke.',
+		hide: false
+	});
+	">
+						Sticky Success
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.error({
+		title: 'Uh Oh!',
+		text: 'Something really terrible happened. You really need to read this, so I won\'t close automatically.',
+		hide: false
+	});
+	">
+						Sticky Error
+					</button>
+					<hr />
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Stickyish Notice',
+		text: 'Check me out! I\'m a Stickyish notice. I won\'t hide automatically, but I\'ll close with everyone else when you click the modal backdrop.',
+		delay: Infinity
+	});
+	">
+						Stickyish Notice
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.info({
+		title: 'Stickyish Info',
+		text: 'Check me out! I\'m a Stickyish info. I won\'t hide automatically, but I\'ll close with everyone else when you click the modal backdrop.',
+		delay: Infinity
+	});
+	">
+						Stickyish Info
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.success({
+		title: 'Stickyish Success',
+		text: 'Check me out! I\'m a Stickyish success. I won\'t hide automatically, but I\'ll close with everyone else when you click the modal backdrop.',
+		delay: Infinity
+	});
+	">
+						Stickyish Success
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.error({
+		title: 'Stickyish Error',
+		text: 'Check me out! I\'m a Stickyish error. I won\'t hide automatically, but I\'ll close with everyone else when you click the modal backdrop.',
+		delay: Infinity
+	});
+	">
+						Stickyish Error
+					</button>
+					<hr />
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Custom Button Icons Notice',
+		text: 'Check me out! My sticker and close buttons have custom icons!',
+		hide: false,
+		icons: {
+		prefix: PNotify.defaults.icons,
+
+		closer: 'fas fa-bomb',
+		sticker: 'fas',
+		stuck: 'fa-hourglass',
+		unstuck: 'fa-anchor'
+		}
+	});
+	">
+						Custom Button Icons
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'No Sticky Button Notice',
+		text: 'Check me out! I\'m a sticky notice with no unsticky button. You\'ll have to close me manually.',
+		hide: false,
+		sticker: false
+	});
+	">
+						No Sticky Button
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'No Close Button Notice',
+		text: 'But, how are you supposed to close me?',
+		hide: false,
+		closer: false
+	});
+	">
+						No Close Button
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Permanent Buttons Notice',
+		text: 'My buttons are really lonely, so they\'re gonna hang out with us.',
+		closerHover: false,
+		stickerHover: false
+	});
+	">
+						Permanent Buttons
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	if (window.permanotice) {
+		window.permanotice.open();
+	} else {
+		window.permanotice = PNotify.notice({
+		title: 'Now Look Here',
+		text: 'There\'s something you need to know, and I won\'t go away until you come to grips with it.',
+		hide: false,
+		closer: false,
+		sticker: false,
+		modules: new Map([
+			...PNotify.defaultModules,
+			[PNotifyMobile, {
+			swipeDismiss: false
+			}]
+		])
+		});
+	}
+	">
+						Permanotice
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	if (window.permanotice) {
+		window.permanotice.close();
+	}
+	">
+						Close Permanotice
+					</button>
+					<hr />
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Non-Blocking Notice',
+		text: 'I\'m a special kind of notice called &quot;non-blocking&quot;. When you hover over me I\'ll fade to show the elements underneath. Feel free to click any of them just like I wasn\'t even here.\n\nNote: HTML links don\'t trigger in some very old browsers, due to security settings.',
+		addModelessClass: 'nonblock'
+	});
+	">
+						Using NonBlock.js
+					</button>
+					<small>(Click through to things underneath the notice.)</small>
+					<hr />
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'See Through Notice',
+		text: 'No one ever pays attention to me. Why should they? I\'m practically invisible.',
+		addClass: 'translucent'
+	});
+	">
+						Translucent
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'No Shadow Notice',
+		text: 'I don\'t have a shadow. (It\'s cause I\'m a vampire or something. Or is that reflections...)',
+		shadow: false
+	});
+	">
+						No Shadow Notice
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({title: 'Check me out! I\'m a notice.'});
+	">
+						Just Title
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice('Check me out! I\'m a notice.');
+	">
+						Just Text
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice(Math.round(Math.random()*9999));
+	">
+						Number
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'No Mouse Reset Notice',
+		text: 'I don\'t care if you move your mouse over me, I\'ll disappear when I want.',
+		mouseReset: false
+	});
+	">
+						No Mouse Reset
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Fast Fading Notice',
+		text: 'I fade in and out really quickly.',
+		animateSpeed: 'fast'
+	});
+	">
+						Fast Fading
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'No Effect Notice',
+		text: 'I don\'t even bother to animate. I\'m too cool for that.',
+		animation: 'none'
+	});
+	">
+						No Effect
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	const notice = PNotify.notice({
+		text: document.getElementById('form_notice').innerHTML,
+		textTrusted: true,
+		icon: false,
+		width: 'auto',
+		maxTextHeight: null,
+		hide: false,
+		closer: false,
+		sticker: false
+	});
+	notice.refs.elem.querySelector('form [name=cancel]').addEventListener('click', () => notice.close());
+	notice.refs.elem.querySelector('form').addEventListener('submit', e => {
+		e.preventDefault();
+		const username = notice.refs.elem.querySelector('form input[name=username]').value;
+		if (!username) {
+		alert('Please provide a username.');
+		return;
+		}
+		notice.update({
+		title: 'Welcome',
+		text: 'Successfully logged in as ' + username,
+		textTrusted: false,
+		icon: true,
+		width: PNotify.defaults.width,
+		hide: true,
+		type: 'success',
+		closer: true,
+		sticker: true
+		});
+	});
+	">
+						Forms
+					</button>
+					<div id="form_notice" style="display: none;">
+						<form action="" method="post">
+							<div class="mt-0 mb-3">
+								<h3>Login to Continue</h3>
+								<p>Just an example.</p>
+								<hr />
+							</div>
+							<div class="form-group">
+								<label for="exampleFormUsername">Username</label>
+								<input class="form-control" id="exampleFormUsername" type="text" name="username" />
+							</div>
+							<div class="form-group">
+								<label for="exampleFormPassword">Password</label>
+								<input class="form-control" id="exampleFormPassword" type="password" name="password" />
+							</div>
+							<div class="form-check">
+								<input class="form-check-input" id="exampleFormRemember" type="checkbox" name="remember" />
+								<label class="form-check-label" for="exampleFormRemember">Remember
+									Me</label>
+								<small class="form-text text-muted">Lasts for 2 weeks.</small>
+							</div>
+							<div class="mt-3">
+								<input class="btn btn-primary" type="submit" name="submit" value="Submit" />
+								<input class="btn btn-secondary ms-3" type="button" name="cancel" value="Cancel" />
+							</div>
+						</form>
+					</div>
+					<button class="btn btn-secondary my-1 source" onclick="
+	if (!window.domNotice) {
+		window.domNotice = PNotify.notice({
+		title: document.getElementById('dom_notice_title'),
+		text: document.getElementById('dom_notice_text'),
+		icon: false,
+		maxTextHeight: null
+		});
+	} else {
+		window.domNotice.open();
+	}
+	">
+						DOM Element
+					</button>
+					<div style="display: none;">
+						<h4 id="dom_notice_title">DOM Element Notice</h4>
+						<div id="dom_notice_text" class="accordion">
+							<div class="card">
+								<div class="card-header" id="headingOne">
+									<h5 class="mb-0">
+										<button class="btn btn-link" type="button" data-toggle="collapse"
+											data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+											Check me out!
+										</button>
+									</h5>
+								</div>
+								<div id="collapseOne" class="collapse show" aria-labelledby="headingOne"
+									data-parent="#dom_notice_text">
+									<div class="card-body">
+										I'm a notice with a DOM element in it.
+									</div>
+								</div>
+							</div>
+							<div class="card">
+								<div class="card-header" id="headingTwo">
+									<h5 class="mb-0">
+										<button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+											data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+											Isn't that cool!
+										</button>
+									</h5>
+								</div>
+								<div id="collapseTwo" class="collapse" aria-labelledby="headingTwo"
+									data-parent="#dom_notice_text">
+									<div class="card-body">
+										Of course it is.
+									</div>
+								</div>
+							</div>
+							<div class="card">
+								<div class="card-header" id="headingThree">
+									<h5 class="mb-0">
+										<button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+											data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+											Hey, one thing though!
+										</button>
+									</h5>
+								</div>
+								<div id="collapseThree" class="collapse" aria-labelledby="headingThree"
+									data-parent="#dom_notice_text">
+									<div class="card-body">
+										The DOM element is inserted into the notice, so it will be
+										ripped out of the DOM if it is already somewhere else.
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<button class="btn btn-secondary my-1 source" onclick="
+	const notice = PNotify.notice({
+		title: 'Click Notice',
+		text: 'I wish someone would click me.'
+	});
+	notice.refs.elem.style.cursor = 'pointer';
+	notice.on('click', e => {
+		if ([...notice.refs.elem.querySelectorAll('.pnotify-closer *, .pnotify-sticker *')].indexOf(e.target) !== -1) {
+		return;
+		}
+		notice.update({
+		type: 'success',
+		text: 'Yay, you clicked me!&lt;div style=&quot;text-align: center;&quot;&gt;&lt;img src=&quot;https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Happy_smiley_face.png/240px-Happy_smiley_face.png&quot; /&gt;&lt;/div&gt;',
+		textTrusted: true,
+		maxTextHeight: null
+		});
+	});
+	">
+						Click on It
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	const notice = PNotify.notice({
+		title: 'Click Close Notice',
+		text: 'Click me anywhere to dismiss me.',
+		closer: false,
+		sticker: false
+	});
+	notice.on('click', () => {
+		notice.close();
+	});
+	">
+						Click to Close
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Big Notice',
+		text: 'Check me out! I\'m tall and wide, even though my text isn\'t.',
+		width: '500px',
+		minHeight: '400px'
+	});
+	">
+						Huge
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Max Text Height Notice',
+		text: 'Check me out! I\'ve got a ton of text, but a pretty small max text height. Since my text is too tall, I\'ve got scrollbars to help you. '+[...(new Array(100))].map((v, i) => i).join(', '),
+		maxTextHeight: '180px'
+	});
+	">
+						Max Text Height
+					</button>
+					<script type="text/javascript">
+						window.showRich = function showRich() {
+							PNotify.notice({
+								title: '<span style="color: green;">Rich Content Notice</' +
+									'span>',
+								titleTrusted: true,
+								text: '<span style="color: blue;">Look at my beautiful <strong>strong</' +
+									'strong>, <em>emphasized</' +
+									'em>, and <span style="font-size: 1.5em;">large</' +
+									'span> text.</' +
+									'span>',
+								textTrusted: true,
+								maxTextHeight: null
+							});
+						};
+					</script>
+					<button class="btn btn-secondary my-1 source" onclick="
+	showRich();
+	">
+						Rich Text
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: '&lt;em&gt;Escaped Notice&lt;/em&gt;',
+		text: document.getElementById('evil_html').innerHTML,
+	});
+	">
+						Or Keep it Safe
+					</button>
+					<div id="evil_html" style="display: none;">
+						<div>As you can see, I don't allow HTML in my content.</div>
+						<div>This prevents things like cross site scripting attacks:</div>
+						<script type="text/javascript">
+							(() => {
+								// Here would be the XSS attack.
+							})();
+						</script>
+					</div>
+					<script type="text/javascript">
+						window.dynNotice = function dynNotice() {
+							let percent = 0;
+							const notice = PNotify.info({
+								text: 'Please Wait',
+								icon: 'fas fa-spinner fa-pulse',
+								hide: false,
+								shadow: false,
+								width: '200px',
+								closer: false,
+								sticker: false
+							});
+
+							notice.on('pnotify:afterOpen', () => {
+								setTimeout(() => {
+									notice.update({
+										title: false
+									});
+									const interval = setInterval(() => {
+										percent += 2;
+										const options = {
+											text: percent +
+												'% complete.'
+										};
+										if (percent === 80) {
+											options.title =
+												'Almost There';
+										}
+										if (percent >= 100) {
+											window.clearInterval(
+												interval);
+											options.title = 'Done!';
+											options.type = 'success';
+											options.hide = true;
+											options.icon =
+												'fas fa-check';
+											options.shadow = true;
+											options.width = PNotify
+												.defaults.width;
+											options.closer = true;
+											options.sticker = true;
+										}
+										notice.update(options);
+									}, 120);
+								}, 2000);
+							});
+						};
+					</script>
+					<button class="btn btn-secondary my-1 source" onclick="
+	dynNotice();
+	">
+						Dynamic
+					</button>
+					<hr />
+					<button class="btn btn-secondary my-1 source" onclick="
+	PNotify.notice({
+		title: 'Custom Styling',
+		text: 'I have a custom styling name that\'s used to give me special styling. I always wanted to be pretty. I also use NonBlock.js when modeless.',
+		styling: 'custom',
+		maxTextHeight: null,
+		addModelessClass: 'nonblock',
+		icon: 'far fa-file-image fa-3x'
+	});
+	">
+						Custom Styling
+					</button>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-header">
+					<h5>Lifecycle Events</h5>
+					<span>Manipulate the notice during its lifecycle.</span>
+				</div>
+				<div class="card-body">
+					<button class="btn btn-secondary my-1 source" onclick="
+	const dontAlert = () => {};
+	const initListener = event => {
+		console.log(event.type, event.detail);
+		alert('I\'m listening for when the notice initializes. This and \'mount\' are the only PNotify lifecycle events that bubble. The event object has a reference to the notice.');
+	};
+	const mountListener = event => {
+		console.log(event.type, event.detail);
+		dontAlert('I\'m listening for when the notice has mounted into the DOM.');
+	};
+	document.body.addEventListener('pnotify:init', initListener);
+	document.body.addEventListener('pnotify:mount', mountListener);
+	const notice = PNotify.notice({
+		title: 'I\'m Here',
+		text: 'I have a listener for each of my lifecycle events. I\'ll fire events for all my listeners while I change states.',
+		autoOpen: false,
+	});
+	document.body.removeEventListener('pnotify:init', initListener);
+	document.body.removeEventListener('pnotify:mount', mountListener);
+	notice.on('pnotify:update', event => {
+		console.log(event.type, event.detail);
+		dontAlert('I\'m listening for when the notice changes state.');
+	});
+	notice.on('pnotify:beforeOpen', event => {
+		console.log(event.type, event.detail);
+		// Use event.preventDefault() to cancel opening.
+		alert('I\'m listening for before the notice opens.\n\nThere are more events you can listen for, but this is the last alert you\'ll see. Check the code to see them all.');
+	});
+	notice.on('pnotify:afterOpen', event => {
+		console.log(event.type, event.detail);
+		dontAlert('I\'m listening for after the notice opens.');
+	});
+	notice.on('pnotify:enterModal', event => {
+		console.log(event.type, event.detail);
+		dontAlert('I\'m listening for when the notice enters a modal state.');
+	});
+	notice.on('pnotify:leaveModal', event => {
+		console.log(event.type, event.detail);
+		dontAlert('I\'m listening for when the notice leaves a modal state.');
+	});
+	notice.on('pnotify:beforeClose', event => {
+		console.log(event.type, event.detail);
+		// Use event.preventDefault() to cancel close. Use notice.queueClose() to set the close timer again.
+		dontAlert('I\'m listening for before the notice closes.');
+	});
+	notice.on('pnotify:afterClose', event => {
+		console.log(event.type, event.detail);
+		dontAlert('I\'m listening for after the notice closes.');
+	});
+	notice.on('pnotify:beforeDestroy', event => {
+		console.log(event.type, event.detail);
+		// Use event.preventDefault() to cancel destroy.
+		dontAlert('I\'m listening for before the notice is destroyed.');
+	});
+	notice.on('pnotify:afterDestroy', event => {
+		console.log(event.type, event.detail);
+		dontAlert('I\'m listening for after the notice is destroyed.');
+	});
+	notice.open();
+	">
+						Notice with Event Listeners
+					</button>
+					<button class="btn btn-secondary my-1 source" onclick="
+	const notice = PNotify.notice({
+		title: 'Notice',
+		text: 'Right now I\'m a notice.',
+		modules: new Map([
+		...PNotify.defaultModules,
+		[PNotifyAnimate, {}]
+		])
+	});
+
+	let off = notice.on('pnotify:beforeClose', event => {
+		listener1(event);
+	});
+
+	const listener1 = event => {
+		if (!event.detail.timerHide) {
+		off();
+		return;
+		}
+		notice.update({
+		title: 'Error',
+		text: 'Uh oh. Now I\'ve become an error.',
+		type: 'error'
+		});
+		notice.attention('swing');
+		notice.queueClose();
+		event.preventDefault();
+		off();
+		off = notice.on('pnotify:beforeClose', event => {
+		listener2(event);
+		});
+	};
+
+	const listener2 = event => {
+		if (!event.detail.timerHide) {
+		off();
+		return;
+		}
+		notice.update({
+		title: 'Success',
+		text: 'I fixed the error!',
+		type: 'success'
+		});
+		notice.attention('swing');
+		notice.queueClose();
+		event.preventDefault();
+		off();
+		off = notice.on('pnotify:beforeClose', event => {
+		listener3(event);
+		});
+	};
+
+	const listener3 = event => {
+		if (!event.detail.timerHide) {
+		off();
+		return;
+		}
+		notice.update({
+		title: 'Info',
+		text: 'Everything\'s cool now.',
+		type: 'info'
+		});
+		notice.attention('swing');
+		notice.queueClose();
+		event.preventDefault();
+		off();
+	};
+	">
+						Notice to Error to Success to Info
+					</button>
+					<script type="text/javascript">
+						window.fakeLoad = function fakeLoad() {
+							let curValue = 1;
+							let progress;
+
+							// Make a loader.
+							const notice = PNotify.notice({
+								title: 'Creating series of tubes',
+								text: '<div class="progress">\n' +
+									'  <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></' +
+									'div>\n' +
+									'</' +
+									'div>',
+								textTrusted: true,
+								icon: 'fas fa-cog fa-spin',
+								hide: false,
+								destroy: true,
+								closer: false,
+								sticker: false
+							});
+
+							notice.on('pnotify:afterOpen', () => {
+								progress = notice.refs.elem.querySelector(
+									'.progress-bar');
+								progress.style.width = curValue + '%';
+								progress.attributes['aria-valuenow'].value = curValue;
+								// Pretend to do something.
+								let plus = 1;
+								const timer = setInterval(() => {
+									if (curValue === 70) {
+										plus = 0.25;
+										notice.update({
+											title: 'Aligning discrete worms',
+											icon: 'fas fa-circle-notch fa-spin'
+										});
+									}
+									if (curValue === 80) {
+										notice.update({
+											title: 'Connecting end points',
+											icon: 'fas fa-sync fa-spin'
+										});
+									}
+									if (curValue === 90) {
+										notice.update({
+											title: 'Dividing and conquering',
+											icon: 'fas fa-spinner fa-pulse'
+										});
+									}
+									if (curValue >= 100) {
+										// Clean up the interval.
+										window.clearInterval(timer);
+										notice.close();
+										return;
+									}
+									curValue += plus;
+									progress.style.width = curValue + '%';
+									progress.attributes['aria-valuenow'].value =
+										curValue;
+								}, 65);
+							});
+						};
+					</script>
+					<button class="btn btn-secondary my-1 source" onclick="
+	fakeLoad();
+	">
+						Progress Loader
+					</button>
+				</div>
+			</div>
+		</div>
+		<!-- [ notification-alert ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}

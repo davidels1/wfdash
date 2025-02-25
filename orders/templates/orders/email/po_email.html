@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <p>Dear {{ supplier.suppliername }},</p>
+    
+    <p>Please find attached Purchase Order {{ po.po_number }}.</p>
+    
+    <p>Order Details:<br>
+    PO Number: {{ po.po_number }}<br>
+    Date: {{ po.created_at|date:"d F Y" }}</p>
+    
+    <p>Best regards,<br>
+    CNL Mining Supplies</p>
+</body>
+</html>

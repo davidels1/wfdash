@@ -1,0 +1,299 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{% if quote %}Edit Quote{% else %}New Quote{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" id="quote-form" class="quote-form-mobile" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Customer Selection -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <label class="form-label">Customer *</label>
+                {{ form.customer }}
+            </div>
+        </div>
+
+        <!-- Photo Upload -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <label class="form-label">Photo</label>
+                {{ form.photo }}
+            </div>
+        </div>
+
+        <!-- Voice Note Recording -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <label class="form-label">Voice Note</label>
+                <button type="button" id="recordButton" class="btn btn-primary">
+                    <i class="feather icon-mic"></i> Record
+                </button>
+                <button type="button" id="stopButton" class="btn btn-danger" disabled>
+                    <i class="feather icon-stop-circle"></i> Stop
+                </button>
+                <span id="recordingStatus" style="display: none;">
+                    <i class="feather icon-loader fa-spin"></i> Recording...
+                </span>
+                <canvas id="audioVisualizer" width="200" height="50" style="display: none;"></canvas>
+                <audio id="audioPlayback" controls style="display:none;"></audio>
+                <input type="hidden" id="voiceNoteData" name="voice_note_data">
+                <div id="microphoneError" class="text-danger" style="display: none;">
+                    Microphone access denied. Please check your browser permissions.
+                </div>
+            </div>
+        </div>
+
+        <!-- Quote Items -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Items</h5>
+            </div>
+            <div class="card-body p-0">
+                {{ formset.management_form }}
+                <div id="mobile-items">
+                    {% for form in formset %}
+                    <div class="item-form border-bottom p-3">
+                        <div class="mb-2">
+                            <label>Description *</label>
+                            {{ form.description }}
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-2">
+                                <label>Quantity</label>
+                                {{ form.quantity }}
+                            </div>
+                            <div class="col-6 text-end">
+                                <button type="button" class="btn btn-danger btn-sm remove-form">
+                                    <i class="feather icon-trash-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label>Notes</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="fixed-bottom bg-white border-top p-3">
+            <button type="button" class="btn btn-secondary btn-lg w-100 mb-2" id="add-form">
+                <i class="feather icon-plus"></i> Add Another Item
+            </button>
+            <button type="submit" class="btn btn-primary btn-lg w-100 mb-2">Save Quote</button>
+            <a href="{% url 'quotes:quote_list' %}" class="btn btn-outline-secondary w-100">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.quote-form-mobile {
+    padding-bottom: 180px;  /* Increased to accommodate the extra button */
+}
+.select2-container {
+    width: 100% !important;
+}
+</style>
+{% endblock %}
+
+{% block javascripts %}
+{{ block.super }}
+<script src="{% static 'assets/js/plugins/select2.min.js' %}"></script>
+<script>
+$(document).ready(function() {
+    // Initialize Select2
+    $('.select2-customer').select2({
+        theme: 'bootstrap4',
+        width: '100%'
+    });
+    
+    // Form Management
+    let formIndex = {{ formset.total_form_count }}; // Tracks number of forms
+    let formsetPrefix = 'items';                   // Form name prefix
+    let maxForms = 10;
+    
+    $('#add-form').on('click', function(e) {        // Add button click handler
+        e.preventDefault();
+        
+        if (formIndex >= maxForms) {
+            alert('Maximum ' + maxForms + ' items allowed');
+            return;
+        }
+        
+        // Clone first form
+        let template = $('.item-form:first').clone(true);
+        
+        // Clear values and update indices
+        template.find('input:not([type=hidden])').val('');
+        template.find('textarea').val('');
+        template.find(':input').each(function() {
+            let oldName = $(this).attr('name');
+            if (oldName) {
+                let newName = oldName.replace('-0-', '-' + formIndex + '-');
+                $(this).attr({
+                    'name': newName,
+                    'id': 'id_' + newName
+                });
+            }
+        });
+        
+        // Add new form
+        $('#mobile-items').append(template);
+        formIndex++;
+        
+        // Update management form
+        $('#id_items-TOTAL_FORMS').val(formIndex);
+    });
+    
+    // Remove form
+    $('.remove-form').on('click', function() {
+        let form = $(this).closest('.item-form');
+        let totalForms = $('.item-form').length;
+        
+        if (totalForms > 1) {
+            form.find('input[type=checkbox]').prop('checked', true);
+            form.hide();
+        } else {
+            alert('At least one item is required');
+        }
+    });
+
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioContext;
+    let analyser;
+    let canvas;
+    let canvasCtx;
+    let animationFrameId; // To store the animation frame ID
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({
+            audio: {
+                sampleRate: 48000, // Or another appropriate sample rate
+                echoCancellation: true,
+                noiseSuppression: true
+            }
+        })
+            .then(stream => {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 2048;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                canvas = document.getElementById("audioVisualizer");
+                canvasCtx = canvas.getContext("2d");
+
+                function draw() {
+                    animationFrameId = requestAnimationFrame(draw); // Store the animation frame ID
+
+                    analyser.getByteTimeDomainData(dataArray);
+
+                    canvasCtx.fillStyle = "rgb(200, 200, 200)";
+                    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    canvasCtx.lineWidth = 2;
+                    canvasCtx.strokeStyle = "rgb(0, 0, 0)";
+
+                    canvasCtx.beginPath();
+
+                    const sliceWidth = canvas.width * 1.0 / bufferLength;
+                    let x = 0;
+
+                    for (let i = 0; i < bufferLength; i++) {
+
+                        const v = dataArray[i] / 128.0;
+                        const y = v * canvas.height / 2;
+
+                        if (i === 0) {
+                            canvasCtx.moveTo(x, y);
+                        } else {
+                            canvasCtx.lineTo(x, y);
+                        }
+
+                        x += sliceWidth;
+                    }
+
+                    canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                    canvasCtx.stroke();
+                }
+
+                const supportedMimeTypes = [
+                    "audio/webm;codecs=opus",
+                    "audio/ogg;codecs=opus",
+                    "audio/wav" // Fallback
+                ];
+
+                let mimeType = null;
+                for (const type of supportedMimeTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        mimeType = type;
+                        break;
+                    }
+                }
+
+                if (!mimeType) {
+                    alert("No supported audio codec found!");
+                    return;
+                }
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+
+                $('#recordButton').on('click', function() {
+                    audioChunks = [];
+                    mediaRecorder.start();
+                    $('#recordButton').prop('disabled', true);
+                    $('#stopButton').prop('disabled', false);
+                    $('#recordingStatus').show();
+                    $('#audioVisualizer').show();
+                    draw(); // Start the visualizer
+                });
+
+                $('#stopButton').on('click', function() {
+                    mediaRecorder.stop();
+                    $('#recordButton').prop('disabled', false);
+                    $('#stopButton').prop('disabled', true);
+                    $('#recordingStatus').hide();
+                    $('#audioVisualizer').hide();
+                    cancelAnimationFrame(animationFrameId); // Stop the visualizer
+                    canvasCtx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+                });
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: mimeType });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    $('#audioPlayback').attr('src', audioUrl);
+                    $('#audioPlayback').show();
+
+                    // Convert Blob to base64 for form submission
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const base64data = reader.result.split(',')[1]; // Extract the base64 data
+                        $('#voiceNoteData').val(base64data);
+                    }
+                    reader.readAsDataURL(audioBlob);
+                };
+            })
+            .catch(err => {
+                console.error("Error accessing microphone:", err);
+                $('#microphoneError').show(); // Show the error message
+                alert("Unable to access microphone. Please check your browser permissions.");
+            });
+    } else {
+        alert("getUserMedia is not supported on this browser.");
+    }
+});
+</script>
+{% endblock %}

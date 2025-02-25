@@ -1,0 +1,67 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block extrastyle %}
+	<!-- enjoyhint css -->
+	<link rel="stylesheet" href="{% static 'assets/css/plugins/introjs.min.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<!-- [ tour ] start -->
+		<div class="col-sm-12">
+			<div class="alert alert-primary" role="alert">
+				<p>Use our extra helper file for quick setup Advance Components in your page - <a
+						href="#" target="_blank" class="alert-link">CHECKOUT</a></p>
+				<label class="text-muted">Copy/paste source code in your page in just couples of seconds.</label>
+			</div>
+		</div>
+		<div class="col-sm-12">
+			<div class="card step1">
+				<div class="card-header step2">
+					<h5 class="step3">Hello card</h5>
+					<div class="card-header-right">
+						<div class="btn-group card-option step2">
+							<button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown"
+								aria-haspopup="true" aria-expanded="false"><i
+									class="feather icon-more-vertical"></i></button>
+							<ul class="list-unstyled card-option dropdown-menu dropdown-menu-end">
+								<li class="dropdown-item full-card"><a href="#!"><span><i class="feather icon-maximize"></i>
+											maximize</span><span style="display:none"><i class="feather icon-minimize"></i>
+											Restore</span></a></li>
+								<li class="dropdown-item minimize-card"><a href="#!"><span><i
+												class="feather icon-minus"></i> collapse</span><span style="display:none"><i
+												class="feather icon-plus"></i> expand</span></a></li>
+								<li class="dropdown-item reload-card"><a href="#!"><i class="feather icon-refresh-cw"></i>
+										reload</a></li>
+								<li class="dropdown-item close-card"><a href="#!"><i class="feather icon-trash"></i>
+										remove</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div class="card-block step4">
+					<h1>H1 Datta Able</h1>
+					<h2>H2 Datta Able</h2>
+					<h3>H3 Datta Able</h3>
+					<h4>H4 Datta Able</h4>
+					<h5>H5 Datta Able</h5>
+					<h6>H6 Datta Able</h6>
+					<p>p Datta Able</p>
+					<strong>p Datta Able</strong>
+				</div>
+			</div>
+		</div>
+		<!-- [ tour ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+{% block extra_js %}
+	<!-- tour Js -->
+	<script src="{% static 'assets/js/plugins/intro.min.js' %}"></script>
+	<script src="{% static 'assets/js/pages/ac-tour.js' %}"></script>
+{% endblock extra_js %}

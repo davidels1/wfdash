@@ -1,0 +1,114 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Generated Quotes {% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Generated Quotes</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Search and Filter Section -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <form method="get" class="form-inline">
+                                <div class="input-group mb-2 mr-sm-2">
+                                    <input type="text" name="search" class="form-control" 
+                                           placeholder="Search quotes..." 
+                                           value="{{ request.GET.search }}">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-primary" type="submit">Search</button>
+                                    </div>
+                                </div>
+                                <select name="company" class="form-control mb-2 mr-sm-2">
+                                    <option value="">All Companies</option>
+                                    <option value="CNL" {% if request.GET.company == 'CNL' %}selected{% endif %}>CNL</option>
+                                    <option value="ISHERWOOD" {% if request.GET.company == 'ISHERWOOD' %}selected{% endif %}>Isherwood</option>
+                                </select>
+                                <select name="date_range" class="form-control mb-2 mr-sm-2">
+                                    <option value="">All Dates</option>
+                                    <option value="today" {% if request.GET.date_range == 'today' %}selected{% endif %}>Today</option>
+                                    <option value="week" {% if request.GET.date_range == 'week' %}selected{% endif %}>This Week</option>
+                                    <option value="month" {% if request.GET.date_range == 'month' %}selected{% endif %}>This Month</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Quotes Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Quote Number</th>
+                                    <th>Customer</th>
+                                    <th>Company</th>
+                                    <th>Generated Date</th>
+                                    <th>Reference</th>
+                                    <th>Total Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quote in quotes %}
+                                <tr>
+                                    <td>{{ quote.quote_number }}</td>
+                                    <td>{{ quote.customer.company }}</td>
+                                    <td>{{ quote.company_letterhead }}</td>
+                                    <td>{{ quote.pdf_generated_at|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ quote.quote_reference }}</td>
+                                    <td>R {{ quote.total_amount|floatformat:2 }}</td>
+                                    <td>
+                                        {% if quote.has_pdf %}
+                                        <a href="{{ quote.pdf_file.url }}" class="btn btn-sm btn-info" target="_blank">
+                                            <i class="fas fa-file-pdf"></i> View PDF
+                                        </a>
+                                        {% endif %}
+                                        <a href="{% url 'quotes:quote_detail' quote.id %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No generated quotes found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if quotes.has_other_pages %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if quotes.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ quotes.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}">Previous</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for i in quotes.paginator.page_range %}
+                            <li class="page-item {% if quotes.number == i %}active{% endif %}">
+                                <a class="page-link" href="?page={{ i }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}">{{ i }}</a>
+                            </li>
+                            {% endfor %}
+                            
+                            {% if quotes.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ quotes.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

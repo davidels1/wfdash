@@ -1,0 +1,32 @@
+[
+    {
+        "group_id": 1,
+        "id": 1,
+        "permission_id": 49
+    },
+    {
+        "group_id": 1,
+        "id": 2,
+        "permission_id": 50
+    },
+    {
+        "group_id": 1,
+        "id": 3,
+        "permission_id": 52
+    },
+    {
+        "group_id": 1,
+        "id": 4,
+        "permission_id": 53
+    },
+    {
+        "group_id": 1,
+        "id": 5,
+        "permission_id": 54
+    },
+    {
+        "group_id": 1,
+        "id": 6,
+        "permission_id": 56
+    }
+]

@@ -1,0 +1,186 @@
+{% extends "layouts/base.html" %}
+{% load static quote_filters %}
+
+{% block title %} Quote Details {% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quote #{{ quote.quote_number }}</h5>
+                    <div class="card-header-right">
+                        {% if not quote.is_complete %}
+                        <a href="{% url 'quotes:quote_edit' quote.pk %}" class="btn btn-primary">
+                            <i class="feather icon-edit"></i> Edit Quote
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="card-header-right">
+                        {% if quote.status == 'processed' or quote.all_items_complete %}
+                            <a href="{% url 'quotes:quote_process' quote.pk %}" class="btn btn-primary">
+                                <i class="feather icon-edit"></i> Process Items
+                            </a>
+                            {% if not quote.pdf_file %}
+                                <a href="{% url 'quotes:generate_quote_pdf' quote.pk %}" class="btn btn-success">
+                                    <i class="feather icon-file-text"></i> Generate Quote
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Customer Information</h6>
+                            <p><strong>Name:</strong> {{ quote.customer.customer }}</p>
+                            <p><strong>Company:</strong> {{ quote.customer.company }}</p>
+                            <p><strong>Email:</strong> {{ quote.customer.email }}</p>
+                            <p><strong>Phone:</strong> {{ quote.customer.number }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Quote Information</h6>
+                            <p><strong>Rep:</strong> {{ quote.rep.username }}</p>
+                            <p><strong>Created:</strong> {{ quote.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Status:</strong> 
+                                {% if quote.status == 'new' %}
+                                    <span class="badge bg-warning">New</span>
+                                {% elif quote.status == 'claimed' %}
+                                    <span class="badge bg-info">Claimed by {{ quote.assigned_to.username }}</span>
+                                {% elif quote.status == 'processed' %}
+                                    <span class="badge bg-primary">Processed</span>
+                                {% elif quote.status == 'complete' %}
+                                    <span class="badge bg-success">Complete</span>
+                                {% endif %}
+                            </p>
+                            {% if quote.notes %}
+                                <p><strong>Notes:</strong><br>{{ quote.notes }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                    <th>Cost Price</th>
+                                    <th>Selling Price</th>
+                                    <th>Total</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in quote.items.all %}
+                                <tr>
+                                    <td>{{ item.description }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>R{{ item.unit_price }}</td>
+                                    <td>R{{ item.cost_price }}</td>
+                                    <td>R{{ item.selling_price }}</td>
+                                    <td>R{{ item.selling_price|multiply:item.quantity }}</td>
+                                    <td>{{ item.notes }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if not quote.is_complete %}
+                    <div class="mt-4">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            {% if quote.status == 'new' and not quote.is_assigned %}
+                            <button type="submit" name="assign" class="btn btn-success">
+                                <i class="feather icon-check"></i> Claim Quote
+                            </button>
+                            {% endif %}
+                            
+                            {% if quote.status == 'claimed' and quote.assigned_to == request.user %}
+                            {% if not quote.all_items_complete %}
+                                <a href="{% url 'quotes:quote_process' quote.pk %}" class="btn btn-primary">
+                                    <i class="feather icon-edit"></i> Process Quote
+                                </a>
+                            {% endif %}
+                        {% endif %}
+
+                            {% if quote.is_assigned and not quote.has_problems %}
+                            <button type="submit" name="complete" class="btn btn-success">
+                                <i class="feather icon-check"></i> Mark Complete
+                            </button>
+                            {% endif %}
+                            
+                            <button type="submit" name="problem" class="btn btn-danger">
+                                <i class="feather icon-alert-triangle"></i> Report Problem
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not quote.is_complete and quote.status == 'new' %}
+                    <div class="mt-4">
+                        <!-- <form method="post" class="d-inline" action="{% url 'quotes:quote_claim' quote.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="feather icon-check"></i> Claim Quote
+                            </button>
+                        </form> -->
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quote Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Description</h6>
+                            <p>{{ quote.description }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Status</h6>
+                            <p>{{ quote.get_status_display }}</p>
+                        </div>
+                    </div>
+
+                    {% if quote.email_sender %}
+                    <div class="mt-4">
+                        <h6>Email Information</h6>
+                        <p><strong>From:</strong> {{ quote.email_sender }}</p>
+                        <p><strong>Subject:</strong> {{ quote.email_subject }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if quote.notes %}
+                    <div class="mt-4">
+                        <h6>Notes</h6>
+                        <pre class="border rounded p-3 bg-light">{{ quote.notes }}</pre>
+                    </div>
+                    {% endif %}
+
+                    {% if quote.attachments.exists %}
+                    <div class="mt-4">
+                        <h6>Attachments:</h6>
+                        <ul class="list-group">
+                            {% for attachment in quote.attachments.all %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a href="{{ attachment.file.url }}" target="_blank">
+                                    <i class="feather icon-paperclip"></i> {{ attachment.filename }}
+                                </a>
+                                <span class="text-muted">{{ attachment.uploaded_at|date:"Y-m-d H:i" }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

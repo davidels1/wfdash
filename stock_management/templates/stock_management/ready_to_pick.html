@@ -1,0 +1,316 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+{% csrf_token %}  <!-- Add this at the top of your content block -->
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5>Ready to Pick</h5>
+        </div>
+        <div class="card-body">
+            {% if invoices %}
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice, items in invoices.items %}
+                        <tr>
+                            <td>{{ invoice }}</td>
+                            <td>{{ items.0.order_item.order.company.company }}</td>
+                            <td>{{ items|length }} items</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary btn-sm view-picking-slip" 
+                                            data-invoice="{{ invoice }}">
+                                        <i class="feather icon-eye"></i> View
+                                    </button>
+                                    <a href="{% url 'stock_management:picking_slip_pdf' invoice %}" 
+                                       class="btn btn-info btn-sm"
+                                       target="_blank">
+                                        <i class="feather icon-file-text"></i> PDF
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center">No items ready to pick</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="pickingSlipModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Picking Slip</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="pickingSlipContent">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer no-print">
+                <span id="pickingStatus" class="me-auto"></span>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="savePickingProgress()">Save Progress</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Debug logging
+    console.log('DOM loaded');
+    console.log('Picking data:', {{ picking_data|safe }});
+
+    // Initialize Bootstrap modal
+    const modalElement = document.getElementById('pickingSlipModal');
+    if (!modalElement) {
+        console.error('Modal element not found');
+        return;
+    }
+    const modal = new bootstrap.Modal(modalElement);
+
+    // Add click handlers to buttons
+    const buttons = document.querySelectorAll('.view-picking-slip');
+    console.log('Found buttons:', buttons.length);
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            console.log('Button clicked');
+            const invoice = this.dataset.invoice;
+            console.log('Invoice:', invoice);
+            const items = {{ picking_data|safe }}[invoice];
+            console.log('Items:', items);
+            
+            if (!items) {
+                console.error('No items found for invoice:', invoice);
+                return;
+            }
+            
+            displayPickingSlip(invoice, items);
+            modal.show();
+        });
+    });
+
+    function displayPickingSlip(invoice, items) {
+        console.log('Displaying picking slip for invoice:', invoice);
+        const content = document.getElementById('pickingSlipContent');
+        if (!content) {
+            console.error('Picking slip content element not found');
+            return;
+        }
+
+        content.innerHTML = `
+            <div class="picking-slip">
+                <div class="d-flex justify-content-between mb-4">
+                    <div>
+                        <h4>Picking Slip - Invoice #${invoice}</h4>
+                        <p>Customer: ${items[0].customer}</p>
+                        <p>Date: ${new Date().toLocaleDateString()}</p>
+                    </div>
+                </div>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Item Description</th>
+                            <th>Qty</th>
+                            <th>Supplier</th>
+                            <th>PO Number</th>
+                            <th class="no-print">Picked</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${items.map(item => `
+                            <tr>
+                                <td>${item.description}</td>
+                                <td>${item.quantity}</td>
+                                <td>${item.supplier}</td>
+                                <td>${item.po_number}</td>
+                                <td class="no-print">
+                                    <input type="checkbox" class="pick-checkbox" 
+                                           data-item-id="${item.id}">
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        updatePickingStatus(invoice);
+        // Add this at the end of displayPickingSlip function
+        content.querySelectorAll('.pick-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                markAsPicked(this);
+            });
+        });
+    }
+
+    window.updatePickingStatus = function(invoice) {
+        const checkboxes = document.querySelectorAll('.pick-checkbox');
+        const totalItems = checkboxes.length;
+        const pickedItems = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const statusSpan = document.getElementById('pickingStatus');
+        
+        if (pickedItems === 0) {
+            statusSpan.innerHTML = '<span class="badge bg-secondary">Not Started</span>';
+        } else if (pickedItems < totalItems) {
+            statusSpan.innerHTML = `<span class="badge bg-warning">Picking in Progress (${pickedItems}/${totalItems})</span>`;
+        } else {
+            statusSpan.innerHTML = '<span class="badge bg-success">Picking Completed</span>';
+        }
+    }
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // Replace the existing markAsPicked function with:
+    window.markAsPicked = async function(checkbox) {
+        try {
+            const response = await fetch(`/stock/mark-picked/${checkbox.dataset.itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.json();
+            if (data.status === 'success') {
+                checkbox.closest('tr').classList.toggle('item-picked');
+                // Get invoice number from the modal title
+                const invoiceText = document.querySelector('.picking-slip h4').textContent;
+                const invoice = invoiceText.split('#')[1].trim();
+                updatePickingStatus(invoice);
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error updating picking status: ' + error.message);
+            checkbox.checked = !checkbox.checked;
+        }
+    };
+
+    // Replace the existing savePickingProgress function with:
+    window.savePickingProgress = async function() {
+        const saveButton = document.querySelector('.btn-success');
+        try {
+            // Disable the save button while processing
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+            const invoiceText = document.querySelector('.picking-slip h4').textContent;
+            const invoice = invoiceText.split('#')[1].trim();
+            
+            if (!invoice) {
+                alert('Error: Could not find invoice number');
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('.pick-checkbox');
+            const pickedItems = Array.from(checkboxes).map(cb => ({
+                id: cb.dataset.itemId,
+                picked: cb.checked
+            }));
+
+            // Check if all items are picked
+            const allPicked = pickedItems.every(item => item.picked);
+
+            const response = await fetch('/stock/save-picking-progress/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    invoice: invoice,
+                    items: pickedItems
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                if (allPicked) {
+                    // If all items are picked, close modal and refresh
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('pickingSlipModal'));
+                    modal.hide();
+                    window.location.reload();
+                } else {
+                    // If not all items picked, just show success message
+                    alert('Progress saved successfully');
+                }
+            } else {
+                throw new Error(data.message || 'Error saving progress');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error saving progress: ' + error.message);
+        } finally {
+            // Re-enable the save button if we're not refreshing
+            if (!pickedItems?.every(item => item.picked)) {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save Progress';
+            }
+        }
+    };
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #pickingSlipContent, #pickingSlipContent * {
+        visibility: visible;
+    }
+    #pickingSlipContent {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    .no-print {
+        display: none !important;
+    }
+}
+.item-picked {
+    background-color: #d4edda;
+}
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.75;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+}
+</style>
+{% endblock %}

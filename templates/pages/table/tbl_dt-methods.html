@@ -1,0 +1,259 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block extrastyle %}
+	<link rel="stylesheet" href="{% static 'assets/css/plugins/style.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<!-- [ basic-table ] start -->
+		<div class="col-xl-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Basic Table</h5>
+					<span class="d-block m-t-5">use class <code>table</code> inside table
+						element</span>
+				</div>
+				<div class="card-block table-border-style">
+					<div class="form-group">
+						<button type="button" class="btn btn-sm btn-primary main" id="init">Init</button>
+						<button type="button" class="btn btn-sm btn-danger main" id="destroy">Destroy</button>
+					</div>
+					<div class="table-responsive">
+						<table class="table" id="pc-dt-methods">
+							<thead>
+								<tr>
+									<th>Select</th>
+									<th>Customer</th>
+									<th>Version</th>
+									<th data-type="date" data-format="DD.MM.YYYY">Planned upgrade
+									</th>
+									<th>DB-Info</th>
+									<th>Website info</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td></td>
+									<td>Test one<br>CCode: 33123</td>
+									<td>7.1.5</td>
+									<td>26.11.2018</td>
+									<td>Server: s1<br>DB: db1</td>
+									<td>Websitename: Red<br>Node: 10</td>
+								</tr>
+								<tr>
+									<td></td>
+									<td>Test two<br>CCode: 12353</td>
+									<td>7.1.5.2</td>
+									<td>26.11.2019</td>
+									<td>Server: s1<br>DB: db2</td>
+									<td>Websitename: Green<br>Node: 6</td>
+								</tr>
+								<tr>
+									<td></td>
+									<td>Test three<br>CCode: 33522</td>
+									<td>7.1.6</td>
+									<td>01.01.2020</td>
+									<td>Server: s2<br>DB: db1</td>
+									<td>Websitename: Orange<br>Node: 5</td>
+								</tr>
+								<tr>
+									<td></td>
+									<td>Test four<br>CCode: 25512</td>
+									<td>7.1.7</td>
+									<td>26.03.2021</td>
+									<td>Server: s1<br>DB: db3</td>
+									<td>Websitename: Blue<br>Node: 10</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<div class="row">
+						<div class="col-md-6">
+							<div id="hide">
+								<div>
+									<h5>Column Visibility</h5>
+									<div class="form-group" id="columns"></div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<h5>Import / Export Data</h5>
+							<div class="form-group">
+								<textarea name="" id="" cols="30" rows="2" class="form-control"
+									placeholder="Paste your csv or json string here..."></textarea>
+							</div>
+							<div class="form-group">
+								<button type="button" class="btn btn-primary btn-sm import" data-type="csv">Import
+									CSV</button>
+								<button type="button" class="btn btn-primary btn-sm import" data-type="json">Import
+									JSON</button>
+								<button type="button" class="btn btn-success btn-sm export" data-type="csv">Export
+									CSV</button>
+								<button type="button" class="btn btn-success btn-sm export" data-type="sql">Export
+									SQL</button>
+								<button type="button" class="btn btn-success btn-sm export" data-type="json">Export
+									JSON</button>
+							</div>
+							<div class="form-group">
+								<small>NOTE: The csv column delimiters and line
+									delimiters are set to <code>","</code> and
+									<code>"\n"</code> respectively.</small>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- [ basic-table ] end -->
+</div>
+<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+{% block extra_js %}
+
+	<script src="{% static 'assets/js/plugins/simple-datatables.js' %}"></script>
+	<script src="{% static 'assets/js/plugins/utils.js' %}"></script>
+	<script>
+		var table = document.querySelector("#pc-dt-methods");
+		var textarea = document.getElementsByTagName("textarea")[0];
+		var div = document.getElementById("data");
+		var btn = document.getElementsByTagName("button")[0];
+		var checkboxes = document.getElementById("columns");
+		var inputs = [],
+			visible = [],
+			hidden = [];
+
+		var datatable = new simpleDatatables.DataTable(table, {
+			perPage: 5,
+		});
+
+		datatable.on("datatable.init", function () {
+			setCheckboxes()
+		});
+
+		function updateColumns() {
+			try {
+				datatable.columns().show(visible);
+				datatable.columns().hide(hidden);
+			} catch (e) {
+				console.log(e);
+			}
+		}
+
+		function setCheckboxes() {
+			inputs = [];
+			visible = [];
+			checkboxes.innerHTML = "";
+
+			util.each(datatable.headings, function (i, heading) {
+				var checkbox = util.createElement("div", {
+					class: "form-check"
+				});
+				var input = util.createElement("input", {
+					type: "checkbox",
+					id: "checkbox-" + i,
+					name: "checkbox",
+					class: "form-check-input"
+				});
+				var label = util.createElement("label", {
+					for: "checkbox-" + i,
+					text: heading.textContent,
+					class: "form-check-label"
+				});
+
+				input.idx = i;
+
+				if (datatable.columns().visible(heading.cellIndex)) {
+					input.checked = true;
+					visible.push(i);
+				} else {
+					if (hidden.indexOf(i) < 0) {
+						hidden.push(i);
+					}
+				}
+
+				checkbox.appendChild(input)
+				checkbox.appendChild(label)
+
+				checkboxes.appendChild(checkbox);
+
+				inputs.push(input);
+			});
+
+			util.each(inputs, function (i, input) {
+
+				input.onchange = function (e) {
+					if (input.checked) {
+						hidden.splice(hidden.indexOf(input.idx), 1);
+						visible.push(input.idx);
+					} else {
+						visible.splice(visible.indexOf(input.idx), 1);
+						hidden.push(input.idx);
+					}
+
+					updateColumns();
+				};
+			});
+		}
+
+		textarea.addEventListener("input", function (e) {
+			if (this.value.length) {
+				this.parentNode.classList.remove("error");
+			}
+		})
+
+		document.querySelectorAll(".export").forEach(function (el) {
+			el.addEventListener("click", function (e) {
+				var type = el.dataset.type;
+
+				var data = {
+					type: type,
+					filename: "my-" + type,
+				};
+
+				if (type === "csv") {
+					data.columnDelimiter = "|";
+				}
+
+				datatable.export(data);
+			});
+		});
+
+		document.querySelectorAll(".main").forEach(function (el) {
+			el.addEventListener("click", e => {
+				datatable[el.id]();
+				setTimeout(function () {
+					document.getElementById("hide").classList.toggle("hidden", !datatable
+						.initialized);
+					table.classList.toggle("table", !datatable.initialized);
+				}, 10);
+			});
+		});
+
+		document.querySelectorAll(".import").forEach(function (el) {
+			el.addEventListener("click", e => {
+				var type = el.dataset.type;
+
+				var data = {
+					type: type,
+					data: textarea.value
+				};
+
+				textarea.parentNode.classList.remove("error");
+
+				if (!data.data.length) {
+					textarea.parentNode.classList.add("error");
+					return false;
+				}
+
+				datatable.import(data);
+			});
+		});
+	</script>
+
+{% endblock extra_js %}

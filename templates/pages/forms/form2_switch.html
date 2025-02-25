@@ -1,0 +1,186 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<!-- [ Switches ] start -->
+		<div class="col-sm-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Switches</h5>
+					<span class="d-block m-t-5">Add class of <code>.form-control</code> with
+						<code>&lt;input&gt;</code> tag</span>
+				</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-xl-3 col-md-6 mb-4">
+							<h5>Primary Switch</h5>
+							<hr>
+							<div class="form-group">
+								<div class="switch switch-primary d-inline m-r-10">
+									<input type="checkbox" id="switch-p-1" checked>
+									<label for="switch-p-1" class="cr"></label>
+								</div>
+								<label>Checked</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-primary d-inline m-r-10">
+									<input type="checkbox" id="switch-p-2">
+									<label for="switch-p-2" class="cr"></label>
+								</div>
+								<label>Uncheck</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-primary d-inline m-r-10">
+									<input type="checkbox" id="switch-p-3" disabled>
+									<label for="switch-p-3" class="cr"></label>
+								</div>
+								<label>Disabled</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-primary d-inline m-r-10">
+									<input type="checkbox" id="switch-p-4" disabled checked>
+									<label for="switch-p-4" class="cr"></label>
+								</div>
+								<label>Disabled Checked</label>
+							</div>
+						</div>
+						<div class="col-xl-3 col-md-6 mb-4">
+							<h5>Danger Switch</h5>
+							<hr>
+							<div class="form-group">
+								<div class="switch switch-danger d-inline m-r-10">
+									<input type="checkbox" id="switch-d-1" checked>
+									<label for="switch-d-1" class="cr"></label>
+								</div>
+								<label>Checked</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-danger d-inline m-r-10">
+									<input type="checkbox" id="switch-d-2">
+									<label for="switch-d-2" class="cr"></label>
+								</div>
+								<label>Uncheck</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-danger d-inline m-r-10">
+									<input type="checkbox" id="switch-d-3" disabled>
+									<label for="switch-d-3" class="cr"></label>
+								</div>
+								<label>Disabled</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-danger d-inline m-r-10">
+									<input type="checkbox" id="switch-d-4" disabled checked>
+									<label for="switch-d-4" class="cr"></label>
+								</div>
+								<label>Disabled Checked</label>
+							</div>
+						</div>
+						<div class="col-xl-3 col-md-6 mb-4">
+							<h5>Success Switch</h5>
+							<hr>
+							<div class="form-group">
+								<div class="switch switch-success d-inline m-r-10">
+									<input type="checkbox" id="switch-s-1" checked>
+									<label for="switch-s-1" class="cr"></label>
+								</div>
+								<label>Checked</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-success d-inline m-r-10">
+									<input type="checkbox" id="switch-s-2">
+									<label for="switch-s-2" class="cr"></label>
+								</div>
+								<label>Uncheck</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-success d-inline m-r-10">
+									<input type="checkbox" id="switch-s-3" disabled>
+									<label for="switch-s-3" class="cr"></label>
+								</div>
+								<label>Disabled</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-success d-inline m-r-10">
+									<input type="checkbox" id="switch-s-4" disabled checked>
+									<label for="switch-s-4" class="cr"></label>
+								</div>
+								<label>Disabled Checked</label>
+							</div>
+						</div>
+						<div class="col-xl-3 col-md-6 mb-3">
+							<h5>Warning Switch</h5>
+							<hr>
+							<div class="form-group">
+								<div class="switch switch-warning d-inline m-r-10">
+									<input type="checkbox" id="switch-w-1" checked>
+									<label for="switch-w-1" class="cr"></label>
+								</div>
+								<label>Checked</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-warning d-inline m-r-10">
+									<input type="checkbox" id="switch-w-2">
+									<label for="switch-w-2" class="cr"></label>
+								</div>
+								<label>Uncheck</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-warning d-inline m-r-10">
+									<input type="checkbox" id="switch-w-3" disabled>
+									<label for="switch-w-3" class="cr"></label>
+								</div>
+								<label>Disabled</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-warning d-inline m-r-10">
+									<input type="checkbox" id="switch-w-4" disabled checked>
+									<label for="switch-w-4" class="cr"></label>
+								</div>
+								<label>Disabled Checked</label>
+							</div>
+						</div>
+						<div class="col-xl-3 col-md-6 mb-3">
+							<h5>Info Switch</h5>
+							<hr>
+							<div class="form-group">
+								<div class="switch switch-info d-inline m-r-10">
+									<input type="checkbox" id="switch-i-1" checked>
+									<label for="switch-i-1" class="cr"></label>
+								</div>
+								<label>Checked</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-info d-inline m-r-10">
+									<input type="checkbox" id="switch-i-2">
+									<label for="switch-i-2" class="cr"></label>
+								</div>
+								<label>Uncheck</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-info d-inline m-r-10">
+									<input type="checkbox" id="switch-i-3" disabled>
+									<label for="switch-i-3" class="cr"></label>
+								</div>
+								<label>Disabled</label>
+							</div>
+							<div class="form-group">
+								<div class="switch switch-info d-inline m-r-10">
+									<input type="checkbox" id="switch-i-4" disabled checked>
+									<label for="switch-i-4" class="cr"></label>
+								</div>
+								<label>Disabled Checked</label>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- [ Switches ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}

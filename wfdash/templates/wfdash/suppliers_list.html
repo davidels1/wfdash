@@ -1,0 +1,182 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="{% static 'assets/css/plugins/dataTables.bootstrap5.min.css' %}">
+<link rel="stylesheet" href="{% static 'assets/css/plugins/buttons.bootstrap5.min.css' %}">
+<link rel="stylesheet" href="{% static 'assets/css/plugins/responsive.bootstrap5.min.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Desktop View -->
+<div class="d-none d-md-block">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Suppliers List</h5>
+                    <a href="{% url 'wfdash:suppliers' %}" class="btn btn-primary">Add New Supplier</a>
+                </div>
+                <div class="card-body">
+                    <div class="dt-responsive table-responsive">
+                        <table id="suppliers-table" class="table table-striped table-bordered dt-responsive nowrap">
+                            <thead>
+                                <tr>
+                                    <th>Supplier Name</th>
+                                    <th>Contact Number</th>
+                                    <th>Address</th>
+                                    <th>Coordinates</th>
+                                    <th>Closing Time</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for supplier in suppliers %}
+                                <tr>
+                                    <td>{{ supplier.suppliername }}</td>
+                                    <td>{{ supplier.suppliernumber }}</td>
+                                    <td>{{ supplier.supplieraddress }}</td>
+                                    <td>{{ supplier.coordinates }}</td>
+                                    <td>{{ supplier.closingtime }}</td>
+                                    <td>
+                                        <a href="{% url 'wfdash:supplier_edit' supplier.id %}" class="btn btn-info btn-sm">
+                                            <i class="feather icon-edit"></i> Edit
+                                        </a>
+                                        <button onclick="deleteSupplier({{ supplier.id }})" class="btn btn-danger btn-sm">
+                                            <i class="feather icon-trash"></i> Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile View -->
+<div class="d-block d-md-none">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Suppliers</h5>
+            <a href="{% url 'wfdash:suppliers' %}" class="btn btn-primary btn-sm">
+                <i class="feather icon-plus"></i> Add
+            </a>
+        </div>
+
+        <div class="card-header border-bottom">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="feather icon-search"></i>
+                </span>
+                <input type="text" class="form-control" id="supplierSearch" 
+                       placeholder="Search suppliers...">
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="accordion" id="supplierAccordion">
+                {% for supplier in suppliers %}
+                <div class="accordion-item border-0">
+                    <h2 class="accordion-header" id="heading{{ supplier.id }}">
+                        <button class="accordion-button collapsed p-3" type="button" 
+                                data-bs-toggle="collapse" 
+                                data-bs-target="#collapse{{ supplier.id }}">
+                            <div>
+                                <strong>{{ supplier.suppliername }}</strong>
+                                <div class="small text-muted">{{ supplier.supplieraddress }}</div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ supplier.id }}" 
+                         class="accordion-collapse collapse" 
+                         data-bs-parent="#supplierAccordion">
+                        <div class="accordion-body">
+                            <div class="mb-2">
+                                <i class="feather icon-phone me-2"></i>{{ supplier.suppliernumber }}
+                            </div>
+                            <div class="mb-2">
+                                <i class="feather icon-navigation me-2"></i>{{ supplier.coordinates }}
+                            </div>
+                            <div class="mb-3">
+                                <i class="feather icon-clock me-2"></i>{{ supplier.closingtime }}
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'wfdash:supplier_edit' supplier.id %}" 
+                                   class="btn btn-info btn-sm flex-grow-1">
+                                    <i class="feather icon-edit"></i> Edit
+                                </a>
+                                <button onclick="deleteSupplier({{ supplier.id }})" 
+                                        class="btn btn-danger btn-sm flex-grow-1">
+                                    <i class="feather icon-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<!-- Core JavaScript -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="{% static 'assets/js/plugins/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/plugins/dataTables.bootstrap5.min.js' %}"></script>
+<script src="{% static 'assets/js/plugins/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'assets/js/plugins/notifier.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    if ($(window).width() >= 768) {
+        var dataTable = $('#suppliers-table').DataTable({
+            dom: '<"top"Bf>rt<"bottom"lip>',
+            responsive: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            language: {
+                search: "Filter records:"
+            }
+        });
+    }
+
+    $("#supplierSearch").on("keyup", function() {
+        var searchTerm = $(this).val().toLowerCase();
+        $("#supplierAccordion .accordion-item").each(function() {
+            var itemText = $(this).text().toLowerCase();
+            var tags = $(this).find(".supply-tags").text().toLowerCase();
+            $(this).toggle(itemText.indexOf(searchTerm) > -1 || tags.indexOf(searchTerm) > -1);
+        });
+    });
+});
+
+function deleteSupplier(id) {
+    if (confirm('Are you sure you want to delete this supplier?')) {
+        $.ajax({
+            url: `/wfdash/supplier/delete/${id}/`,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    notifier.show('Success!', 'Supplier deleted successfully', 'success', 'img/notification/ok.png', 4000);
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                }
+            },
+            error: function() {
+                notifier.show('Error!', 'Failed to delete supplier', 'error', 'img/notification/error.png', 4000);
+            }
+        });
+    }
+}
+</script>
+{% endblock extra_js %}

@@ -1,0 +1,93 @@
+[
+    {
+        "date_joined": "2025-02-16 07:51:06",
+        "email": "david.els1@outlook.com",
+        "first_name": "",
+        "id": 1,
+        "is_active": 1,
+        "is_staff": 1,
+        "is_superuser": 1,
+        "last_login": "2025-02-24 06:42:23.192708",
+        "last_name": "",
+        "password": "pbkdf2_sha256$600000$8fIF7SzpMPaHYlGjX7DpqR$18Zv+e8StpFbZwoUYkXJms9wh7D7a/WsKjk47QSvreE=",
+        "username": "Admin"
+    },
+    {
+        "date_joined": "2025-02-16 07:52:35",
+        "email": "",
+        "first_name": "",
+        "id": 2,
+        "is_active": 1,
+        "is_staff": 1,
+        "is_superuser": 0,
+        "last_login": "2025-02-24 06:16:26",
+        "last_name": "",
+        "password": "pbkdf2_sha256$600000$Od95fY7lvkKRcsJcdzCar3$jF4iX5XvedL21qItqgeEvg13FhgUvV0pa68rKqTaYB0=",
+        "username": "David"
+    },
+    {
+        "date_joined": "2025-02-17 18:41:35",
+        "email": "",
+        "first_name": "",
+        "id": 3,
+        "is_active": 1,
+        "is_staff": 1,
+        "is_superuser": 0,
+        "last_login": null,
+        "last_name": "",
+        "password": "pbkdf2_sha256$600000$xH0Tck2kS9NS3YMADg36gp$nMHV7BYDYmgPavImiAnnQLOvD9/2Tthmg1fIy/nKG4s=",
+        "username": "Jd"
+    },
+    {
+        "date_joined": "2025-02-18 06:54:49",
+        "email": "",
+        "first_name": "",
+        "id": 4,
+        "is_active": 1,
+        "is_staff": 1,
+        "is_superuser": 0,
+        "last_login": "2025-02-18 11:26:42.192445",
+        "last_name": "",
+        "password": "pbkdf2_sha256$600000$BDlw0FTL1xY5f626JHGFfn$InCayvxO+7Xb7KhqXe2Tv5VORj8ACdEbhkf4E/rSaUQ=",
+        "username": "Chris"
+    },
+    {
+        "date_joined": "2025-02-18 11:52:11",
+        "email": "",
+        "first_name": "",
+        "id": 5,
+        "is_active": 1,
+        "is_staff": 1,
+        "is_superuser": 0,
+        "last_login": "2025-02-18 11:52:57.544148",
+        "last_name": "",
+        "password": "pbkdf2_sha256$600000$DSrYPzrdwgSuWZWYo5nYJF$9xa4xGfsz3NKDOrASVq2oHdnOuw2qs0fWkguHAK9jtY=",
+        "username": "Dewald"
+    },
+    {
+        "date_joined": "2025-02-20 12:59:57.656719",
+        "email": "david@wfsales.co.za",
+        "first_name": "",
+        "id": 6,
+        "is_active": 1,
+        "is_staff": 1,
+        "is_superuser": 1,
+        "last_login": null,
+        "last_name": "",
+        "password": "pbkdf2_sha256$600000$Xt9aUITXcwQU3reIyFYTbv$TB3Wl85J/SXT+3EwBlwq6yogDo7lxM3KRDrhiWQPn8M=",
+        "username": "work"
+    },
+    {
+        "date_joined": "2025-02-21 08:53:46",
+        "email": "",
+        "first_name": "",
+        "id": 7,
+        "is_active": 1,
+        "is_staff": 1,
+        "is_superuser": 0,
+        "last_login": "2025-02-21 14:39:36.468429",
+        "last_name": "",
+        "password": "pbkdf2_sha256$600000$ahW1IlATygL8z3QxX1eBys$S8S9xBTHs+1EvmewbRjcujHJyZBtSnsbCDGLn+pYppM=",
+        "username": "REP_TEST"
+    }
+]

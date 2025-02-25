@@ -1,0 +1,136 @@
+{% load i18n static admin_datta %}
+
+
+<!-- Admin Menu
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-settings"></i></span>
+        <span class="pcoded-mtext">Administration</span>
+    </a>
+    <ul class="pcoded-submenu">
+        {% if request.user.is_superuser %}
+            <li><a href="{% url 'admin:index' %}">Django Admin</a></li>
+            <li><a href="{% url 'admin:auth_user_changelist' %}">User Management</a></li>
+            <li><a href="{% url 'admin:auth_group_changelist' %}">Group Management</a></li>
+        {% endif %}
+    </ul>
+</li> -->
+
+<!-- Company Management 
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-briefcase"></i></span>
+        <span class="pcoded-mtext">Company Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'wfdash:company' %}"><i class="feather icon-plus me-2"></i>Add Company</a></li>
+        <li><a href="{% url 'wfdash:company_list' %}"><i class="feather icon-list me-2"></i>Companies List</a></li>
+    </ul>
+</li>-->
+
+<!-- Customer Management
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-users"></i></span>
+        <span class="pcoded-mtext">Customers</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'wfdash:customers' %}"><i class="feather icon-user-plus me-2"></i>Add Customer</a></li>
+        <li><a href="{% url 'wfdash:customers_list' %}"><i class="feather icon-list me-2"></i>Customer List</a></li>
+    </ul>
+</li> -->
+
+<!-- Supplier Management 
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-smartphone"></i></span>
+        <span class="pcoded-mtext">Suppliers</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'wfdash:suppliers' %}"><i class="feather icon-plus-square me-2"></i>Add Supplier</a></li>
+        <li><a href="{% url 'wfdash:suppliers_list' %}"><i class="feather icon-list me-2"></i>Supplier List</a></li>
+    </ul>
+</li>-->
+
+<!-- Quote Management 
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-file-text"></i></span>
+        <span class="pcoded-mtext">Quote Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'quotes:quote_create' %}"><i class="feather icon-plus-circle me-2"></i>New Quote</a></li>
+        <li><a href="{% url 'quotes:quote_list' %}"><i class="feather icon-list me-2"></i>Quote List</a></li>
+        <li><a href="{% url 'quotes:generated_quotes' %}"><i class="feather icon-box me-2"></i>Generated Quotes</a></li>
+    </ul>
+</li>-->
+
+<!-- Order Management 
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-shopping-cart"></i></span>
+        <span class="pcoded-mtext">Order Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'orders:order_create' %}"><i class="feather icon-plus-circle me-2"></i>New Order</a></li>
+        <li><a href="{% url 'orders:order_list' %}"><i class="feather icon-list me-2"></i>Order List</a></li>
+        <li><a href="{% url 'orders:purchase_order_list' %}"><i class="feather icon-file-text me-2"></i>Purchase Orders</a></li>
+    </ul>
+</li>-->
+
+<!-- Driver Operations
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-compass"></i></span>
+        <span class="pcoded-mtext">Driver Operations</span>
+    </a>
+    <ul class="pcoded-submenu">
+
+      
+        <li><a href="{% url 'driver_list:collection_pool' %}"><i class="feather icon-inbox me-2"></i>Collection Pool</a></li>
+      
+
+        <li><a href="{% url 'driver_list:assigned_collections' %}"><i class="feather icon-check-square me-2"></i>Assigned Collections</a></li>
+
+
+     
+        <li><a href="{% url 'driver_list:completed_collections' %}"><i class="feather icon-check-circle me-2"></i>Completed Collections</a></li>
+  
+    </ul>
+</li> -->
+
+<!-- Stock Management  -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-package"></i></span>
+        <span class="pcoded-mtext">Stock Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+
+        <!-- Stock Management  
+
+        <li><a href="{% url 'stock_management:stock_verification' %}"><i class="feather icon-check me-2"></i>Stock Verification</a></li>
+        <li><a href="{% url 'stock_management:stock_list' %}"><i class="feather icon-list me-2"></i>Current Stock</a></li>
+        <li><a href="{% url 'stock_management:ready_to_pick' %}"><i class="feather icon-box me-2"></i>Ready to Pick</a></li>
+        <li><a href="{% url 'stock_management:delivery_pick_list' %}"><i class="feather icon-clipboard me-2"></i>Delivery Pick List</a></li>
+        <li><a href="{% url 'stock_management:ready_for_delivery' %}"><i class="feather icon-truck me-2"></i>Ready for Delivery</a></li>
+
+          -->
+
+
+
+       
+        <li><a href="{% url 'stock_management:office_stock' %}"><i class="feather icon-compass me-2"></i>Office Stock</a></li>
+    </ul>
+</li>
+
+<!-- Reports & Analytics 
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-bar-chart-2"></i></span>
+        <span class="pcoded-mtext">Reports</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'dashboard:index' %}"><i class="feather icon-pie-chart me-2"></i>Dashboard</a></li>
+    </ul>
+</li>-->

@@ -1,0 +1,156 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load order_tags %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Order #{{ order.order_number }}</h5>
+            <div class="button-group">
+                {% if order.status == 'new' or order.status == 'processing' %}
+                <a href="{% url 'orders:process_order' order.pk %}" class="btn btn-primary">
+                    <i class="feather icon-settings"></i> Process Items
+                </a>
+                {% endif %}
+                
+                {% if order.status == 'order_ready' %}
+                {% for supplier in suppliers %}
+                <a href="{% url 'orders:generate_po' order.id supplier.id %}" 
+                   class="btn btn-success">
+                    <i class="feather icon-file-text"></i> Generate PO for {{ supplier.suppliername }}
+                </a>
+                {% endfor %}
+                {% endif %}
+                <a href="{% url 'orders:purchase_order_list' %}" class="btn btn-secondary">
+                    <i class="feather icon-list"></i> View All POs
+                </a>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h6>Customer Information</h6>
+                    <p><strong>Company:</strong> {{ order.company.company }}</p>
+                    <p><strong>Contact:</strong> {{ order.company.contact_person }}</p>
+                    <p><strong>Email:</strong> {{ order.company.email }}</p>
+                    <p><strong>Phone:</strong> {{ order.company.phone }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Order Information</h6>
+                    <p><strong>Status:</strong> 
+                        <span class="badge {% if order.status == 'new' %}bg-primary
+                                      {% elif order.status == 'processing' %}bg-warning
+                                      {% elif order.status == 'order_ready' %}bg-info
+                                      {% elif order.status == 'completed' %}bg-success
+                                      {% else %}bg-secondary{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </p>
+                    <p><strong>Created:</strong> {{ order.created_at|date:"Y-m-d H:i" }}</p>
+                    <p><strong>Last Updated:</strong> {{ order.updated_at|date:"Y-m-d H:i" }}</p>
+                    <p><strong>Rep:</strong> {{ order.rep.get_full_name|default:order.rep.username }}</p>
+                </div>
+            </div>
+
+            <div class="table-responsive mt-4">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Quantity</th>
+                            <th>Supplier</th>
+                            <th>Cost Price</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items.all %}
+                        <tr>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.supplier.suppliername|default:"-" }}</td>
+                            <td>{% if item.cost_price %}R {{ item.cost_price }}{% else %}-{% endif %}</td>
+                            <td>
+                                <span class="badge {% if item.status == 'pending' %}bg-warning
+                                              {% elif item.status == 'processed' %}bg-info
+                                              {% elif item.status == 'completed' %}bg-success
+                                              {% endif %}">
+                                    {{ item.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ item.notes|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if order.notes %}
+            <div class="mt-4">
+                <h6>Notes</h6>
+                <div class="border rounded p-3 bg-light">
+                    {{ order.notes|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if order.status == 'order_ready' %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Purchase Orders</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>PO Number</th>
+                            <th>Supplier</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for po in order.purchase_orders.all %}
+                        <tr>
+                            <td>{{ po.po_number }}</td>
+                            <td>{{ po.supplier.suppliername }}</td>
+                            <td>
+                                <span class="badge {% if po.status == 'draft' %}bg-warning
+                                              {% elif po.status == 'sent' %}bg-info
+                                              {% elif po.status == 'completed' %}bg-success
+                                              {% endif %}">
+                                    {{ po.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ po.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <a href="{% url 'orders:download_po' po.id %}" 
+                                   class="btn btn-sm btn-info">
+                                    <i class="feather icon-download"></i> Download
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Add any JavaScript functionality here
+});
+</script>
+{% endblock %}

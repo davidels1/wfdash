@@ -1,0 +1,242 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Assigned Collections{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>{{ page_title }}</h5>
+            <a href="{% url 'driver_list:collection_pool' %}" class="btn btn-primary btn-sm">
+                Collection Pool
+            </a>
+        </div>
+        <div class="card-body">
+            {% if grouped_collections %}
+                <div class="accordion" id="collectionsAccordion">
+                    {% for group in grouped_collections %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ group.supplier.id }}">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ group.supplier.id }}">
+                                    {{ group.supplier.suppliername }}
+                                    <span class="badge bg-primary ms-2">{{ group.count }}</span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ group.supplier.id }}" 
+                                 class="accordion-collapse collapse" 
+                                 data-bs-parent="#collectionsAccordion">
+                                <div class="accordion-body p-0">
+                                    <div class="list-group list-group-flush">
+                                        {% for item in group.items %}
+                                            <div class="list-group-item">
+                                                <form method="POST" 
+                                                      action="{% url 'driver_list:update_status' item.id %}"
+                                                      class="collection-form">
+                                                    {% csrf_token %}
+                                                    <div class="mb-2">
+                                                        <strong>{{ item.order_item.description }}</strong>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            PO #: {{ item.order_item.purchase_order.po_number }}<br>
+                                                            Order #: {{ item.order_item.order.order_number }}<br>
+                                                            Expected: {{ item.quantity }} {{ item.order_item.unit }}
+                                                        </small>
+                                                    </div>
+                                                    <div class="row g-2 align-items-center">
+                                                        <div class="col-12 col-sm-6 mb-2">
+                                                            <input type="number" 
+                                                                   name="received_qty"
+                                                                   class="form-control form-control-sm"
+                                                                   placeholder="Received Qty"
+                                                                   step="0.01"
+                                                                   inputmode="decimal"
+                                                                   pattern="[0-9]*"
+                                                                   value="{{ item.received_qty|default:'' }}"
+                                                                   required>
+                                                            <input type="hidden" name="status" value="collected">
+                                                        </div>
+                                                        <div class="col-12 col-sm-6">
+                                                            <div class="d-flex gap-1">
+                                                                <button type="submit" 
+                                                                        class="btn btn-success btn-sm flex-grow-1"
+                                                                        style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                                                    <i class="fas fa-check"></i> Collect
+                                                                </button>
+                                                                <button type="button" 
+                                                                        class="btn btn-warning btn-sm"
+                                                                        data-bs-toggle="collapse" 
+                                                                        data-bs-target="#problemNotes{{ item.id }}"
+                                                                        style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Problem Notes Section -->
+                                                    <div class="collapse mt-2" id="problemNotes{{ item.id }}">
+                                                        <textarea name="notes" 
+                                                                  class="form-control form-control-sm mb-2" 
+                                                                  placeholder="Describe the problem..."
+                                                                  rows="2"></textarea>
+                                                        <button type="submit" 
+                                                                class="btn btn-danger btn-sm w-100"
+                                                                style="font-size: 0.8rem; padding: 0.25rem 0.5rem;"
+                                                                onclick="this.form.querySelector('[name=status]').value='problem'">
+                                                            <i class="fas fa-exclamation-circle"></i> Report Problem
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center">No assigned collections found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.collection-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const listItem = this.closest('.list-group-item');
+            const submitButton = this.querySelector('button[type="submit"]');
+            
+            try {
+                // Disable submit button and show loading state
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Response:', data);
+                
+                if (data.status === 'success') {
+                    if (data.split_created) {
+                        alert(`Collection split successfully. Remaining ${data.remaining_qty} units returned to order as pending.`);
+                    }
+                    
+                    // Animate the removal of the item
+                    listItem.style.transition = 'all 0.3s ease-out';
+                    listItem.style.opacity = '0';
+                    listItem.style.height = '0';
+                    
+                    // Remove the item after animation
+                    setTimeout(() => {
+                        listItem.remove();
+                        
+                        // Find the accordion item and check remaining items
+                        const accordionItem = listItem.closest('.accordion-item');
+                        const remainingItems = accordionItem.querySelectorAll('.list-group-item');
+                        
+                        if (remainingItems.length <= 1) { // Using <= 1 because the removed item might still be counted
+                            // Remove the entire supplier group
+                            accordionItem.style.transition = 'all 0.3s ease-out';
+                            accordionItem.style.opacity = '0';
+                            accordionItem.style.height = '0';
+                            setTimeout(() => {
+                                accordionItem.remove();
+                                
+                                // Check if this was the last group
+                                const remainingGroups = document.querySelectorAll('.accordion-item');
+                                if (remainingGroups.length === 0) {
+                                    // Show completion message and redirect
+                                    const cardBody = document.querySelector('.card-body');
+                                    cardBody.innerHTML = `
+                                        <div class="alert alert-success text-center">
+                                            <i class="fas fa-check-circle"></i> All collections completed!
+                                            <br>
+                                            <small>Redirecting to completed collections...</small>
+                                        </div>
+                                    `;
+                                    setTimeout(() => {
+                                        window.location.href = "{% url 'driver_list:completed_collections' %}";
+                                    }, 1500);
+                                }
+                            }, 300);
+                        }
+                        
+                        // Show success toast
+                        const toast = document.createElement('div');
+                        toast.className = 'toast position-fixed bottom-0 end-0 m-3';
+                        toast.setAttribute('role', 'alert');
+                        toast.innerHTML = `
+                            <div class="toast-header bg-success text-white">
+                                <strong class="me-auto"><i class="fas fa-check"></i> Success</strong>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                            </div>
+                            <div class="toast-body">
+                                Collection updated successfully
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        const bsToast = new bootstrap.Toast(toast);
+                        bsToast.show();
+                        
+                        // Remove toast after it's hidden
+                        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+                    }, 300);
+                } else {
+                    throw new Error(data.message || 'Error updating collection');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error updating collection: ' + error.message);
+                // Reset button state on error
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-check"></i> Collect';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Smooth transitions */
+    .list-group-item,
+    .accordion-item {
+        transition: all 0.3s ease-out;
+    }
+    
+    /* Toast styling */
+    .toast {
+        z-index: 1050;
+    }
+    
+    /* Loading spinner */
+    .fa-spin {
+        animation: fa-spin 1s infinite linear;
+    }
+    @keyframes fa-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}

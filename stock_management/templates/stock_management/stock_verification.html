@@ -1,0 +1,213 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5>Stock Verification</h5>
+        </div>
+        <div class="card-body">
+            {% if collections %}
+            <div class="row">
+                {% for collection in collections %}
+                <div class="col-12 col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">Order #{{ collection.order_item.order.order_number }}</h6>
+                            <p class="mb-1"><strong>PO:</strong> {{ collection.order_item.purchase_order.po_number }}</p>
+                            <p class="mb-1"><strong>Description:</strong> {{ collection.order_item.description }}</p>
+                            <p class="mb-1"><strong>Supplier:</strong> {{ collection.supplier.suppliername }}</p>
+                            <p class="mb-1"><strong>Qty:</strong> {{ collection.received_qty }}</p>
+                            <p class="mb-1"><strong>Driver:</strong> {{ collection.driver.get_full_name }}</p>
+                            <p class="mb-2"><strong>Date:</strong> {{ collection.actual_date|date:"d/m/Y" }}</p>
+                            <button type="button" 
+                                    class="btn btn-primary w-100 verify-btn"
+                                    data-collection-id="{{ collection.id }}"
+                                    data-received-qty="{{ collection.received_qty }}">
+                                Verify Stock
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-center">No collections to verify</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Verification Modal -->
+<div class="modal fade" id="verificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Verify Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="verificationForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">External Invoice Number *</label>
+                        <input type="text" class="form-control" id="externalInvoiceNumber" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">External Invoice Date *</label>
+                        <input type="date" class="form-control" id="externalInvoiceDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Verify Quantity *</label>
+                        <input type="number" class="form-control" id="verifiedQuantity" step="0.01" required>
+                        <small class="form-text text-muted">Received quantity: <span id="receivedQty"></span></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" id="collectionId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="confirmVerificationBtn">Verify Stock</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Enhanced card styling */
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    /* Existing modal styles */
+    .modal {
+        z-index: 1050 !important;
+    }
+    .modal-backdrop {
+        z-index: 1040 !important;
+    }
+    .modal-dialog {
+        margin: 1rem auto;
+        max-width: 95%;
+    }
+    @media (min-width: 576px) {
+        .modal-dialog {
+            max-width: 500px;
+        }
+    }
+    
+    /* Form improvements */
+    .modal-body input,
+    .modal-body textarea {
+        font-size: 16px;
+    }
+    
+    /* Button improvements */
+    .verify-btn {
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('verificationModal'));
+    const verificationForm = document.getElementById('verificationForm');
+    
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('externalInvoiceDate').value = today;
+    
+    document.querySelectorAll('.verify-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const collectionId = this.dataset.collectionId;
+            const receivedQty = this.dataset.receivedQty;
+            
+            document.getElementById('collectionId').value = collectionId;
+            document.getElementById('receivedQty').textContent = receivedQty;
+            document.getElementById('verifiedQuantity').value = receivedQty;
+            
+            // Reset form
+            document.getElementById('externalInvoiceNumber').value = '';
+            document.getElementById('notes').value = '';
+            
+            modal.show();
+        });
+    });
+    
+    document.getElementById('confirmVerificationBtn').addEventListener('click', async function() {
+        const button = this;
+        try {
+            if (!verificationForm.checkValidity()) {
+                verificationForm.reportValidity();
+                return;
+            }
+
+            // Disable button and show loading state
+            button.disabled = true;
+            button.textContent = 'Verifying...';
+
+            const collectionId = document.getElementById('collectionId').value;
+            const formData = new FormData();
+            
+            formData.append('external_invoice_number', document.getElementById('externalInvoiceNumber').value);
+            formData.append('external_invoice_date', document.getElementById('externalInvoiceDate').value);
+            formData.append('verified_quantity', document.getElementById('verifiedQuantity').value);
+            formData.append('notes', document.getElementById('notes').value);
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            const response = await fetch(`/stock/verify/${collectionId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                // If not JSON, get the text content for error details
+                const textContent = await response.text();
+                console.error('Server returned non-JSON response:', textContent);
+                throw new Error('Server returned an invalid response. Please try again.');
+            }
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || `Server error: ${response.status}`);
+            }
+            
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                throw new Error(data.message || 'Error verifying stock');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error verifying stock: ' + error.message);
+        } finally {
+            // Reset button state
+            button.disabled = false;
+            button.textContent = 'Verify Stock';
+            modal.hide();
+        }
+    });
+});
+</script>
+{% endblock %}

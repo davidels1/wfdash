@@ -1,0 +1,120 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5>{{ page_title }}</h5>
+        </div>
+        <div class="card-body">
+            {% if invoices %}
+                {% csrf_token %}
+                {% for invoice_number, items in invoices.items %}
+                <div class="invoice-section mb-4">
+                    <h6 class="border-bottom pb-2">
+                        Invoice #{{ invoice_number }}
+                        <button class="btn btn-sm btn-success float-end mark-all-loaded"
+                                data-invoice="{{ invoice_number }}">
+                            Mark All Loaded
+                        </button>
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Quantity</th>
+                                    <th>Supplier</th>
+                                    <th>PO Number</th>
+                                    <th>Customer</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr id="item-row-{{ item.id }}">
+                                    <td>{{ item.order_item.description }}</td>
+                                    <td>{{ item.received_qty }}</td>
+                                    <td>{{ item.collection.supplier.suppliername }}</td>
+                                    <td>{{ item.order_item.purchase_order.po_number }}</td>
+                                    <td>{{ item.order_item.order.company.company }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-success mark-loaded"
+                                                data-item-id="{{ item.id }}">
+                                            Mark Loaded
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-warning">No items available for loading.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // Mark single item as loaded
+    document.querySelectorAll('.mark-loaded').forEach(button => {
+        button.addEventListener('click', async function() {
+            const itemId = this.dataset.itemId;
+            try {
+                const response = await fetch(`/stock/mark-loaded/${itemId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Remove the row or update UI
+                    const row = document.querySelector(`#item-row-${itemId}`);
+                    row.style.backgroundColor = '#f1d984';
+                    button.disabled = true;
+                    button.textContent = 'Loaded';
+                    
+                    // Optional: Remove row after animation
+                    setTimeout(() => {
+                        row.remove();
+                    }, 1000);
+
+                    // Check if invoice section is empty
+                    const tbody = row.closest('tbody');
+                    if (tbody.children.length === 1) {
+                        tbody.closest('.invoice-section').remove();
+                    }
+                } else {
+                    alert(data.message || 'Error marking item as loaded');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error marking item as loaded');
+            }
+        });
+    });
+
+    // Mark all items in an invoice as loaded
+    document.querySelectorAll('.mark-all-loaded').forEach(button => {
+        button.addEventListener('click', function() {
+            const invoiceSection = this.closest('.invoice-section');
+            const loadButtons = invoiceSection.querySelectorAll('.mark-loaded:not([disabled])');
+            loadButtons.forEach(btn => btn.click());
+        });
+    });
+});
+</script>
+{% endblock %}

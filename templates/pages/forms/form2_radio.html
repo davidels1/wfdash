@@ -1,0 +1,731 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block content %}
+
+  <!-- [ Main Content ] start -->
+  <div class="row">
+    <!-- [ form-element ] start -->
+    <div class="col-sm-6">
+      <div class="card">
+        <div class="card-header">
+          <h5>Basic radio</h5>
+        </div>
+        <div class="card-body">
+          <form>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">radioes</label>
+              <div class="col-9">
+                <div class="">
+                  <input class="" name="group1" type="radio" value="" id="defaultCheck1">
+                  <label class="" for="defaultCheck1">
+                    Default radio
+                  </label>
+                </div>
+                <div class="">
+                  <input class="" name="group1" type="radio" value="" id="defaultCheck2" checked>
+                  <label class="" for="defaultCheck2">
+                    Checked radio
+                  </label>
+                </div>
+                <div class="">
+                  <input class="" name="group1" type="radio" value="" id="defaultCheck3" disabled>
+                  <label class="" for="defaultCheck3">
+                    Disabled radio
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">Inline</label>
+              <div class="col-9">
+                <div class="form-check-inline">
+                  <input class="" type="radio" name="group2" id="inlineradio1" value="option1">
+                  <label class="" for="inlineradio1">1</label>
+                </div>
+                <div class="form-check-inline">
+                  <input class="" type="radio" name="group2" id="inlineradio2" value="option2">
+                  <label class="" for="inlineradio2">2</label>
+                </div>
+                <div class="form-check-inline">
+                  <input class="" type="radio" name="group2" id="inlineradio3" value="option3">
+                  <label class="" for="inlineradio3">3</label>
+                </div>
+                <div class="form-check-inline">
+                  <input class="" type="radio" name="group2" id="inlineradio4" value="option4" disabled>
+                  <label class="" for="inlineradio4">4 (disabled)</label>
+                </div>
+                <small class="form-text d-block"><code>.form-check-inline</code> to
+                  any <code>.form-check</code></small>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">Inline checked state</label>
+              <div class="col-9">
+                <div class="form-check-inline">
+                  <input class="" type="radio" name="group3" id="inlineradiostate1" value="option1">
+                  <label class="" for="inlineradiostate1">1</label>
+                </div>
+                <div class="form-check-inline">
+                  <input class="" type="radio" name="group3" id="inlineradiostate2" value="option2">
+                  <label class="" for="inlineradiostate2">2</label>
+                </div>
+                <div class="form-check-inline">
+                  <input class="" type="radio" name="group3" id="inlineradiostate3" value="option3" checked>
+                  <label class="" for="inlineradiostate3">3</label>
+                </div>
+                <div class="form-check-inline">
+                  <input class="" type="radio" name="group3" id="inlineradiostate4" value="option4"
+                    disabled>
+                  <label class="" for="inlineradiostate4">4 (disabled)</label>
+                </div>
+                <small class="form-text d-block"><code>.form-check-inline</code> to
+                  any <code>.form-check</code></small>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="card">
+        <div class="card-header">
+          <h5>Custom radio</h5>
+        </div>
+        <div class="card-body">
+          <form>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">radioes</label>
+              <div class="col-9">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="group4" value="" id="flexCheckDefault">
+                  <label class="form-check-label" for="flexCheckDefault">
+                    Default radio
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="group4" value="" id="flexCheckChecked"
+                    checked>
+                  <label class="form-check-label" for="flexCheckChecked">
+                    Checked radio
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="group41" value=""
+                    id="flexCheckDisabled" disabled>
+                  <label class="form-check-label" for="flexCheckDisabled">
+                    Disabled radio
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="group41" value=""
+                    id="flexCheckCheckedDisabled" checked disabled>
+                  <label class="form-check-label" for="flexCheckCheckedDisabled">
+                    Disabled checked radio
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">Inline</label>
+              <div class="col-9">
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="group5" value="" id="customCheckinlh1">
+                  <label class="form-check-label" for="customCheckinlh1">
+                    1
+                  </label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="group5" value="" id="customCheckinlh2">
+                  <label class="form-check-label" for="customCheckinlh2">
+                    2
+                  </label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="group5" value="" id="customCheckinlh3">
+                  <label class="form-check-label" for="customCheckinlh3">
+                    3
+                  </label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="group5" value="" id="customCheckinlh4"
+                    disabled>
+                  <label class="form-check-label" for="customCheckinlh4">
+                    4 (disabled)
+                  </label>
+                </div>
+                <small class="form-text d-block text-muted">Add
+                  <code>.form-check-inline</code> to any
+                  <code>.custom-control</code></small>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">Inline Radio Checked State </label>
+              <div class="col-9">
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="group6" value=""
+                    id="customCheckinlhstate1">
+                  <label class="form-check-label" for="customCheckinlhstate1">
+                    1
+                  </label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="group6" value=""
+                    id="customCheckinlhstate2">
+                  <label class="form-check-label" for="customCheckinlhstate2">
+                    2
+                  </label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="group6" value=""
+                    id="customCheckinlhstate3" checked>
+                  <label class="form-check-label" for="customCheckinlhstate3">
+                    3
+                  </label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="group6" value=""
+                    id="customCheckinlhstate4" disabled>
+                  <label class="form-check-label" for="customCheckinlhstate4">
+                    4 (disabled)
+                  </label>
+                </div>
+                <small class="form-text d-block text-muted">Add <code>checked</code>
+                  attribute to any <code>.form-check-input</code></small>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-12">
+      <div class="card">
+        <div class="card-header">
+          <h5>Color Options</h5>
+        </div>
+        <div class="card-body">
+          <form>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Color States</label>
+                  <div class="form-check">
+                    <input class="form-check-input input-primary" type="radio" id="customCheckc1" checked>
+                    <label class="form-check-label" for="customCheckc1">primary</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-secondary" type="radio" id="customCheckc2" checked>
+                    <label class="form-check-label" for="customCheckc2">secondary</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-success" type="radio" id="customCheckc3" checked>
+                    <label class="form-check-label" for="customCheckc3">success</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-danger" type="radio" id="customCheckc4" checked>
+                    <label class="form-check-label" for="customCheckc4">danger</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-warning" type="radio" id="customCheckc5" checked>
+                    <label class="form-check-label" for="customCheckc5">warning</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-info" type="radio" id="customCheckc6" checked>
+                    <label class="form-check-label" for="customCheckc6">info</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-dark" type="radio" id="customCheckc7" checked>
+                    <label class="form-check-label" for="customCheckc7">dark</label>
+                  </div>
+                  <small class="form-text text-muted">Some help text goes
+                    here</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Color States</label>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-primary" type="radio" id="customCheckclight1"
+                      checked>
+                    <label class="form-check-label" for="customCheckclight1">primary</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-secondary" type="radio"
+                      id="customCheckclight2" checked>
+                    <label class="form-check-label" for="customCheckclight2">secondary</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-success" type="radio" id="customCheckclight3"
+                      checked>
+                    <label class="form-check-label" for="customCheckclight3">success</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-danger" type="radio" id="customCheckclight4"
+                      checked>
+                    <label class="form-check-label" for="customCheckclight4">danger</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-warning" type="radio" id="customCheckclight5"
+                      checked>
+                    <label class="form-check-label" for="customCheckclight5">warning</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-info" type="radio" id="customCheckclight6"
+                      checked>
+                    <label class="form-check-label" for="customCheckclight6">info</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-dark" type="radio" id="customCheckclight7"
+                      checked>
+                    <label class="form-check-label" for="customCheckclight7">dark</label>
+                  </div>
+                  <small class="form-text text-muted">Some help text goes
+                    here</small>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- [ form-element ] end -->
+    <!-- [ Radiobox ] start -->
+    <div class="col-sm-12">
+      <div class="card">
+        <div class="card-header">
+          <h5>Radio</h5>
+          <span class="d-block m-t-5">Add class of <code>.form-control</code> with
+            <code>&lt;input&gt;</code> tag</span>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- [ primary radio ] start -->
+            <div class="col-xl-4 col-md-6 mb-5">
+              <h5>Primary Radio</h5>
+              <hr>
+              <div class="form-group">
+                <div class="radio radio-primary">
+                  <input type="radio" name="radio-p-1" id="radio-p-1" checked>
+                  <label for="radio-p-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-primary">
+                  <input type="radio" name="radio-p-1" id="radio-p-2">
+                  <label for="radio-p-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-primary m-r-10">
+                  <input type="radio" id="radio-p-3" disabled>
+                  <label for="radio-p-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-primary m-r-10">
+                  <input type="radio" id="radio-p-4" disabled checked>
+                  <label for="radio-p-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Radio fill Button</h6>
+              <hr>
+              <div class="form-group">
+                <div class="radio radio-primary radio-fill">
+                  <input type="radio" name="radio-p-fill-1" id="radio-p-fill-1" checked>
+                  <label for="radio-p-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-primary radio-fill">
+                  <input type="radio" name="radio-p-fill-1" id="radio-p-fill-2">
+                  <label for="radio-p-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-primary radio-fill m-r-10">
+                  <input type="radio" name="radio-p-fill-3" id="radio-p-fill-3" disabled>
+                  <label for="radio-p-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-primary radio-fill m-r-10">
+                  <input type="radio" id="radio-p-fill-4" disabled checked>
+                  <label for="radio-p-fill-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline Button</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="radio radio-primary d-inline">
+                  <input type="radio" name="radio-p-fill-5" id="radio-p-fill-5" checked>
+                  <label for="radio-p-fill-5" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="radio radio-primary d-inline">
+                  <input type="radio" name="radio-p-fill-5" id="radio-p-fill-6">
+                  <label for="radio-p-fill-6" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline fill Button</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="radio radio-primary radio-fill d-inline">
+                  <input type="radio" name="radio-p-in-1" id="radio-p-infill-1" checked>
+                  <label for="radio-p-infill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="radio radio-primary radio-fill d-inline">
+                  <input type="radio" name="radio-p-in-1" id="radio-p-infill-2">
+                  <label for="radio-p-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ primary radio ] end -->
+            <!-- [ Danger radio ] start -->
+            <div class="col-xl-4 col-md-6 mb-5">
+              <h5>Danger Radio</h5>
+              <hr>
+              <div class="form-group">
+                <div class="radio radio-danger">
+                  <input type="radio" name="radio-d-1" id="radio-d-1" checked>
+                  <label for="radio-d-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-danger">
+                  <input type="radio" name="radio-d-1" id="radio-d-2">
+                  <label for="radio-d-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-danger m-r-10">
+                  <input type="radio" id="radio-d-3" disabled>
+                  <label for="radio-d-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-danger m-r-10">
+                  <input type="radio" id="radio-d-4" disabled checked>
+                  <label for="radio-d-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Radio fill Button</h6>
+              <hr>
+              <div class="form-group">
+                <div class="radio radio-danger radio-fill">
+                  <input type="radio" name="radio-d-fill-1" id="radio-d-fill-1" checked>
+                  <label for="radio-d-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-danger radio-fill">
+                  <input type="radio" name="radio-d-fill-1" id="radio-d-fill-2">
+                  <label for="radio-d-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-danger radio-fill m-r-10">
+                  <input type="radio" name="radio-d-fill-3" id="radio-d-fill-3" disabled>
+                  <label for="radio-d-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-danger radio-fill m-r-10">
+                  <input type="radio" id="radio-d-fill-4" disabled checked>
+                  <label for="radio-d-fill-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline Button</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="radio radio-danger d-inline">
+                  <input type="radio" name="radio-d-fill-5" id="radio-d-fill-5" checked>
+                  <label for="radio-d-fill-5" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="radio radio-danger d-inline">
+                  <input type="radio" name="radio-d-fill-5" id="radio-d-fill-6">
+                  <label for="radio-d-fill-6" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline fill Button</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="radio radio-danger radio-fill d-inline">
+                  <input type="radio" name="radio-d-in-1" id="radio-d-infill-1" checked>
+                  <label for="radio-d-infill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="radio radio-danger radio-fill d-inline">
+                  <input type="radio" name="radio-d-in-1" id="radio-d-infill-2">
+                  <label for="radio-d-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ Danger radio ] end -->
+            <!-- [ success radio ] start -->
+            <div class="col-xl-4 col-md-6 mb-5">
+              <h5>Success Radio</h5>
+              <hr>
+              <div class="form-group">
+                <div class="radio radio-success">
+                  <input type="radio" name="radio-s-1" id="radio-s-1" checked>
+                  <label for="radio-s-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-success">
+                  <input type="radio" name="radio-s-1" id="radio-s-2">
+                  <label for="radio-s-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-success m-r-10">
+                  <input type="radio" id="radio-s-3" disabled>
+                  <label for="radio-s-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-success m-r-10">
+                  <input type="radio" id="radio-s-4" disabled checked>
+                  <label for="radio-s-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Radio fill</h6>
+              <hr>
+              <div class="form-group">
+                <div class="radio radio-success radio-fill">
+                  <input type="radio" name="radio-s-fill-1" id="radio-s-fill-1" checked>
+                  <label for="radio-s-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-success radio-fill">
+                  <input type="radio" name="radio-s-fill-1" id="radio-s-fill-2">
+                  <label for="radio-s-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-success radio-fill m-r-10">
+                  <input type="radio" name="radio-s-fill-3" id="radio-s-fill-3" disabled>
+                  <label for="radio-s-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-success radio-fill m-r-10">
+                  <input type="radio" id="radio-s-fill-4" disabled checked>
+                  <label for="radio-s-fill-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="radio radio-success d-inline">
+                  <input type="radio" name="radio-s-in-1" id="radio-s-in-1" checked>
+                  <label for="radio-s-in-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="radio radio-success d-inline">
+                  <input type="radio" name="radio-s-in-1" id="radio-s-in-2">
+                  <label for="radio-s-in-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline fill</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="radio radio-success radio-fill d-inline">
+                  <input type="radio" name="radio-s-in-3" id="radio-s-infill-3" checked>
+                  <label for="radio-s-infill-3" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="radio radio-success radio-fill d-inline">
+                  <input type="radio" name="radio-s-in-3" id="radio-s-infill-2">
+                  <label for="radio-s-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ success radio ] end -->
+            <!-- [ warning radio ] start -->
+            <div class="col-xl-4 col-md-6 mb-5">
+              <h5>Warning Radio</h5>
+              <hr>
+              <div class="form-group">
+                <div class="radio radio-warning">
+                  <input type="radio" name="radio-w-1" id="radio-w-1" checked>
+                  <label for="radio-w-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-warning">
+                  <input type="radio" name="radio-w-1" id="radio-w-2">
+                  <label for="radio-w-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-warning m-r-10">
+                  <input type="radio" id="radio-w-3" disabled>
+                  <label for="radio-w-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-warning m-r-10">
+                  <input type="radio" id="radio-w-4" disabled checked>
+                  <label for="radio-w-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Radio fill</h6>
+              <hr>
+              <div class="form-group">
+                <div class="radio radio-warning radio-fill">
+                  <input type="radio" name="radio-w-fill-1" id="radio-w-fill-1" checked>
+                  <label for="radio-w-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-warning radio-fill">
+                  <input type="radio" name="radio-w-fill-1" id="radio-w-fill-2">
+                  <label for="radio-w-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-warning radio-fill m-r-10">
+                  <input type="radio" name="radio-w-fill-3" id="radio-w-fill-3" disabled>
+                  <label for="radio-w-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-warning radio-fill m-r-10">
+                  <input type="radio" id="radio-w-fill-4" disabled checked>
+                  <label for="radio-w-fill-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="radio radio-warning d-inline">
+                  <input type="radio" name="radio-w-in-1" id="radio-w-in-1" checked>
+                  <label for="radio-w-in-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="radio radio-warning d-inline">
+                  <input type="radio" name="radio-w-in-1" id="radio-w-in-2">
+                  <label for="radio-w-in-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline fill</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="radio radio-warning radio-fill d-inline">
+                  <input type="radio" name="radio-w-in-3" id="radio-w-infill-1" checked>
+                  <label for="radio-w-infill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="radio radio-warning radio-fill d-inline">
+                  <input type="radio" name="radio-w-in-3" id="radio-w-infill-2">
+                  <label for="radio-w-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ warning radio ] end -->
+            <!-- [ Info radio ] start -->
+            <div class="col-xl-4 col-md-6 mb-3">
+              <h5>Info Radio</h5>
+              <hr>
+              <div class="form-group">
+                <div class="radio radio-info">
+                  <input type="radio" name="radio-i-1" id="radio-i-1" checked>
+                  <label for="radio-i-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-info">
+                  <input type="radio" name="radio-i-1" id="radio-i-2">
+                  <label for="radio-i-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-info m-r-10">
+                  <input type="radio" id="radio-i-3" disabled>
+                  <label for="radio-i-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-info m-r-10">
+                  <input type="radio" id="radio-i-4" disabled checked>
+                  <label for="radio-i-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Radio fill</h6>
+              <hr>
+              <div class="form-group">
+                <div class="radio radio-info radio-fill">
+                  <input type="radio" name="radio-i-fill-1" id="radio-i-fill-1" checked>
+                  <label for="radio-i-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-info radio-fill">
+                  <input type="radio" name="radio-i-fill-1" id="radio-i-fill-2">
+                  <label for="radio-i-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-info radio-fill m-r-10">
+                  <input type="radio" name="radio-i-fill-3" id="radio-i-fill-3" disabled>
+                  <label for="radio-i-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="radio radio-info radio-fill m-r-10">
+                  <input type="radio" id="radio-i-fill-4" disabled checked>
+                  <label for="radio-i-fill-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="radio radio-info d-inline">
+                  <input type="radio" name="radio-i-in-1" id="radio-i-in-1" checked>
+                  <label for="radio-i-in-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="radio radio-info d-inline">
+                  <input type="radio" name="radio-i-in-1" id="radio-i-in-2">
+                  <label for="radio-i-in-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline fill</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="radio radio-info radio-fill d-inline">
+                  <input type="radio" name="radio-i-in-2" id="radio-i-infill-1" checked>
+                  <label for="radio-i-infill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="radio radio-info radio-fill d-inline">
+                  <input type="radio" name="radio-i-in-2" id="radio-i-infill-2">
+                  <label for="radio-i-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ Info radio ] end -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- [ Radiobox ] end -->
+  </div>
+  <!-- [ Main Content ] end -->
+
+{% endblock content %}

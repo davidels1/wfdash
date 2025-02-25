@@ -1,0 +1,171 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{% if quote %}Edit Quote{% else %}New Quote{% endif %}{% endblock %}
+
+{% block stylesheets %}
+<link href="{% static 'assets/css/plugins/select2.min.css' %}" rel="stylesheet">
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" id="quoteForm">
+        {% csrf_token %}
+        
+        <!-- Show form errors if any -->
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <!-- Customer -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <label>Customer *</label>
+                {{ form.customer }}
+                {% if form.customer.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.customer.errors }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Items -->
+        <div class="card">
+            <div class="card-header">
+                <h5>Quote Items</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="itemsList">
+                    <div class="item-row border-bottom p-3">
+                        <div class="mb-2">
+                            <label>Description *</label>
+                            <input type="text" name="description[]" class="form-control" required>
+                        </div>
+                        <div class="mb-2">
+                            <label>Quantity</label>
+                            <input type="number" name="quantity[]" class="form-control" value="1" min="1">
+                        </div>
+                        <div class="mb-2">
+                            <label>Notes</label>
+                            <textarea name="notes[]" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">
+                                <i class="feather icon-trash-2"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3 d-flex gap-2">
+            <button type="button" class="btn btn-secondary w-100" onclick="addItem()">
+                <i class="feather icon-plus"></i> Add Another Item
+            </button>
+            <button type="submit" class="btn btn-primary w-100">Save Quote</button>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script src="{% static 'assets/js/plugins/jquery.min.js' %}"></script>
+<script>
+$(document).ready(function() {
+    $('#quoteForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Basic validation
+        let valid = true;
+        const descriptions = document.getElementsByName('description[]');
+        
+        for (let desc of descriptions) {
+            if (!desc.value.trim()) {
+                valid = false;
+                desc.classList.add('is-invalid');
+            } else {
+                desc.classList.remove('is-invalid');
+            }
+        }
+        
+        if (!$('#id_customer').val()) {
+            valid = false;
+            $('#id_customer').addClass('is-invalid');
+        }
+        
+        if (valid) {
+            this.submit();
+        } else {
+            alert('Please fill in all required fields');
+        }
+    });
+});
+
+function addItem() {
+    const template = `
+        <div class="item-row border-bottom p-3">
+            <div class="mb-2">
+                <label>Description *</label>
+                <input type="text" name="description[]" class="form-control" required>
+            </div>
+            <div class="mb-2">
+                <label>Quantity</label>
+                <input type="number" name="quantity[]" class="form-control" value="1" min="1">
+            </div>
+            <div class="mb-2">
+                <label>Notes</label>
+                <textarea name="notes[]" class="form-control" rows="2"></textarea>
+            </div>
+            <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removeItem(this)">
+                <i class="feather icon-trash-2"></i> Remove
+            </button>
+        </div>
+    `;
+    document.getElementById('itemsList').insertAdjacentHTML('beforeend', template);
+}
+
+function removeItem(button) {
+    const items = document.getElementsByClassName('item-row');
+    if (items.length > 1) {
+        button.closest('.item-row').remove();
+    } else {
+        alert('At least one item is required');
+    }
+}
+</script>
+{% endblock %}
+
+<style>
+.item-row {
+    background: #fff;
+}
+.item-row:hover {
+    background: #f8f9fa;
+}
+@media (max-width: 768px) {
+    .card-body {
+        padding: 0;
+    }
+    .btn-lg {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90% !important;
+        z-index: 1000;
+    }
+    form {
+        padding-bottom: 80px;
+    }
+}
+</style>
+{% endblock %}

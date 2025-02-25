@@ -1,0 +1,209 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5>Ready for Delivery</h5>
+        </div>
+        <div class="card-body">
+            {% if grouped_items %}
+                <div class="accordion" id="deliveryAccordion">
+                    {% for invoice_number, group in grouped_items.items %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ forloop.counter }}">
+                                    Delivery Group #{{ forloop.counter }} 
+                                    <span class="badge bg-primary ms-2">{{ group.total_items }} items</span>
+                                    <span class="ms-2">{{ group.customer }}</span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ forloop.counter }}" 
+                                 class="accordion-collapse collapse" 
+                                 data-bs-parent="#deliveryAccordion">
+                                <div class="accordion-body">
+                                    <div class="table-responsive">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Order #</th>
+                                                    <th>Description</th>
+                                                    <th>Quantity</th>
+                                                    <th>Date Loaded</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for item in group.items %}
+                                                <tr>
+                                                    <td>{{ item.order_item.order.order_number }}</td>
+                                                    <td>{{ item.order_item.description }}</td>
+                                                    <td>{{ item.received_qty }}</td>
+                                                    <td>{{ item.loaded_date|date:"d/m/Y" }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                        <button type="button" 
+                                                class="btn btn-success mark-delivered-btn"
+                                                data-items="{{ group.item_ids|join:',' }}"
+                                                data-invoice="{{ invoice_number }}">
+                                            Mark Group as Delivered
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center">No items ready for delivery</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delivery Confirmation Modal -->
+<div class="modal fade" id="deliveryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delivery</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="deliveryForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Delivery Date</label>
+                        <input type="date" class="form-control" id="deliveryDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Enter Invoice Number</label>
+                        <input type="text" class="form-control" id="confirmInvoiceNumber" required>
+                    </div>
+                    <input type="hidden" id="actualInvoiceNumber">
+                    <input type="hidden" id="itemIds">
+                </form>
+            </div>
+            <div class="modal-body" id="errorMessage" style="display:none">
+                <div class="alert alert-danger">
+                    Invoice number does not match. Please check and try again.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmDeliveryBtn">Confirm Delivery</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.5rem;
+    }
+    
+    /* Improve error message visibility */
+    #errorMessage .alert {
+        margin-bottom: 0;
+    }
+    
+    /* Button loading state */
+    .btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.75;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('deliveryModal'));
+    const deliveryForm = document.getElementById('deliveryForm');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('deliveryDate').value = today;
+    
+    document.querySelectorAll('.mark-delivered-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemIds = this.dataset.items;
+            const invoiceNumber = this.dataset.invoice;
+            
+            document.getElementById('itemIds').value = itemIds;
+            document.getElementById('actualInvoiceNumber').value = invoiceNumber;
+            document.getElementById('confirmInvoiceNumber').value = '';
+            errorMessage.style.display = 'none';
+            
+            modal.show();
+        });
+    });
+    
+    document.getElementById('confirmDeliveryBtn').addEventListener('click', async function() {
+        const button = this;
+        try {
+            const enteredInvoice = document.getElementById('confirmInvoiceNumber').value;
+            const actualInvoice = document.getElementById('actualInvoiceNumber').value;
+            const deliveryDate = document.getElementById('deliveryDate').value;
+            const itemIds = document.getElementById('itemIds').value;
+            
+            if (enteredInvoice !== actualInvoice) {
+                errorMessage.style.display = 'block';
+                return; // Stop here and keep modal open
+            }
+            
+            // Disable button while processing
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Confirming...';
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            const response = await fetch('/stock/mark-group-delivered/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    item_ids: itemIds.split(','),
+                    delivery_date: deliveryDate,
+                    invoice_number: enteredInvoice
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || `HTTP error! status: ${response.status}`);
+            }
+            
+            if (data.status === 'success') {
+                modal.hide(); // Only hide modal on success
+                alert('Delivery status updated successfully!');
+                window.location.reload();
+            } else {
+                throw new Error(data.message || 'Error updating delivery status');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error updating delivery status: ' + error.message);
+        } finally {
+            // Reset button state if we're not refreshing the page
+            if (!button.disabled) {
+                button.disabled = false;
+                button.textContent = 'Confirm Delivery';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

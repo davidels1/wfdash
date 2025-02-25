@@ -1,0 +1,136 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{% if quote %}Edit Quote{% else %}New Quote{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" id="quote-form" class="quote-form-mobile">
+        {% csrf_token %}
+        
+        <!-- Customer Selection -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <label class="form-label">Customer *</label>
+                {{ form.customer }}
+            </div>
+        </div>
+
+        <!-- Quote Items -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Items</h5>
+            </div>
+            <div class="card-body p-0">
+                {{ formset.management_form }}
+                <div id="mobile-items">
+                    {% for form in formset %}
+                    <div class="item-form border-bottom p-3">
+                        <div class="mb-2">
+                            <label>Description *</label>
+                            {{ form.description }}
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-2">
+                                <label>Quantity</label>
+                                {{ form.quantity }}
+                            </div>
+                            <div class="col-6 text-end">
+                                <button type="button" class="btn btn-danger btn-sm remove-form">
+                                    <i class="feather icon-trash-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label>Notes</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="fixed-bottom bg-white border-top p-3">
+            <button type="button" class="btn btn-secondary btn-lg w-100 mb-2" id="add-form">
+                <i class="feather icon-plus"></i> Add Another Item
+            </button>
+            <button type="submit" class="btn btn-primary btn-lg w-100 mb-2">Save Quote</button>
+            <a href="{% url 'quotes:quote_list' %}" class="btn btn-outline-secondary w-100">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.quote-form-mobile {
+    padding-bottom: 180px;  /* Increased to accommodate the extra button */
+}
+.select2-container {
+    width: 100% !important;
+}
+</style>
+{% endblock %}
+
+{% block javascripts %}
+<script src="{% static 'assets/js/plugins/select2.min.js' %}"></script>
+<script>
+$(document).ready(function() {
+    // Initialize Select2
+    $('.select2-customer').select2({
+        theme: 'bootstrap4',
+        width: '100%'
+    });
+    
+    // Form Management
+    let formIndex = {{ formset.total_form_count }}; // Tracks number of forms
+    const formsetPrefix = 'items';                   // Form name prefix
+    
+    $('#add-form').on('click', function(e) {        // Add button click handler
+        e.preventDefault();
+        
+        if (formIndex >= maxForms) {
+            alert('Maximum ' + maxForms + ' items allowed');
+            return;
+        }
+        
+        // Clone first form
+        const template = $('.item-form:first').clone(true);
+        
+        // Clear values and update indices
+        template.find('input:not([type=hidden])').val('');
+        template.find('textarea').val('');
+        template.find(':input').each(function() {
+            const oldName = $(this).attr('name');
+            if (oldName) {
+                const newName = oldName.replace('-0-', '-' + formIndex + '-');
+                $(this).attr({
+                    'name': newName,
+                    'id': 'id_' + newName
+                });
+            }
+        });
+        
+        // Add new form
+        $('#mobile-items').append(template);
+        formIndex++;
+        
+        // Update management form
+        $('#id_items-TOTAL_FORMS').val(formIndex);
+    });
+    
+    // Remove form
+    $('.remove-form').on('click', function() {
+        const form = $(this).closest('.item-form');
+        const totalForms = $('.item-form').length;
+        
+        if (totalForms > 1) {
+            form.find('input[type=checkbox]').prop('checked', true);
+            form.hide();
+        } else {
+            alert('At least one item is required');
+        }
+    });
+});
+</script>
+{% endblock %}

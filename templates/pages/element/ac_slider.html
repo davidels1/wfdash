@@ -1,0 +1,143 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block extrastyle %}
+	<!-- owl-carousel css -->
+	<link rel="stylesheet" href="{% static 'assets/css/plugins/tiny-slider.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="alert alert-primary" role="alert">
+				<p>Use our extra helper file for quick setup Advance Components in your page - <a
+						href="#" target="_blank" class="alert-link">CHECKOUT</a>
+				</p>
+				<label class="text-muted">Copy/paste source code in your page in just couples of
+					seconds.</label>
+			</div>
+		</div>
+		<!-- [ Slider ] start -->
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header">
+					<h5>Slider1</h5>
+				</div>
+				<div class="card-block">
+					<div class="slider1 owl-carousel owl-theme">
+						<div class="item">
+							<img src="{% static 'assets/images/slider/img-slide-1.jpg' %}" alt="" class="img-fluid">
+						</div>
+						<div class="item">
+							<img src="{% static 'assets/images/slider/img-slide-2.jpg' %}" alt="" class="img-fluid">
+						</div>
+						<div class="item">
+							<img src="{% static 'assets/images/slider/img-slide-3.jpg' %}" alt="" class="img-fluid">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header">
+					<h5>Vertical</h5>
+				</div>
+				<div class="card-block">
+					<div class="slider2 owl-carousel owl-theme">
+						<div class="item">
+							<img src="{% static 'assets/images/slider/img-slide-1.jpg' %}" alt="" class="img-fluid">
+						</div>
+						<div class="item">
+							<img src="{% static 'assets/images/slider/img-slide-2.jpg' %}" alt="" class="img-fluid">
+						</div>
+						<div class="item">
+							<img src="{% static 'assets/images/slider/img-slide-3.jpg' %}" alt="" class="img-fluid">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Vertical</h5>
+				</div>
+				<div class="card-block">
+					<div id="slider3">
+						<div class="customize" id="customize">
+							<div>
+								<div>
+									<img src="{% static 'assets/images/slider/img-slide-1.jpg' %}" alt="" class="img-fluid">
+								</div>
+							</div>
+							<div>
+								<div>
+									<img src="{% static 'assets/images/slider/img-slide-2.jpg' %}" alt="" class="img-fluid">
+								</div>
+							</div>
+							<div>
+								<div>
+									<img src="{% static 'assets/images/slider/img-slide-3.jpg' %}" alt="" class="img-fluid">
+								</div>
+							</div>
+							<div>
+								<div>
+									<img src="{% static 'assets/images/slider/img-slide-4.jpg' %}" alt="" class="img-fluid">
+								</div>
+							</div>
+							<div>
+								<div>
+									<img src="{% static 'assets/images/slider/img-slide-7.jpg' %}" alt="" class="img-fluid">
+								</div>
+							</div>
+						</div>
+						<div class="customize-tools">
+							<ul class="thumbnails" id="customize-thumbnails">
+								<li>
+									<img src="{% static 'assets/images/slider/img-slide-1.jpg' %}">
+								</li>
+								<li>
+									<img src="{% static 'assets/images/slider/img-slide-2.jpg' %}">
+								</li>
+								<li>
+									<img src="{% static 'assets/images/slider/img-slide-3.jpg' %}">
+								</li>
+								<li>
+									<img src="{% static 'assets/images/slider/img-slide-4.jpg' %}">
+								</li>
+								<li>
+									<img src="{% static 'assets/images/slider/img-slide-7.jpg' %}">
+								</li>
+							</ul>
+							<ul class="controls" id="customize-controls">
+								<li class="prev">
+									<i class="feather icon-chevron-left"></i>
+								</li>
+								<li class="next">
+									<i class="feather icon-chevron-right"></i>
+								</li>
+							</ul>
+							<div class="playbutton-wrapper">
+								<button id="customize-toggle">Pause</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- [ slider ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+{% block extra_js %}
+
+	<!-- owl-carousel Js -->
+	<script src="{% static 'assets/js/plugins/tiny-slider.js' %}"></script>
+	<script src="{% static 'assets/js/pages/ac-slider.js' %}"></script>
+
+{% endblock extra_js %}

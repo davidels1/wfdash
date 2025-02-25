@@ -1,0 +1,161 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<!-- [ Gallery-Grid ] start -->
+		<div class="col-sm-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Image Grid</h5>
+				</div>
+				<div class="card-block">
+					<div class="row">
+						<div class="col-lg-4 col-sm-6">
+							<div class="thumbnail mb-4">
+								<div class="thumb">
+									<a data-lightbox="{% static 'assets/images/gallery-grid/img-grd-gal-1.jpg' %}"><img
+											src="{% static 'assets/images/gallery-grid/img-grd-gal-1.jpg' %}"
+											class="img-fluid img-thumbnail m-b-10" alt=""></a>
+								</div>
+							</div>
+						</div>
+						<div class="col-lg-4 col-sm-6">
+							<div class="thumbnail mb-4">
+								<div class="thumb">
+									<a data-lightbox="{% static 'assets/images/gallery-grid/img-grd-gal-2.jpg' %}"><img
+											src="{% static 'assets/images/gallery-grid/img-grd-gal-2.jpg' %}"
+											class="img-fluid img-thumbnail m-b-10" alt=""></a>
+								</div>
+							</div>
+						</div>
+						<div class="col-lg-4 col-sm-6">
+							<div class="thumbnail mb-4">
+								<div class="thumb">
+									<a data-lightbox="{% static 'assets/images/gallery-grid/img-grd-gal-3.jpg' %}"><img
+											src="{% static 'assets/images/gallery-grid/img-grd-gal-3.jpg' %}"
+											class="img-fluid img-thumbnail m-b-10" alt=""></a>
+								</div>
+							</div>
+						</div>
+						<div class="col-lg-4 col-sm-6">
+							<div class="thumbnail mb-4">
+								<div class="thumb">
+									<a data-lightbox="{% static 'assets/images/gallery-grid/img-grd-gal-4.jpg' %}"><img
+											src="{% static 'assets/images/gallery-grid/img-grd-gal-4.jpg' %}"
+											class="img-fluid img-thumbnail m-b-10" alt=""></a>
+								</div>
+							</div>
+						</div>
+						<div class="col-lg-4 col-sm-6">
+							<div class="thumbnail mb-4">
+								<div class="thumb">
+									<a data-lightbox="{% static 'assets/images/gallery-grid/img-grd-gal-5.jpg' %}"><img
+											src="{% static 'assets/images/gallery-grid/img-grd-gal-5.jpg' %}"
+											class="img-fluid img-thumbnail m-b-10" alt=""></a>
+								</div>
+							</div>
+						</div>
+						<div class="col-lg-4 col-sm-6">
+							<div class="thumbnail mb-4">
+								<div class="thumb">
+									<a data-lightbox="{% static 'assets/images/gallery-grid/img-grd-gal-6.jpg' %}"><img
+											src="{% static 'assets/images/gallery-grid/img-grd-gal-6.jpg' %}"
+											class="img-fluid img-thumbnail m-b-10" alt=""></a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-header">
+					<h5>Video Grid</h5>
+				</div>
+				<div class="card-block">
+					<div class="row">
+						<div class="col-lg-4 col-sm-6">
+							<div class="embed-responsive embed-responsive-16by9 mb-4">
+								<iframe allowfullscreen=""
+									src="https://player.vimeo.com/video/246066429?title=0&amp;byline=0&amp;portrait=0"></iframe>
+							</div>
+						</div>
+						<div class="col-lg-4 col-sm-6">
+							<div class="embed-responsive embed-responsive-16by9 mb-4">
+								<iframe allowfullscreen=""
+									src="https://player.vimeo.com/video/246066429?title=0&amp;byline=0&amp;portrait=0"></iframe>
+							</div>
+						</div>
+						<div class="col-lg-4 col-sm-6">
+							<div class="embed-responsive embed-responsive-16by9 mb-4">
+								<iframe allowfullscreen=""
+									src="https://player.vimeo.com/video/246066429?title=0&amp;byline=0&amp;portrait=0"></iframe>
+							</div>
+						</div>
+						<div class="col-lg-4 col-sm-6">
+							<div class="embed-responsive embed-responsive-16by9 mb-4">
+								<iframe class="embed-responsive-item" src="//www.youtube.com/embed/IkyZHPnfFnE"></iframe>
+							</div>
+						</div>
+						<div class="col-lg-4 col-sm-6">
+							<div class="embed-responsive embed-responsive-16by9 mb-4">
+								<iframe class="embed-responsive-item" src="//www.youtube.com/embed/IkyZHPnfFnE"></iframe>
+							</div>
+						</div>
+						<div class="col-lg-4 col-sm-6">
+							<div class="embed-responsive embed-responsive-16by9 mb-4">
+								<iframe class="embed-responsive-item" src="//www.youtube.com/embed/IkyZHPnfFnE"></iframe>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- [ Gallery-Grid ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+	<!-- [ Main Content ] end -->
+	<div class="modal fade modal-lightbox" id="lightboxModal" tabindex="-1" aria-labelledby="lightboxModalLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content border-0">
+				<button type=" button"
+					class="btn-close btn-close-white position-absolute bottom-100 start-100 translate-middle1"
+					data-bs-dismiss="modal" aria-label="Close"></button>
+				<div class="modal-body p-0">
+					<img src="" alt="images" class="modal-image img-fluid">
+				</div>
+			</div>
+		</div>
+	</div>
+
+{% endblock content %}
+
+	<script>
+		var lightboxModal = new bootstrap.Modal(document.getElementById('lightboxModal'));
+		var elem = document.querySelectorAll("[data-lightbox]");
+		for (var j = 0; j < elem.length; j++) {
+			elem[j].addEventListener('click', function () {
+				var imagespath = event.target;
+				if (imagespath.tagName == "IMG") {
+					imagespath = imagespath.parentNode;
+				}
+				var recipient = imagespath.getAttribute('data-lightbox');
+				var image = document.querySelector('.modal-image');
+				image.setAttribute('src', recipient);
+				lightboxModal.show();
+			});
+		}
+
+		function removeClassByPrefix(node, prefix) {
+			for (let i = 0; i < node.classList.length; i++) {
+				let value = node.classList[i];
+				if (value.startsWith(prefix)) {
+					node.classList.remove(value);
+				}
+			}
+		}
+	</script>

@@ -1,0 +1,783 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block content %}
+
+  <!-- [ Main Content ] start -->
+  <div class="row">
+    <!-- [ form-element ] start -->
+    <div class="col-sm-6">
+      <div class="card">
+        <div class="card-header">
+          <h5>Basic Checkbox</h5>
+        </div>
+        <div class="card-body">
+          <form>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">Checkboxes</label>
+              <div class="col-9">
+                <div class="custom-control">
+                  <input class="custom-control-input" type="checkbox" value="" id="defaultCheck1">
+                  <label class="custom-control-label" for="defaultCheck1">
+                    Default checkbox
+                  </label>
+                </div>
+                <div class="custom-control">
+                  <input class="custom-control-input" type="checkbox" value="" id="defaultCheck2" checked>
+                  <label class="custom-control-label" for="defaultCheck2">
+                    Checked checkbox
+                  </label>
+                </div>
+                <div class="custom-control">
+                  <input class="custom-control-input" type="checkbox" value="" id="defaultCheck3" disabled>
+                  <label class="custom-control-label" for="defaultCheck3">
+                    Disabled checkbox
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">Inline</label>
+              <div class="col-9">
+                <div class="custom-control d-inline-block me-2">
+                  <input class="custom-control-input" type="checkbox" id="inlineCheckbox1" value="option1">
+                  <label class="custom-control-label" for="inlineCheckbox1">1</label>
+                </div>
+                <div class="custom-control d-inline-block me-2">
+                  <input class="custom-control-input" type="checkbox" id="inlineCheckbox2" value="option2">
+                  <label class="custom-control-label" for="inlineCheckbox2">2</label>
+                </div>
+                <div class="custom-control d-inline-block me-2">
+                  <input class="custom-control-input" type="checkbox" id="inlineCheckbox3" value="option3"
+                    checked>
+                  <label class="custom-control-label" for="inlineCheckbox3">3</label>
+                </div>
+                <div class="custom-control d-inline-block me-2">
+                  <input class="custom-control-input" type="checkbox" id="inlineCheckbox4" value="option4"
+                    disabled>
+                  <label class="custom-control-label" for="inlineCheckbox4">4
+                    (disabled)</label>
+                </div>
+                <small class="form-text"><code>.form-check-inline</code> to any
+                  <code>.form-check</code></small>
+
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">Without Labels</label>
+              <div class="col-9">
+                <div class="custom-control">
+                  <input class="custom-control-input position-static" type="checkbox" id="blankCheckbox"
+                    value="option1" aria-label="...">
+                </div>
+                <div class="custom-control">
+                  <input class="custom-control-input position-static" type="radio" name="blankRadio"
+                    id="blankRadio1" value="option1" aria-label="...">
+                </div>
+                <small class="form-text">Add <code>.position-static</code> to
+                  inputs within <code>.form-check</code> that don’t have any
+                  label text</small>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="card">
+        <div class="card-header">
+          <h5>Custom Checkbox</h5>
+        </div>
+        <div class="card-body">
+          <form>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">Checkboxes</label>
+              <div class="col-9">
+                <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="form-check-input input-secondary" id="customCheckdefh1">
+                  <label class="custom-control-input" for="customCheckdefh1">Default checkbox</label>
+                </div>
+                <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="form-check-input input-primary" id="customCheckdefh2"
+                    checked>
+                  <label class="custom-control-input" for="customCheckdefh2">Checked checkbox</label>
+                </div>
+                <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="form-check-input input-primary" id="customCheckdefh4"
+                    disabled>
+                  <label class="custom-control-input" for="customCheckdefh4">Disabled checkbox</label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">Inline</label>
+              <div class="col-9">
+                <div class="custom-control custom-checkbox custom-control-inline">
+                  <input type="checkbox" class="form-check-input input-primary" id="customCheckinlh1">
+                  <label class="custom-control-input" for="customCheckinlh1">1</label>
+                </div>
+                <div class="custom-control custom-checkbox custom-control-inline">
+                  <input type="checkbox" class="form-check-input input-primary" id="customCheckinlh2">
+                  <label class="custom-control-input" for="customCheckinlh2">2</label>
+                </div>
+                <div class="custom-control custom-checkbox custom-control-inline">
+                  <input type="checkbox" class="form-check-input input-primary" id="customCheckinlh3"
+                    checked>
+                  <label class="custom-control-input" for="customCheckinlh3">3</label>
+                </div>
+                <div class="custom-control custom-checkbox custom-control-inline">
+                  <input type="checkbox" class="form-check-input input-primary" id="customCheckinlh4"
+                    disabled>
+                  <label class="custom-control-input" for="customCheckinlh4">4
+                    (disabled)</label>
+                </div>
+                <small class="form-text text-muted">Add
+                  <code>.custom-control-inline</code> to any
+                  <code>.custom-control</code></small>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-3 col-form-label">Indeterminate</label>
+              <div class="col-9">
+                <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="form-check-input" id="customCheckint1">
+                  <label class="custom-control-input" for="customCheckint1">Check this custom
+                    checkbox</label>
+                </div>
+                <small
+                  class="form-text text-muted"><code>$('.your-checkbox').prop('indeterminate', true)</code></small>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-12">
+      <div class="card">
+        <div class="card-header">
+          <h5>Color Options</h5>
+        </div>
+        <div class="card-body">
+          <form>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Color States</label>
+                  <div class="form-check">
+                    <input class="form-check-input input-primary" type="checkbox" id="customCheckc1"
+                      checked>
+                    <label class="form-check-label" for="customCheckc1">primary</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-secondary" type="checkbox" id="customCheckc2"
+                      checked>
+                    <label class="form-check-label" for="customCheckc2">secondary</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-success" type="checkbox" id="customCheckc3"
+                      checked>
+                    <label class="form-check-label" for="customCheckc3">success</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-danger" type="checkbox" id="customCheckc4" checked>
+                    <label class="form-check-label" for="customCheckc4">danger</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-warning" type="checkbox" id="customCheckc5"
+                      checked>
+                    <label class="form-check-label" for="customCheckc5">warning</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-info" type="checkbox" id="customCheckc6" checked>
+                    <label class="form-check-label" for="customCheckc6">info</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-dark" type="checkbox" id="customCheckc7" checked>
+                    <label class="form-check-label" for="customCheckc7">dark</label>
+                  </div>
+                  <small class="form-text text-muted">Some help text goes
+                    here</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Color States</label>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-primary" type="checkbox"
+                      id="customCheckclight1" checked>
+                    <label class="form-check-label" for="customCheckclight1">primary</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-secondary" type="checkbox"
+                      id="customCheckclight2" checked>
+                    <label class="form-check-label" for="customCheckclight2">secondary</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-success" type="checkbox"
+                      id="customCheckclight3" checked>
+                    <label class="form-check-label" for="customCheckclight3">success</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-danger" type="checkbox"
+                      id="customCheckclight4" checked>
+                    <label class="form-check-label" for="customCheckclight4">danger</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-warning" type="checkbox"
+                      id="customCheckclight5" checked>
+                    <label class="form-check-label" for="customCheckclight5">warning</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-info" type="checkbox" id="customCheckclight6"
+                      checked>
+                    <label class="form-check-label" for="customCheckclight6">info</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input input-light-dark" type="checkbox" id="customCheckclight7"
+                      checked>
+                    <label class="form-check-label" for="customCheckclight7">dark</label>
+                  </div>
+                  <small class="form-text text-muted">Some help text goes
+                    here</small>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- [ form-element ] end -->
+    <!-- [ checkbox ] start -->
+    <div class="col-sm-12">
+      <div class="card">
+        <div class="card-header">
+          <h5>Checkbox</h5>
+          <span class="d-block m-t-5">Add class of <code>.form-control</code> with
+            <code>&lt;input&gt;</code> tag</span>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- [ default-checkbox ] start -->
+            <div class="col-xl-4 col-md-6 mb-5">
+              <h5>Default checkbox</h5>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox d-inline">
+                  <input type="checkbox" name="checkbox-1" id="checkbox-1" checked>
+                  <label for="checkbox-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox d-inline">
+                  <input type="checkbox" name="checkbox-1" id="checkbox-2">
+                  <label for="checkbox-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-3" disabled>
+                  <label for="checkbox-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-4" disabled checked>
+                  <label for="checkbox-4" class="cr">Disabled Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-fill-1" id="checkbox-fill-1" checked>
+                  <label for="checkbox-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-fill-1" id="checkbox-fill-2">
+                  <label for="checkbox-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" name="checkbox-fill-3" id="checkbox-fill-3" disabled>
+                  <label for="checkbox-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-fill-4" disabled checked>
+                  <label for="checkbox-fill-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline checkbox </h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox d-inline">
+                  <input type="checkbox" name="checkbox-in-1" id="checkbox-in-1" checked>
+                  <label for="checkbox-in-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox d-inline">
+                  <input type="checkbox" name="checkbox-in-1" id="checkbox-in-2">
+                  <label for="checkbox-in-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-in-3" id="checkbox-infill-1" checked>
+                  <label for="checkbox-infill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-in-3" id="checkbox-infill-2">
+                  <label for="checkbox-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ default-checkbox ] end -->
+            <!-- [ primary-checkbox ] start -->
+            <div class="col-xl-4 col-md-6 mb-5">
+              <h5>Primary checkbox</h5>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-primary d-inline">
+                  <input type="checkbox" name="checkbox-p-1" id="checkbox-p-1" checked>
+                  <label for="checkbox-p-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-primary d-inline">
+                  <input type="checkbox" name="checkbox-p-1" id="checkbox-p-2">
+                  <label for="checkbox-p-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-primary d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-p-3" disabled>
+                  <label for="checkbox-p-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-primary d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-p-4" disabled checked>
+                  <label for="checkbox-p-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-primary checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-p-fill-1" id="checkbox-p-fill-1" checked>
+                  <label for="checkbox-p-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-primary checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-fill-p-1" id="checkbox-p-fill-2">
+                  <label for="checkbox-p-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-primary checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" name="checkbox-p-fill-3" id="checkbox-p-fill-3" disabled>
+                  <label for="checkbox-p-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-primary checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-p-fill-4" disabled checked>
+                  <label for="checkbox-p-fill-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-primary d-inline">
+                  <input type="checkbox" name="checkbox-p-in-1" id="checkbox-p-in-1" checked>
+                  <label for="checkbox-p-in-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-primary d-inline">
+                  <input type="checkbox" name="checkbox-in-1" id="checkbox-p-in-2">
+                  <label for="checkbox-p-in-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-primary checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-p-in-1" id="checkbox-p-infill-1" checked>
+                  <label for="checkbox-p-infill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-primary checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-p-in-1" id="checkbox-p-infill-2">
+                  <label for="checkbox-p-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ primary-checkbox ] end -->
+            <!-- [ Danger-checkbox ] start -->
+            <div class="col-xl-4 col-md-6 mb-5">
+              <h5>Danger checkbox</h5>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-danger d-inline">
+                  <input type="checkbox" name="checkbox-d-1" id="checkbox-d-1" checked>
+                  <label for="checkbox-d-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-danger d-inline">
+                  <input type="checkbox" name="checkbox-d-1" id="checkbox-d-2">
+                  <label for="checkbox-d-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-danger d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-d-3" disabled>
+                  <label for="checkbox-d-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-danger d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-d-4" disabled checked>
+                  <label for="checkbox-d-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-danger checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-d-fill-1" id="checkbox-d-fill-1" checked>
+                  <label for="checkbox-d-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-danger checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-fill-d-1" id="checkbox-d-fill-2">
+                  <label for="checkbox-d-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-danger checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" name="checkbox-d-fill-3" id="checkbox-d-fill-3" disabled>
+                  <label for="checkbox-d-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-danger checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-d-fill-4" disabled checked>
+                  <label for="checkbox-d-fill-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-danger d-inline">
+                  <input type="checkbox" name="checkbox-d-in-1" id="checkbox-d-in-1" checked>
+                  <label for="checkbox-d-in-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-danger d-inline">
+                  <input type="checkbox" name="checkbox-in-1" id="checkbox-d-in-2">
+                  <label for="checkbox-d-in-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-danger checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-d-in-1" id="checkbox-d-infill-1" checked>
+                  <label for="checkbox-d-infill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-danger checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-d-in-1" id="checkbox-d-infill-2">
+                  <label for="checkbox-d-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ Danger-checkbox ] end -->
+            <!-- [ success-checkbox ] start -->
+            <div class="col-xl-4 col-md-6 mb-5">
+              <h5>Success checkbox</h5>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-success d-inline">
+                  <input type="checkbox" name="checkbox-s-1" id="checkbox-s-1" checked>
+                  <label for="checkbox-s-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-success d-inline">
+                  <input type="checkbox" name="checkbox-s-1" id="checkbox-s-2">
+                  <label for="checkbox-s-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-success d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-s-3" disabled>
+                  <label for="checkbox-s-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-success d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-s-4" disabled checked>
+                  <label for="checkbox-s-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-success checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-s-fill-1" id="checkbox-s-fill-1" checked>
+                  <label for="checkbox-s-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-success checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-fill-s-1" id="checkbox-s-fill-2">
+                  <label for="checkbox-s-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-success checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" name="checkbox-s-fill-3" id="checkbox-s-fill-3" disabled>
+                  <label for="checkbox-s-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-success checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-s-fill-4" disabled checked>
+                  <label for="checkbox-s-fill-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-success d-inline">
+                  <input type="checkbox" name="checkbox-s-in-1" id="checkbox-s-in-1" checked>
+                  <label for="checkbox-s-in-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-success d-inline">
+                  <input type="checkbox" name="checkbox-in-1" id="checkbox-s-in-2">
+                  <label for="checkbox-s-in-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-success checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-s-in-1" id="checkbox-s-infill-1" checked>
+                  <label for="checkbox-s-infill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-success checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-s-in-1" id="checkbox-s-infill-2">
+                  <label for="checkbox-s-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ success-checkbox ] end -->
+            <!-- [ warning-checkbox ] start -->
+            <div class="col-xl-4 col-md-6 mb-5">
+              <h5>Warning checkbox</h5>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-warning d-inline">
+                  <input type="checkbox" name="checkbox-w-1" id="checkbox-w-1" checked>
+                  <label for="checkbox-w-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-warning d-inline">
+                  <input type="checkbox" name="checkbox-w-1" id="checkbox-w-2">
+                  <label for="checkbox-w-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-warning d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-w-3" disabled>
+                  <label for="checkbox-w-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-warning d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-w-4" disabled checked>
+                  <label for="checkbox-w-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-warning checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-w-fill-1" id="checkbox-w-fill-1" checked>
+                  <label for="checkbox-w-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-warning checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-fill-w-1" id="checkbox-w-fill-2">
+                  <label for="checkbox-w-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-warning checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" name="checkbox-w-fill-3" id="checkbox-w-fill-3" disabled>
+                  <label for="checkbox-w-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-warning checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-w-fill-4" disabled checked>
+                  <label for="checkbox-w-fill-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-warning d-inline">
+                  <input type="checkbox" name="checkbox-w-in-1" id="checkbox-w-in-1" checked>
+                  <label for="checkbox-w-in-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-warning d-inline">
+                  <input type="checkbox" name="checkbox-in-1" id="checkbox-w-in-2">
+                  <label for="checkbox-w-in-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-warning checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-w-in-1" id="checkbox-w-infill-1" checked>
+                  <label for="checkbox-w-infill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-warning checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-w-in-1" id="checkbox-w-infill-2">
+                  <label for="checkbox-w-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ warning-checkbox ] end -->
+            <!-- [ Info-checkbox ] start -->
+            <div class="col-xl-4 col-md-6 mb-5">
+              <h5>Info checkbox</h5>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-info d-inline">
+                  <input type="checkbox" name="checkbox-i-1" id="checkbox-i-1" checked>
+                  <label for="checkbox-i-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-info d-inline">
+                  <input type="checkbox" name="checkbox-i-1" id="checkbox-i-2">
+                  <label for="checkbox-i-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-info d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-i-3" disabled>
+                  <label for="checkbox-i-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-info d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-i-4" disabled checked>
+                  <label for="checkbox-i-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group">
+                <div class="checkbox checkbox-info checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-i-fill-1" id="checkbox-i-fill-1" checked>
+                  <label for="checkbox-i-fill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-info checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-fill-i-1" id="checkbox-i-fill-2">
+                  <label for="checkbox-i-fill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-info checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" name="checkbox-i-fill-3" id="checkbox-i-fill-3" disabled>
+                  <label for="checkbox-i-fill-3" class="cr">Disabled</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="checkbox checkbox-info checkbox-fill d-inline m-r-10">
+                  <input type="checkbox" id="checkbox-i-fill-4" disabled checked>
+                  <label for="checkbox-i-fill-4" class="cr">Disabled
+                    Checked</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Inline checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-info d-inline">
+                  <input type="checkbox" name="checkbox-i-in-1" id="checkbox-i-in-1" checked>
+                  <label for="checkbox-i-in-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-info d-inline">
+                  <input type="checkbox" name="checkbox-in-1" id="checkbox-i-in-2">
+                  <label for="checkbox-i-in-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+              <h6 class="mt-4">Bordered checkbox</h6>
+              <hr>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-info checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-i-in-1" id="checkbox-i-infill-1" checked>
+                  <label for="checkbox-i-infill-1" class="cr">Checked</label>
+                </div>
+              </div>
+              <div class="form-group d-inline">
+                <div class="checkbox checkbox-info checkbox-fill d-inline">
+                  <input type="checkbox" name="checkbox-i-in-1" id="checkbox-i-infill-2">
+                  <label for="checkbox-i-infill-2" class="cr">Uncheck</label>
+                </div>
+              </div>
+            </div>
+            <!-- [ Info-checkbox ] end -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- [ checkbox ] end -->
+  </div>
+  <!-- [ Main Content ] end -->
+
+{% endblock content %}

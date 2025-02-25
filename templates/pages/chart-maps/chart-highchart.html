@@ -1,0 +1,112 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="alert alert-primary" role="alert">
+				<p>Use our extra helper file for quick setup Charts in your page - <a
+						href="#" target="_blank" class="alert-link">CHECKOUT</a></p>
+				<label class="text-muted">Copy/paste source code in your page in just couples of seconds.</label>
+			</div>
+		</div>
+		<!-- [ high-Chart ] start -->
+		<div class="col-xl-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Bar [ Basic ] Chart</h5>
+				</div>
+				<div class="card-block">
+					<div id="chart-highchart-bar1" style="width: 100%; height: 450px;"></div>
+				</div>
+			</div>
+		</div>
+		<div class="col-xl-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Line [ Basic ] Chart</h5>
+				</div>
+				<div class="card-block">
+					<div id="chart-highchart-line1" style="width: 100%; height: 350px;"></div>
+				</div>
+			</div>
+		</div>
+		<div class="col-xl-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Area [ Zoom ] Chart</h5>
+				</div>
+				<div class="card-block">
+					<div id="chart-highchart-area2" style="width: 100%; height: 350px;"></div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header">
+					<h5>Pie [ Basic ] Chart</h5>
+				</div>
+				<div class="card-block">
+					<div id="chart-highchart-pie1" style="width: 100%; height: 350px;"></div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header">
+					<h5>Pie [ Donut ] Chart</h5>
+				</div>
+				<div class="card-block">
+					<div id="chart-highchart-pie2" style="width: 100%; height: 350px;"></div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header">
+					<h5>Pie [ 3D ] Chart</h5>
+				</div>
+				<div class="card-block">
+					<div id="chart-highchart-pie-3d1" style="width: 100%; height: 350px;"></div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header">
+					<h5>Pie [ Donut 3D ] Chart</h5>
+				</div>
+				<div class="card-block">
+					<div id="chart-highchart-pie-3d2" style="width: 100%; height: 350px;"></div>
+				</div>
+			</div>
+		</div>
+		<div class="col-xl-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Combinations [ Column, Line & Pie ] Chart</h5>
+				</div>
+				<div class="card-block">
+					<div id="chart-highchart-combo1" style="width: 100%; height: 450px;"></div>
+				</div>
+			</div>
+		</div>
+		<!-- [ high-Chart ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+{% block extra_js %}
+
+	<!-- highchart chart -->
+	<script src="https://code.highcharts.com/highcharts.js"></script>
+	<script src="https://code.highcharts.com/modules/data.js"></script>
+	<script src="https://code.highcharts.com/modules/exporting.js"></script>
+	<script src="https://code.highcharts.com/modules/export-data.js"></script>
+	<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+	<script src="{% static 'assets/js/pages/chart-highchart-custom.js' %}"></script>
+
+{% endblock extra_js %}

@@ -1,0 +1,82 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block extrastyle %}
+	<!-- notification css -->
+	<link rel="stylesheet" href="{% static 'assets/css/plugins/notifier.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="alert alert-primary" role="alert">
+				<p>Use our extra helper file for quick setup Advance Components in your page - <a
+						href="#" target="_blank" class="alert-link">CHECKOUT</a>
+				</p>
+				<label class="text-muted">Copy/paste source code in your page in just couples of
+					seconds.</label>
+			</div>
+		</div>
+		<!-- [ notification-alert ] start -->
+		<div class="col-sm-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Notification Alert</h5>
+				</div>
+				<div class="card-block">
+					<button type="button" class="btn btn-primary" id="btn-default">Default</button>
+					<button type="button" class="btn btn-info" id="btn-info">Info</button>
+					<button type="button" class="btn btn-success" id="btn-success">Success</button>
+					<button type="button" class="btn btn-warning" id="btn-warning">Warning</button>
+					<button type="button" class="btn btn-danger" id="btn-danger">Danger</button>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-header">
+					<h5>Notification with Icons</h5>
+				</div>
+				<div class="card-block">
+					<button type="button" class="btn btn-primary" id="btn-default-i">Default</button>
+					<button type="button" class="btn btn-info" id="btn-info-i">Info</button>
+					<button type="button" class="btn btn-success" id="btn-success-i">Success</button>
+					<button type="button" class="btn btn-warning" id="btn-warning-i">Warning</button>
+					<button type="button" class="btn btn-danger" id="btn-danger-i">Danger</button>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-header">
+					<h5>Auto Close Notifications</h5>
+				</div>
+				<div class="card-block">
+					<button type="button" class="btn btn-primary" id="btn-default-ac">Default</button>
+					<button type="button" class="btn btn-info" id="btn-info-ac">Info</button>
+					<button type="button" class="btn btn-success" id="btn-success-ac">Success</button>
+					<button type="button" class="btn btn-warning" id="btn-warning-ac">Warning</button>
+					<button type="button" class="btn btn-danger" id="btn-danger-ac">Danger</button>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-header">
+					<h5>Using the notification.hide() method</h5>
+				</div>
+				<div class="card-block">
+					<button type="button" class="btn btn-primary" id="btn-nt-show">Show
+						Notification</button>
+					<button type="button" class="btn btn-danger" id="btn-nt-hide">Hide
+						Notification</button>
+				</div>
+			</div>
+		</div>
+		<!-- [ notification-alert ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+{% block extra_js %}
+	<!-- notification Js -->
+	<script src="{% static 'assets/js/plugins/notifier.js' %}"></script>
+	<script src="{% static 'assets/js/pages/ac-notification.js' %}"></script>
+{% endblock extra_js %}

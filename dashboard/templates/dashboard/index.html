@@ -1,0 +1,220 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %} Dashboard {% endblock %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<!-- Remove pcoded-main-container and pcoded-content divs -->
+<!-- [ breadcrumb ] start -->
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col-md-12">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Dashboard</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ breadcrumb ] end -->
+
+<!-- [ Main Content ] start -->
+<div class="row">
+    <!-- Total Quotes Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card bg-c-blue order-card">
+            <div class="card-body">
+                <h6 class="text-white">Total Quotes</h6>
+                <h2 class="text-end text-white">
+                    <i class="feather icon-file-text float-start"></i>
+                    <span>{{ total_quotes }}</span>
+                </h2>
+                <p class="m-b-0 text-white">Pending: {{ quotes_stats.pending }}</p>
+                <div class="progress mt-3" style="height: 7px;">
+                    <div class="progress-bar bg-white" role="progressbar" style="width: {{ quote_percentage }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Orders Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card bg-c-green order-card">
+            <div class="card-body">
+                <h6 class="text-white">Monthly Sales</h6>
+                <h2 class="text-end text-white">
+                    <i class="feather icon-shopping-cart float-start"></i>
+                    <span>R {{ orders_stats.monthly.total|default:"0.00" }}</span>
+                </h2>
+                <p class="m-b-0 text-white">Orders: {{ orders_stats.monthly.count }}</p>
+                <div class="progress mt-3" style="height: 7px;">
+                    <div class="progress-bar bg-white" role="progressbar" style="width: 65%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collections Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card bg-c-yellow order-card">
+            <div class="card-body">
+                <h6 class="text-white">Collections</h6>
+                <h2 class="text-end text-white">
+                    <i class="feather icon-truck float-start"></i>
+                    <span>{{ total_collections }}</span>
+                </h2>
+                <p class="m-b-0 text-white">Pending: {{ pending_collections }}</p>
+                <div class="progress mt-3" style="height: 7px;">
+                    <div class="progress-bar bg-white" role="progressbar" style="width: 45%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customers Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card bg-c-red order-card">
+            <div class="card-body">
+                <h6 class="text-white">Total Customers</h6>
+                <h2 class="text-end text-white">
+                    <i class="feather icon-users float-start"></i>
+                    <span>{{ total_customers }}</span>
+                </h2>
+                <p class="m-b-0 text-white">Active: {{ active_customers }}</p>
+                <div class="progress mt-3" style="height: 7px;">
+                    <div class="progress-bar bg-white" role="progressbar" style="width: 85%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Quotes Table -->
+    <div class="col-xl-8 col-md-12">
+        <div class="card latest-update-card">
+            <div class="card-header">
+                <h5>Recent Quotes</h5>
+                <div class="card-header-right">
+                    <div class="btn-group card-option">
+                        <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="feather icon-more-horizontal"></i>
+                        </button>
+                        <ul class="list-unstyled card-option dropdown-menu dropdown-menu-end">
+                            <li class="dropdown-item full-card"><a href="#!"><span><i class="feather icon-maximize"></i> Maximize</span></a></li>
+                            <li class="dropdown-item minimize-card"><a href="#!"><span><i class="feather icon-minus"></i> Collapse</span></a></li>
+                            <li class="dropdown-item reload-card"><a href="#!"><span><i class="feather icon-refresh-cw"></i> Reload</span></a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover m-b-0">
+                        <thead>
+                            <tr>
+                                <th>Quote #</th>
+                                <th>Customer</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for quote in recent_quotes %}
+                            <tr>
+                                <td>{{ quote.quote_number }}</td>
+                                <td>{{ quote.customer.company }}</td>
+                                <td><span class="badge bg-{{ quote.status|lower }}">{{ quote.get_status_display }}</span></td>
+                                <td>{{ quote.created_at|date:"d M Y" }}</td>
+                                <td>
+                                    <a href="{% url 'quotes:quote_detail' quote.id %}" class="btn btn-sm btn-primary">
+                                        <i class="feather icon-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="col-xl-4 col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <ul class="feed-widget">
+                    {% for collection in recent_collections %}
+                    <li class="feed-item">
+                        <div class="feed-icon bg-{{ collection.status|lower }}">
+                            <i class="feather icon-truck"></i>
+                        </div>
+                        <div class="feed-content">
+                            <p class="m-b-5">Collection #{{ collection.id }}</p>
+                            <span class="text-muted">{{ collection.created_at|timesince }} ago</span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ Main Content ] end -->
+{% endblock content %}
+
+{% block extra_js %}
+<!-- Add any additional JavaScript for charts/graphs here -->
+{% endblock extra_js %}
+
+{% block extra_css %}
+<style>
+.bg-c-blue {
+    background: linear-gradient(45deg, #4099ff, #73b4ff);
+}
+.bg-c-green {
+    background: linear-gradient(45deg, #2ed8b6, #59e0c5);
+}
+.bg-c-yellow {
+    background: linear-gradient(45deg, #FFB64D, #ffcb80);
+}
+.bg-c-red {
+    background: linear-gradient(45deg, #FF5370, #ff869a);
+}
+.order-card {
+    color: #fff;
+}
+.order-card i {
+    font-size: 26px;
+}
+.f-left {
+    float: left;
+}
+.f-right {
+    float: right;
+}
+.feed-widget .feed-item {
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f1f1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.feed-widget .feed-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    margin-right: 15px;
+}
+</style>
+{% endblock extra_css %}

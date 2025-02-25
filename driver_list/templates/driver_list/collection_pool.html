@@ -1,0 +1,105 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Collection Pool{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5>Collection Pool</h5>
+        </div>
+        <div class="card-body">
+            <!-- Bulk assignment form at the top -->
+            <form method="POST" action="{% url 'driver_list:bulk_assign_driver' %}">
+                {% csrf_token %}
+                <div class="mb-3 d-flex gap-2">
+                    <select name="driver" class="form-select" style="width: auto;" required>
+                        <option value="">Select Driver</option>
+                        {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="date" name="planned_date" class="form-control" style="width: auto;" required>
+                    <button type="submit" class="btn btn-primary">Assign Selected</button>
+                </div>
+
+                <!-- Supplier groups with checkboxes -->
+                {% for group in grouped_collections %}
+                    <div class="supplier-section mb-4">
+                        <div class="d-flex align-items-center bg-light p-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input supplier-select" 
+                                       data-supplier="{{ group.supplier.id }}">
+                                <label class="form-check-label fw-bold">
+                                    {{ group.supplier.suppliername }} 
+                                    <span class="badge bg-primary ms-2">{{ group.count }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="list-group mt-2">
+                            {% for item in group.items %}
+                                <div class="list-group-item {% if item.is_future %}bg-warning-subtle{% endif %}">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <div class="form-check">
+                                                <input type="checkbox" 
+                                                       class="form-check-input collection-checkbox" 
+                                                       name="items[]" 
+                                                       value="{{ item.id }}"
+                                                       data-supplier="{{ item.supplier.id }}">
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1">{{ item.order_item.description }}</h6>
+                                                    <small class="text-muted">
+                                                        Order #: {{ item.order_item.order.order_number }} |
+                                                        {% if item.order_item.purchase_order %}
+                                                            PO #: {{ item.order_item.purchase_order.po_number }} |
+                                                        {% endif %}
+                                                        Quantity: {{ item.quantity }}
+                                                    </small>
+                                                    {% if item.planned_date %}
+                                                        <br>
+                                                        <small class="{% if item.is_future %}text-warning{% endif %}">
+                                                            Planned Date: {{ item.planned_date|date:"d/m/Y" }}
+                                                        </small>
+                                                    {% endif %}
+                                                    {% if item.notes %}
+                                                        <br>
+                                                        <small class="text-muted">Notes: {{ item.notes }}</small>
+                                                    {% endif %}
+                                                </div>
+                                                {% if item.is_future %}
+                                                    <span class="badge bg-warning">Future Date</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle supplier checkboxes
+    document.querySelectorAll('.supplier-select').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const supplierId = this.dataset.supplier;
+            const items = document.querySelectorAll(`.collection-checkbox[data-supplier="${supplierId}"]`);
+            items.forEach(item => item.checked = this.checked);
+        });
+    });
+});
+</script>
+{% endblock %}

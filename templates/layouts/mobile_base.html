@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{% block title %}WF Sales{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'assets/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/style.css' %}">
+    
+    <!-- Mobile-specific CSS -->
+    <style>
+        body {
+            padding-bottom: 60px; /* Space for bottom navigation */
+        }
+        .fixed-top {
+            z-index: 1030;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            z-index: 1020;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    {% block content %}{% endblock %}
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="d-flex justify-content-around p-2">
+            <a href="{% url 'orders:order_list' %}" class="btn btn-link text-dark">
+                <i class="feather icon-list"></i>
+                <small class="d-block">Orders</small>
+            </a>
+            <a href="{% url 'orders:order_create' %}" class="btn btn-link text-dark">
+                <i class="feather icon-plus-circle"></i>
+                <small class="d-block">New</small>
+            </a>
+            <a href="{% url 'orders:purchase_order_list' %}" class="btn btn-link text-dark">
+                <i class="feather icon-file-text"></i>
+                <small class="d-block">POs</small>
+            </a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'assets/js/jquery.min.js' %}"></script>
+    <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,69 @@
+{% load i18n static admin_datta custom_tags %}
+
+<ul class="nav pcoded-inner-navbar">
+    {% is_admin_user request.user as is_admin %}
+    
+    {# ADMIN & SUPERUSER - Show Everything #}
+    {% if is_admin or request.user.is_superuser %}
+        <li class="nav-item pcoded-menu-caption">
+            <label>Administration</label>
+        </li>
+        {% include "includes/menu_items/admin_menu.html" %}
+    {% endif %}
+
+    {# QUOTERS GROUP #}
+    {% if request.user|has_group:'QUOTERS' %}
+        <li class="nav-item pcoded-menu-caption">
+            <label>Quote Management</label>
+        </li>
+        {% include "includes/menu_items/quoter_menu.html" %}
+    {% endif %}
+
+    {# REP GROUP #}
+    {% if request.user|has_group:'REP' %}
+        <li class="nav-item pcoded-menu-caption">
+            <label>Representative Menu</label>
+        </li>
+        {% include "includes/menu_items/rep_menu.html" %}
+    {% endif %}
+
+    {# INVOICING GROUP #}
+    {% if request.user|has_group:'INVOICING' %}
+        <li class="nav-item pcoded-menu-caption">
+            <label>Invoicing</label>
+        </li>
+        {% include "includes/menu_items/invoicing_menu.html" %}
+    {% endif %}
+
+    {# LOGISTICS GROUP #}
+    {% if request.user|has_group:'LOGISTICS' %}
+        <li class="nav-item pcoded-menu-caption">
+            <label>Logistics Management</label>
+        </li>
+        {% include "includes/menu_items/logistics_menu.html" %}
+    {% endif %}
+
+    {# STOCK GROUP #}
+    {% if request.user|has_group:'STOCK' %}
+        <li class="nav-item pcoded-menu-caption">
+            <label>Stock Management</label>
+        </li>
+        {% include "includes/menu_items/stock_menu.html" %}
+    {% endif %}
+
+    {# DRIVER GROUP #}
+    {% if request.user|has_group:'DRIVER' %}
+        <li class="nav-item pcoded-menu-caption">
+            <label>Driver Operations</label>
+        </li>
+        {% include "includes/menu_items/driver_menu.html" %}
+    {% endif %}
+
+    {# BUYER GROUP #}
+    {% if request.user|has_group:'BUYER' %}
+        <li class="nav-item pcoded-menu-caption">
+            <label>Procurement</label>
+        </li>
+        {% include "includes/menu_items/buyer_menu.html" %}
+    {% endif %}
+</ul>

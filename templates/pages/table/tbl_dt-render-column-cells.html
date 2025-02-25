@@ -1,0 +1,130 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="{% static 'assets/css/plugins/style.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<!-- [ basic-table ] start -->
+		<div class="col-xl-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Basic Table</h5>
+					<span class="d-block m-t-5">use class <code>table</code> inside table
+						element</span>
+				</div>
+				<div class="card-block table-border-style">
+					<div class="table-responsive">
+						<table class="table" id="pc-dt-render-column-cells">
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- [ basic-table ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+{% block extra_js %}
+
+	<script src="{% static 'assets/js/plugins/simple-datatables.js' %}"></script>
+	<script>
+		const data = {
+			headings: ['ID', 'Drink', 'Price', 'Caffeinated', 'Profit'],
+			data: [
+				[574, 'latte', 4.00, false, 0.00],
+				[984, 'herbal tea', 3.00, false, 0.56],
+				[312, 'green tea', 3.00, true, 1.72],
+				[312, 'latte', 3.00, true, -1.21],
+				[312, 'green tea', 3.00, false, 0.00],
+				[312, 'green tea', 3.00, false, 0.00],
+				[312, 'green tea', 3.00, true, 1.72],
+				[312, 'latte', 3.00, true, 1.72],
+				[312, 'green tea', 3.00, true, -1.21],
+				[312, 'green tea', 3.00, false, 0.00],
+				[312, 'green tea', 3.00, true, 1.72],
+				[312, 'green tea', 3.00, true, 1.72],
+				[312, 'latte', 3.00, false, 0.00],
+				[312, 'latte', 3.00, true, 1.72],
+				[312, 'green tea', 3.00, false, 0.00],
+				[312, 'green tea', 3.00, true, 1.72],
+				[312, 'latte', 3.00, false, 0.00],
+				[312, 'latte', 3.00, true, -1.21],
+				[312, 'latte', 3.00, true, 1.72],
+				[312, 'latte', 3.00, false, 0.00],
+				[312, 'latte', 3.00, false, 0.00],
+				[312, 'latte', 3.00, true, 1.72],
+				[312, 'green tea', 3.00, true, -1.21],
+				[312, 'green tea', 3.00, true, -1.21],
+				[312, 'green tea', 3.00, true, -1.21],
+			]
+		};
+
+		// Add Icon
+		function renderIcon(data, cell, row) {
+			if (data == 'latte') {
+				return `🔥 ${data}`;
+			} else {
+				return `🌿 ${data}`;
+			}
+		}
+
+		// Price column cell manipulation
+		function renderButton(data, cell, row) {
+			return `${data}<button class="btn btn-success btn-sm ms-3" data-row="${row.dataIndex}">Buy Now</button>`;
+		}
+
+		// Caffeinated column cell manipulation
+		function renderYesNo(data, cell, row) {
+			if (data == 'true') {
+				return row.classList.add("text-success"), `<b>Yes</b>`;
+			} else if (data == 'false') {
+				return row.classList.add("text-danger"), `<b>No</b>`;
+			}
+		}
+
+		// numbers
+		function renderHighLow(data, cell, row) {
+			if (data < 0) {
+				return `<span class="text-danger">${data}</span>`;
+			} else if (data > 0) {
+				return `<span class="text-success">${data}</span>`;
+			} else if (data == 0) {
+				return `<span class="text-body">${data}</span>`;
+			}
+		}
+
+		var dataTable = new simpleDatatables.DataTable("#pc-dt-render-column-cells", {
+			data: data,
+			perPage: 25,
+			columns: [{
+				select: 0,
+				hidden: true
+			},
+			{
+				select: 1,
+				render: renderIcon
+			},
+			{
+				select: 2,
+				render: renderButton
+			},
+			{
+				select: 3,
+				render: renderYesNo
+			},
+			{
+				select: 4,
+				render: renderHighLow
+			}
+			]
+		});
+	</script>
+
+{% endblock extra_js %}

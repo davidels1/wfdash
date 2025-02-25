@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .section { margin-bottom: 30px; }
+        .quote-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .warning { color: #dc3545; }
+        .status { font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Daily Quote Report - {{ report_date }}</h2>
+
+        {% if stale_quotes %}
+        <div class="section">
+            <h3>Stale Quotes (No Updates for 3+ Days)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Quote #</th>
+                        <th>Customer</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Rep</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for quote in stale_quotes %}
+                    <tr>
+                        <td>{{ quote.quote_number }}</td>
+                        <td>{{ quote.customer.company }}</td>
+                        <td>{{ quote.get_status_display }}</td>
+                        <td>{{ quote.updated_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ quote.rep.get_full_name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if problem_quotes %}
+        <div class="section">
+            <h3 class="warning">Problem Quotes</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Quote #</th>
+                        <th>Customer</th>
+                        <th>Created</th>
+                        <th>Rep</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for quote in problem_quotes %}
+                    <tr>
+                        <td>{{ quote.quote_number }}</td>
+                        <td>{{ quote.customer.company }}</td>
+                        <td>{{ quote.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ quote.rep.get_full_name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if not stale_quotes and not problem_quotes %}
+        <p>No issues to report today! All quotes are being handled within expected timeframes.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<tr class="item-row">
+    <td>
+        <input type="text" name="items-{{ index }}-description" class="form-control" required>
+    </td>
+    <td>
+        <input type="number" name="items-{{ index }}-quantity" class="form-control" value="1" min="1">
+    </td>
+    <td>
+        <textarea name="items-{{ index }}-notes" class="form-control"></textarea>
+    </td>
+    <td>
+        <button type="button" class="btn btn-danger btn-sm delete-row">
+            <i class="feather icon-trash-2"></i> Remove
+        </button>
+    </td>
+</tr>

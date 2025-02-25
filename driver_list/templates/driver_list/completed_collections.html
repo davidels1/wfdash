@@ -1,0 +1,63 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Completed Collections{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>{{ page_title }}</h5>
+        </div>
+        <div class="card-body">
+            {% if grouped_collections %}
+                <div class="accordion" id="collectionsAccordion">
+                    {% for group in grouped_collections %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ group.supplier.id }}">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ group.supplier.id }}">
+                                    {{ group.supplier.suppliername }}
+                                    <span class="badge bg-primary ms-2">{{ group.count }}</span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ group.supplier.id }}" 
+                                 class="accordion-collapse collapse" 
+                                 data-bs-parent="#collectionsAccordion">
+                                <div class="accordion-body p-0">
+                                    <div class="list-group list-group-flush">
+                                        {% for item in group.items %}
+                                            <div class="list-group-item">
+                                                <div class="mb-2">
+                                                    <strong>{{ item.order_item.description }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        PO #: {{ item.order_item.purchase_order.po_number }}<br>
+                                                        Order #: {{ item.order_item.order.order_number }}<br>
+                                                        Expected: {{ item.quantity }} {{ item.order_item.unit }}<br>
+                                                        Received: {{ item.received_qty }} {{ item.order_item.unit }}<br>
+                                                        Collected by: {{ item.driver.get_full_name }}<br>
+                                                        Date: {{ item.actual_date|date:"d/m/Y" }}
+                                                    </small>
+                                                </div>
+                                                {% if item.notes %}
+                                                    <div class="alert alert-danger mb-0">
+                                                        <small>{{ item.notes }}</small>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center">No completed collections found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="{% static 'assets/css/plugins/dataTables.bootstrap5.min.css' %}">
+<link rel="stylesheet" href="{% static 'assets/css/plugins/buttons.bootstrap5.min.css' %}">
+<link rel="stylesheet" href="{% static 'assets/css/plugins/responsive.bootstrap5.min.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Desktop View -->
+<div class="d-none d-md-block">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Companies List</h5>
+                    <a href="{% url 'wfdash:company' %}" class="btn btn-primary">Add New Company</a>
+                </div>
+                <div class="card-body">
+                    <div class="dt-responsive table-responsive">
+                        <table id="companies-table" class="table table-striped table-bordered dt-responsive nowrap">
+                            <thead>
+                                <tr>
+                                    <th>Company Name</th>
+                                    <th>Address</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for company in companies %}
+                                <tr>
+                                    <td>{{ company.company }}</td>
+                                    <td>{{ company.address }}</td>
+                                    <td>
+                                        <a href="{% url 'wfdash:company_edit' company.id %}" class="btn btn-info btn-sm">
+                                            <i class="feather icon-edit"></i> Edit
+                                        </a>
+                                        <button onclick="deleteCompany({{ company.id }})" class="btn btn-danger btn-sm">
+                                            <i class="feather icon-trash"></i> Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile View -->
+<div class="d-block d-md-none">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Companies</h5>
+            <a href="{% url 'wfdash:company' %}" class="btn btn-primary btn-sm">
+                <i class="feather icon-plus"></i> Add
+            </a>
+        </div>
+        <div class="card-header border-bottom">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="feather icon-search"></i>
+                </span>
+                <input type="text" class="form-control" id="companySearch" placeholder="Search companies...">
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="accordion" id="companyAccordion">
+                {% for company in companies %}
+                <div class="accordion-item border-0">
+                    <h2 class="accordion-header" id="heading{{ company.id }}">
+                        <button class="accordion-button collapsed p-3" type="button" 
+                                data-bs-toggle="collapse" 
+                                data-bs-target="#collapse{{ company.id }}">
+                            <div>
+                                <strong>{{ company.company }}</strong>
+                                <div class="small text-muted">{{ company.address }}</div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ company.id }}" class="accordion-collapse collapse" 
+                         data-bs-parent="#companyAccordion">
+                        <div class="accordion-body">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'wfdash:company_edit' company.id %}" class="btn btn-info btn-sm flex-grow-1">
+                                    <i class="feather icon-edit"></i> Edit
+                                </a>
+                                <button onclick="deleteCompany({{ company.id }})" class="btn btn-danger btn-sm flex-grow-1">
+                                    <i class="feather icon-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="{% static 'assets/js/plugins/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/plugins/dataTables.bootstrap5.min.js' %}"></script>
+<script src="{% static 'assets/js/plugins/notifier.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    if ($(window).width() >= 768) {
+        var dataTable = $('#companies-table').DataTable({
+            dom: '<"top"Bf>rt<"bottom"lip>',
+            responsive: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            language: { search: "Filter records:" }
+        });
+    }
+
+    $("#companySearch").on("keyup", function() {
+        var searchTerm = $(this).val().toLowerCase();
+        $("#companyAccordion .accordion-item").each(function() {
+            var itemText = $(this).text().toLowerCase();
+            $(this).toggle(itemText.indexOf(searchTerm) > -1);
+        });
+    });
+});
+
+function deleteCompany(id) {
+    if (confirm('Are you sure you want to delete this company?')) {
+        $.ajax({
+            url: `/wfdash/company/delete/${id}/`,  // Make sure this matches your URL pattern
+            type: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            success: function(response) {
+                if (response.status === 'success') {
+                    notifier.show('Success!', 'Company deleted successfully', 'success', 'img/notification/ok.png', 4000);
+                    setTimeout(function() { location.reload(); }, 1000);
+                }
+            },
+            error: function() {
+                notifier.show('Error!', 'Failed to delete company', 'error', 'img/notification/error.png', 4000);
+            }
+        });
+    }
+}
+</script>
+{% endblock extra_js %}

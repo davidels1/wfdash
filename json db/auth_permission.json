@@ -1,0 +1,962 @@
+[
+    {
+        "codename": "add_logentry",
+        "content_type_id": 1,
+        "id": 1,
+        "name": "Can add log entry"
+    },
+    {
+        "codename": "change_logentry",
+        "content_type_id": 1,
+        "id": 2,
+        "name": "Can change log entry"
+    },
+    {
+        "codename": "delete_logentry",
+        "content_type_id": 1,
+        "id": 3,
+        "name": "Can delete log entry"
+    },
+    {
+        "codename": "view_logentry",
+        "content_type_id": 1,
+        "id": 4,
+        "name": "Can view log entry"
+    },
+    {
+        "codename": "add_permission",
+        "content_type_id": 2,
+        "id": 5,
+        "name": "Can add permission"
+    },
+    {
+        "codename": "change_permission",
+        "content_type_id": 2,
+        "id": 6,
+        "name": "Can change permission"
+    },
+    {
+        "codename": "delete_permission",
+        "content_type_id": 2,
+        "id": 7,
+        "name": "Can delete permission"
+    },
+    {
+        "codename": "view_permission",
+        "content_type_id": 2,
+        "id": 8,
+        "name": "Can view permission"
+    },
+    {
+        "codename": "add_group",
+        "content_type_id": 3,
+        "id": 9,
+        "name": "Can add group"
+    },
+    {
+        "codename": "change_group",
+        "content_type_id": 3,
+        "id": 10,
+        "name": "Can change group"
+    },
+    {
+        "codename": "delete_group",
+        "content_type_id": 3,
+        "id": 11,
+        "name": "Can delete group"
+    },
+    {
+        "codename": "view_group",
+        "content_type_id": 3,
+        "id": 12,
+        "name": "Can view group"
+    },
+    {
+        "codename": "add_user",
+        "content_type_id": 4,
+        "id": 13,
+        "name": "Can add user"
+    },
+    {
+        "codename": "change_user",
+        "content_type_id": 4,
+        "id": 14,
+        "name": "Can change user"
+    },
+    {
+        "codename": "delete_user",
+        "content_type_id": 4,
+        "id": 15,
+        "name": "Can delete user"
+    },
+    {
+        "codename": "view_user",
+        "content_type_id": 4,
+        "id": 16,
+        "name": "Can view user"
+    },
+    {
+        "codename": "add_contenttype",
+        "content_type_id": 5,
+        "id": 17,
+        "name": "Can add content type"
+    },
+    {
+        "codename": "change_contenttype",
+        "content_type_id": 5,
+        "id": 18,
+        "name": "Can change content type"
+    },
+    {
+        "codename": "delete_contenttype",
+        "content_type_id": 5,
+        "id": 19,
+        "name": "Can delete content type"
+    },
+    {
+        "codename": "view_contenttype",
+        "content_type_id": 5,
+        "id": 20,
+        "name": "Can view content type"
+    },
+    {
+        "codename": "add_session",
+        "content_type_id": 6,
+        "id": 21,
+        "name": "Can add session"
+    },
+    {
+        "codename": "change_session",
+        "content_type_id": 6,
+        "id": 22,
+        "name": "Can change session"
+    },
+    {
+        "codename": "delete_session",
+        "content_type_id": 6,
+        "id": 23,
+        "name": "Can delete session"
+    },
+    {
+        "codename": "view_session",
+        "content_type_id": 6,
+        "id": 24,
+        "name": "Can view session"
+    },
+    {
+        "codename": "add_site",
+        "content_type_id": 7,
+        "id": 25,
+        "name": "Can add site"
+    },
+    {
+        "codename": "change_site",
+        "content_type_id": 7,
+        "id": 26,
+        "name": "Can change site"
+    },
+    {
+        "codename": "delete_site",
+        "content_type_id": 7,
+        "id": 27,
+        "name": "Can delete site"
+    },
+    {
+        "codename": "view_site",
+        "content_type_id": 7,
+        "id": 28,
+        "name": "Can view site"
+    },
+    {
+        "codename": "add_pushsubscription",
+        "content_type_id": 8,
+        "id": 29,
+        "name": "Can add push subscription"
+    },
+    {
+        "codename": "change_pushsubscription",
+        "content_type_id": 8,
+        "id": 30,
+        "name": "Can change push subscription"
+    },
+    {
+        "codename": "delete_pushsubscription",
+        "content_type_id": 8,
+        "id": 31,
+        "name": "Can delete push subscription"
+    },
+    {
+        "codename": "view_pushsubscription",
+        "content_type_id": 8,
+        "id": 32,
+        "name": "Can view push subscription"
+    },
+    {
+        "codename": "add_company",
+        "content_type_id": 9,
+        "id": 33,
+        "name": "Can add Company"
+    },
+    {
+        "codename": "change_company",
+        "content_type_id": 9,
+        "id": 34,
+        "name": "Can change Company"
+    },
+    {
+        "codename": "delete_company",
+        "content_type_id": 9,
+        "id": 35,
+        "name": "Can delete Company"
+    },
+    {
+        "codename": "view_company",
+        "content_type_id": 9,
+        "id": 36,
+        "name": "Can view Company"
+    },
+    {
+        "codename": "add_customers",
+        "content_type_id": 10,
+        "id": 37,
+        "name": "Can add Customers"
+    },
+    {
+        "codename": "change_customers",
+        "content_type_id": 10,
+        "id": 38,
+        "name": "Can change Customers"
+    },
+    {
+        "codename": "delete_customers",
+        "content_type_id": 10,
+        "id": 39,
+        "name": "Can delete Customers"
+    },
+    {
+        "codename": "view_customers",
+        "content_type_id": 10,
+        "id": 40,
+        "name": "Can view Customers"
+    },
+    {
+        "codename": "add_driverlist",
+        "content_type_id": 11,
+        "id": 41,
+        "name": "Can add Driverlist"
+    },
+    {
+        "codename": "change_driverlist",
+        "content_type_id": 11,
+        "id": 42,
+        "name": "Can change Driverlist"
+    },
+    {
+        "codename": "delete_driverlist",
+        "content_type_id": 11,
+        "id": 43,
+        "name": "Can delete Driverlist"
+    },
+    {
+        "codename": "view_driverlist",
+        "content_type_id": 11,
+        "id": 44,
+        "name": "Can view Driverlist"
+    },
+    {
+        "codename": "add_orders",
+        "content_type_id": 12,
+        "id": 45,
+        "name": "Can add Orders"
+    },
+    {
+        "codename": "change_orders",
+        "content_type_id": 12,
+        "id": 46,
+        "name": "Can change Orders"
+    },
+    {
+        "codename": "delete_orders",
+        "content_type_id": 12,
+        "id": 47,
+        "name": "Can delete Orders"
+    },
+    {
+        "codename": "view_orders",
+        "content_type_id": 12,
+        "id": 48,
+        "name": "Can view Orders"
+    },
+    {
+        "codename": "add_quoterequest",
+        "content_type_id": 13,
+        "id": 49,
+        "name": "Can add Quoterequest"
+    },
+    {
+        "codename": "change_quoterequest",
+        "content_type_id": 13,
+        "id": 50,
+        "name": "Can change Quoterequest"
+    },
+    {
+        "codename": "delete_quoterequest",
+        "content_type_id": 13,
+        "id": 51,
+        "name": "Can delete Quoterequest"
+    },
+    {
+        "codename": "view_quoterequest",
+        "content_type_id": 13,
+        "id": 52,
+        "name": "Can view Quoterequest"
+    },
+    {
+        "codename": "add_suppliers",
+        "content_type_id": 14,
+        "id": 53,
+        "name": "Can add Suppliers"
+    },
+    {
+        "codename": "change_suppliers",
+        "content_type_id": 14,
+        "id": 54,
+        "name": "Can change Suppliers"
+    },
+    {
+        "codename": "delete_suppliers",
+        "content_type_id": 14,
+        "id": 55,
+        "name": "Can delete Suppliers"
+    },
+    {
+        "codename": "view_suppliers",
+        "content_type_id": 14,
+        "id": 56,
+        "name": "Can view Suppliers"
+    },
+    {
+        "codename": "add_companydetails",
+        "content_type_id": 15,
+        "id": 57,
+        "name": "Can add company details"
+    },
+    {
+        "codename": "change_companydetails",
+        "content_type_id": 15,
+        "id": 58,
+        "name": "Can change company details"
+    },
+    {
+        "codename": "delete_companydetails",
+        "content_type_id": 15,
+        "id": 59,
+        "name": "Can delete company details"
+    },
+    {
+        "codename": "view_companydetails",
+        "content_type_id": 15,
+        "id": 60,
+        "name": "Can view company details"
+    },
+    {
+        "codename": "add_quoterequest",
+        "content_type_id": 16,
+        "id": 61,
+        "name": "Can add quote request"
+    },
+    {
+        "codename": "change_quoterequest",
+        "content_type_id": 16,
+        "id": 62,
+        "name": "Can change quote request"
+    },
+    {
+        "codename": "delete_quoterequest",
+        "content_type_id": 16,
+        "id": 63,
+        "name": "Can delete quote request"
+    },
+    {
+        "codename": "view_quoterequest",
+        "content_type_id": 16,
+        "id": 64,
+        "name": "Can view quote request"
+    },
+    {
+        "codename": "add_quoteitem",
+        "content_type_id": 17,
+        "id": 65,
+        "name": "Can add quote item"
+    },
+    {
+        "codename": "change_quoteitem",
+        "content_type_id": 17,
+        "id": 66,
+        "name": "Can change quote item"
+    },
+    {
+        "codename": "delete_quoteitem",
+        "content_type_id": 17,
+        "id": 67,
+        "name": "Can delete quote item"
+    },
+    {
+        "codename": "view_quoteitem",
+        "content_type_id": 17,
+        "id": 68,
+        "name": "Can view quote item"
+    },
+    {
+        "codename": "add_quoteattachment",
+        "content_type_id": 18,
+        "id": 69,
+        "name": "Can add quote attachment"
+    },
+    {
+        "codename": "change_quoteattachment",
+        "content_type_id": 18,
+        "id": 70,
+        "name": "Can change quote attachment"
+    },
+    {
+        "codename": "delete_quoteattachment",
+        "content_type_id": 18,
+        "id": 71,
+        "name": "Can delete quote attachment"
+    },
+    {
+        "codename": "view_quoteattachment",
+        "content_type_id": 18,
+        "id": 72,
+        "name": "Can view quote attachment"
+    },
+    {
+        "codename": "add_order",
+        "content_type_id": 19,
+        "id": 73,
+        "name": "Can add order"
+    },
+    {
+        "codename": "change_order",
+        "content_type_id": 19,
+        "id": 74,
+        "name": "Can change order"
+    },
+    {
+        "codename": "delete_order",
+        "content_type_id": 19,
+        "id": 75,
+        "name": "Can delete order"
+    },
+    {
+        "codename": "view_order",
+        "content_type_id": 19,
+        "id": 76,
+        "name": "Can view order"
+    },
+    {
+        "codename": "add_purchaseorder",
+        "content_type_id": 20,
+        "id": 77,
+        "name": "Can add purchase order"
+    },
+    {
+        "codename": "change_purchaseorder",
+        "content_type_id": 20,
+        "id": 78,
+        "name": "Can change purchase order"
+    },
+    {
+        "codename": "delete_purchaseorder",
+        "content_type_id": 20,
+        "id": 79,
+        "name": "Can delete purchase order"
+    },
+    {
+        "codename": "view_purchaseorder",
+        "content_type_id": 20,
+        "id": 80,
+        "name": "Can view purchase order"
+    },
+    {
+        "codename": "add_orderitem",
+        "content_type_id": 21,
+        "id": 81,
+        "name": "Can add order item"
+    },
+    {
+        "codename": "change_orderitem",
+        "content_type_id": 21,
+        "id": 82,
+        "name": "Can change order item"
+    },
+    {
+        "codename": "delete_orderitem",
+        "content_type_id": 21,
+        "id": 83,
+        "name": "Can delete order item"
+    },
+    {
+        "codename": "view_orderitem",
+        "content_type_id": 21,
+        "id": 84,
+        "name": "Can view order item"
+    },
+    {
+        "codename": "add_companydetails",
+        "content_type_id": 22,
+        "id": 85,
+        "name": "Can add company details"
+    },
+    {
+        "codename": "change_companydetails",
+        "content_type_id": 22,
+        "id": 86,
+        "name": "Can change company details"
+    },
+    {
+        "codename": "delete_companydetails",
+        "content_type_id": 22,
+        "id": 87,
+        "name": "Can delete company details"
+    },
+    {
+        "codename": "view_companydetails",
+        "content_type_id": 22,
+        "id": 88,
+        "name": "Can view company details"
+    },
+    {
+        "codename": "add_collection",
+        "content_type_id": 23,
+        "id": 89,
+        "name": "Can add collection"
+    },
+    {
+        "codename": "change_collection",
+        "content_type_id": 23,
+        "id": 90,
+        "name": "Can change collection"
+    },
+    {
+        "codename": "delete_collection",
+        "content_type_id": 23,
+        "id": 91,
+        "name": "Can delete collection"
+    },
+    {
+        "codename": "view_collection",
+        "content_type_id": 23,
+        "id": 92,
+        "name": "Can view collection"
+    },
+    {
+        "codename": "add_collectionproblem",
+        "content_type_id": 24,
+        "id": 93,
+        "name": "Can add collection problem"
+    },
+    {
+        "codename": "change_collectionproblem",
+        "content_type_id": 24,
+        "id": 94,
+        "name": "Can change collection problem"
+    },
+    {
+        "codename": "delete_collectionproblem",
+        "content_type_id": 24,
+        "id": 95,
+        "name": "Can delete collection problem"
+    },
+    {
+        "codename": "view_collectionproblem",
+        "content_type_id": 24,
+        "id": 96,
+        "name": "Can view collection problem"
+    },
+    {
+        "codename": "add_sales",
+        "content_type_id": 25,
+        "id": 97,
+        "name": "Can add sales"
+    },
+    {
+        "codename": "change_sales",
+        "content_type_id": 25,
+        "id": 98,
+        "name": "Can change sales"
+    },
+    {
+        "codename": "delete_sales",
+        "content_type_id": 25,
+        "id": 99,
+        "name": "Can delete sales"
+    },
+    {
+        "codename": "view_sales",
+        "content_type_id": 25,
+        "id": 100,
+        "name": "Can view sales"
+    },
+    {
+        "codename": "add_fileinfo",
+        "content_type_id": 26,
+        "id": 101,
+        "name": "Can add file info"
+    },
+    {
+        "codename": "change_fileinfo",
+        "content_type_id": 26,
+        "id": 102,
+        "name": "Can change file info"
+    },
+    {
+        "codename": "delete_fileinfo",
+        "content_type_id": 26,
+        "id": 103,
+        "name": "Can delete file info"
+    },
+    {
+        "codename": "view_fileinfo",
+        "content_type_id": 26,
+        "id": 104,
+        "name": "Can view file info"
+    },
+    {
+        "codename": "add_hideshowfilter",
+        "content_type_id": 27,
+        "id": 105,
+        "name": "Can add hide show filter"
+    },
+    {
+        "codename": "change_hideshowfilter",
+        "content_type_id": 27,
+        "id": 106,
+        "name": "Can change hide show filter"
+    },
+    {
+        "codename": "delete_hideshowfilter",
+        "content_type_id": 27,
+        "id": 107,
+        "name": "Can delete hide show filter"
+    },
+    {
+        "codename": "view_hideshowfilter",
+        "content_type_id": 27,
+        "id": 108,
+        "name": "Can view hide show filter"
+    },
+    {
+        "codename": "add_modelfilter",
+        "content_type_id": 28,
+        "id": 109,
+        "name": "Can add model filter"
+    },
+    {
+        "codename": "change_modelfilter",
+        "content_type_id": 28,
+        "id": 110,
+        "name": "Can change model filter"
+    },
+    {
+        "codename": "delete_modelfilter",
+        "content_type_id": 28,
+        "id": 111,
+        "name": "Can delete model filter"
+    },
+    {
+        "codename": "view_modelfilter",
+        "content_type_id": 28,
+        "id": 112,
+        "name": "Can view model filter"
+    },
+    {
+        "codename": "add_pageitems",
+        "content_type_id": 29,
+        "id": 113,
+        "name": "Can add page items"
+    },
+    {
+        "codename": "change_pageitems",
+        "content_type_id": 29,
+        "id": 114,
+        "name": "Can change page items"
+    },
+    {
+        "codename": "delete_pageitems",
+        "content_type_id": 29,
+        "id": 115,
+        "name": "Can delete page items"
+    },
+    {
+        "codename": "view_pageitems",
+        "content_type_id": 29,
+        "id": 116,
+        "name": "Can view page items"
+    },
+    {
+        "codename": "add_profile",
+        "content_type_id": 30,
+        "id": 117,
+        "name": "Can add profile"
+    },
+    {
+        "codename": "change_profile",
+        "content_type_id": 30,
+        "id": 118,
+        "name": "Can change profile"
+    },
+    {
+        "codename": "delete_profile",
+        "content_type_id": 30,
+        "id": 119,
+        "name": "Can delete profile"
+    },
+    {
+        "codename": "view_profile",
+        "content_type_id": 30,
+        "id": 120,
+        "name": "Can view profile"
+    },
+    {
+        "codename": "add_emailaddress",
+        "content_type_id": 31,
+        "id": 121,
+        "name": "Can add email address"
+    },
+    {
+        "codename": "change_emailaddress",
+        "content_type_id": 31,
+        "id": 122,
+        "name": "Can change email address"
+    },
+    {
+        "codename": "delete_emailaddress",
+        "content_type_id": 31,
+        "id": 123,
+        "name": "Can delete email address"
+    },
+    {
+        "codename": "view_emailaddress",
+        "content_type_id": 31,
+        "id": 124,
+        "name": "Can view email address"
+    },
+    {
+        "codename": "add_emailconfirmation",
+        "content_type_id": 32,
+        "id": 125,
+        "name": "Can add email confirmation"
+    },
+    {
+        "codename": "change_emailconfirmation",
+        "content_type_id": 32,
+        "id": 126,
+        "name": "Can change email confirmation"
+    },
+    {
+        "codename": "delete_emailconfirmation",
+        "content_type_id": 32,
+        "id": 127,
+        "name": "Can delete email confirmation"
+    },
+    {
+        "codename": "view_emailconfirmation",
+        "content_type_id": 32,
+        "id": 128,
+        "name": "Can view email confirmation"
+    },
+    {
+        "codename": "add_socialaccount",
+        "content_type_id": 33,
+        "id": 129,
+        "name": "Can add social account"
+    },
+    {
+        "codename": "change_socialaccount",
+        "content_type_id": 33,
+        "id": 130,
+        "name": "Can change social account"
+    },
+    {
+        "codename": "delete_socialaccount",
+        "content_type_id": 33,
+        "id": 131,
+        "name": "Can delete social account"
+    },
+    {
+        "codename": "view_socialaccount",
+        "content_type_id": 33,
+        "id": 132,
+        "name": "Can view social account"
+    },
+    {
+        "codename": "add_socialapp",
+        "content_type_id": 34,
+        "id": 133,
+        "name": "Can add social application"
+    },
+    {
+        "codename": "change_socialapp",
+        "content_type_id": 34,
+        "id": 134,
+        "name": "Can change social application"
+    },
+    {
+        "codename": "delete_socialapp",
+        "content_type_id": 34,
+        "id": 135,
+        "name": "Can delete social application"
+    },
+    {
+        "codename": "view_socialapp",
+        "content_type_id": 34,
+        "id": 136,
+        "name": "Can view social application"
+    },
+    {
+        "codename": "add_socialtoken",
+        "content_type_id": 35,
+        "id": 137,
+        "name": "Can add social application token"
+    },
+    {
+        "codename": "change_socialtoken",
+        "content_type_id": 35,
+        "id": 138,
+        "name": "Can change social application token"
+    },
+    {
+        "codename": "delete_socialtoken",
+        "content_type_id": 35,
+        "id": 139,
+        "name": "Can delete social application token"
+    },
+    {
+        "codename": "view_socialtoken",
+        "content_type_id": 35,
+        "id": 140,
+        "name": "Can view social application token"
+    },
+    {
+        "codename": "add_taskresult",
+        "content_type_id": 36,
+        "id": 141,
+        "name": "Can add task result"
+    },
+    {
+        "codename": "change_taskresult",
+        "content_type_id": 36,
+        "id": 142,
+        "name": "Can change task result"
+    },
+    {
+        "codename": "delete_taskresult",
+        "content_type_id": 36,
+        "id": 143,
+        "name": "Can delete task result"
+    },
+    {
+        "codename": "view_taskresult",
+        "content_type_id": 36,
+        "id": 144,
+        "name": "Can view task result"
+    },
+    {
+        "codename": "add_chordcounter",
+        "content_type_id": 37,
+        "id": 145,
+        "name": "Can add chord counter"
+    },
+    {
+        "codename": "change_chordcounter",
+        "content_type_id": 37,
+        "id": 146,
+        "name": "Can change chord counter"
+    },
+    {
+        "codename": "delete_chordcounter",
+        "content_type_id": 37,
+        "id": 147,
+        "name": "Can delete chord counter"
+    },
+    {
+        "codename": "view_chordcounter",
+        "content_type_id": 37,
+        "id": 148,
+        "name": "Can view chord counter"
+    },
+    {
+        "codename": "add_groupresult",
+        "content_type_id": 38,
+        "id": 149,
+        "name": "Can add group result"
+    },
+    {
+        "codename": "change_groupresult",
+        "content_type_id": 38,
+        "id": 150,
+        "name": "Can change group result"
+    },
+    {
+        "codename": "delete_groupresult",
+        "content_type_id": 38,
+        "id": 151,
+        "name": "Can delete group result"
+    },
+    {
+        "codename": "view_groupresult",
+        "content_type_id": 38,
+        "id": 152,
+        "name": "Can view group result"
+    },
+    {
+        "codename": "add_stockitem",
+        "content_type_id": 39,
+        "id": 153,
+        "name": "Can add stock item"
+    },
+    {
+        "codename": "change_stockitem",
+        "content_type_id": 39,
+        "id": 154,
+        "name": "Can change stock item"
+    },
+    {
+        "codename": "delete_stockitem",
+        "content_type_id": 39,
+        "id": 155,
+        "name": "Can delete stock item"
+    },
+    {
+        "codename": "view_stockitem",
+        "content_type_id": 39,
+        "id": 156,
+        "name": "Can view stock item"
+    },
+    {
+        "codename": "add_driverlistpool",
+        "content_type_id": 40,
+        "id": 157,
+        "name": "Can add Driver List Pool"
+    },
+    {
+        "codename": "change_driverlistpool",
+        "content_type_id": 40,
+        "id": 158,
+        "name": "Can change Driver List Pool"
+    },
+    {
+        "codename": "delete_driverlistpool",
+        "content_type_id": 40,
+        "id": 159,
+        "name": "Can delete Driver List Pool"
+    },
+    {
+        "codename": "view_driverlistpool",
+        "content_type_id": 40,
+        "id": 160,
+        "name": "Can view Driver List Pool"
+    }
+]

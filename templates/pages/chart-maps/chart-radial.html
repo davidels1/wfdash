@@ -1,0 +1,65 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block content %}
+
+	<!-- [ Main Content ] start -->
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="alert alert-primary" role="alert">
+				<p>Use our extra helper file for quick setup Charts in your page - <a
+						href="#" target="_blank" class="alert-link">CHECKOUT</a></p>
+				<label class="text-muted">Copy/paste source code in your page in just couples of seconds.</label>
+			</div>
+		</div>
+		<!-- [ radial-chart ] start -->
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header">
+					<h5>Variant of Colors</h5>
+				</div>
+				<div class="card-block">
+					<div data-label="20%" class="radial-bar radial-bar-20 radial-bar-lg radial-bar-primary"></div>
+					<div data-label="30%" class="radial-bar radial-bar-30 radial-bar-lg radial-bar-success"></div>
+					<div data-label="40%" class="radial-bar radial-bar-40 radial-bar-lg radial-bar-info"></div>
+					<div data-label="50%" class="radial-bar radial-bar-50 radial-bar-lg radial-bar-danger"></div>
+					<div data-label="60%" class="radial-bar radial-bar-60 radial-bar-lg radial-bar-warning"></div>
+					<div data-label="10%" class="radial-bar radial-bar-10 radial-bar-lg"></div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header">
+					<h5>Different Size</h5>
+				</div>
+				<div class="card-block">
+					<div data-label="50%" class="radial-bar radial-bar-50 radial-bar-lg"></div>
+					<div data-label="40%" class="radial-bar radial-bar-40 radial-bar-sm"></div>
+					<div data-label="30%" class="radial-bar radial-bar-30 radial-bar-xs"></div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header">
+					<h5>Radial With Images</h5>
+				</div>
+				<div class="card-block">
+					<div data-label="50%" class="radial-bar radial-bar-50 radial-bar-lg radial-bar-danger">
+						<img src="{% static 'assets/images/user/avatar-2.jpg' %}" alt="User-Image">
+					</div>
+					<div data-label="40%" class="radial-bar radial-bar-40 radial-bar-sm radial-bar-warning">
+						<img src="{% static 'assets/images/user/avatar-2.jpg' %}" alt="User-Image">
+					</div>
+					<div data-label="30%" class="radial-bar radial-bar-30 radial-bar-xs radial-bar-success">
+						<img src="{% static 'assets/images/user/avatar-2.jpg' %}" alt="User-Image">
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- [ radial-chart ] end -->
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}

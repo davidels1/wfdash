@@ -1,0 +1,68 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Add Supplier {% endblock title %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex align-items-center">
+                        <i class="feather icon-briefcase h4 mb-0 me-2"></i>
+                        <h4 class="card-title mb-0">Add New Supplier</h4>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="form-horizontal">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="form-group row mb-4">
+                            <label class="col-sm-3 col-form-label">
+                                {% if field.name == 'suppliername' %}
+                                    <i class="feather icon-user me-2"></i>
+                                {% elif field.name == 'suppliernumber' %}
+                                    <i class="feather icon-phone me-2"></i>
+                                {% elif field.name == 'supplieraddress' %}
+                                    <i class="feather icon-map-pin me-2"></i>
+                                {% elif field.name == 'coordinates' %}
+                                    <i class="feather icon-navigation me-2"></i>
+                                {% elif field.name == 'closingtime' %}
+                                    <i class="feather icon-clock me-2"></i>
+                                {% elif field.name == 'supply_tags' %}
+                                    <i class="feather icon-tag me-2"></i>
+                                {% endif %}
+                                {{ field.label }}
+                            </label>
+                            <div class="col-sm-9">
+                                {{ field }}
+                                {% if field.name == 'supply_tags' %}
+                                    <small class="text-muted">Separate tags with commas</small>
+                                {% endif %}
+                                {% if field.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ field.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <div class="row">
+                            <div class="col-sm-9 offset-sm-3">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="feather icon-save me-1"></i>
+                                    Add Supplier
+                                </button>
+                                <a href="{% url 'wfdash:suppliers_list' %}" class="btn btn-light btn-sm">
+                                    <i class="feather icon-list me-1"></i>
+                                    View All Suppliers
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

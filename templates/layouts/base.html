@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+{% load static %}
+{% load pwa %}
+{% progressive_web_app_meta %}
+
+<html lang="en" data-theme="{{ request.session.color_mode|default:'light' }}">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>WF Sales - {% block title %}ORDER TRACK | QUOTE MANAGEMENT{% endblock title %}</title>
+  {% include 'includes/head.html' %}
+  {% block style %}
+    <!-- Favicon icon -->
+    <link rel="icon" href="{% static 'assets/images/favicon.ico' %}" type="image/x-icon">
+    <!-- fontawesome icon -->
+    <link rel="stylesheet" href="{% static 'assets/fonts/fontawesome/css/fontawesome-all.min.css' %}">
+    <!-- animation css -->
+    <link rel="stylesheet" href="{% static 'assets/css/plugins/animate.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/plugins/perfect-scrollbar.css' %}">
+    
+    {% block extrastyle %}
+    
+    <link rel="stylesheet" href="{% static 'assets/css/plugins/notifier.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+
+    {% endblock extrastyle %}
+    <!-- vendor css -->
+    <link rel="stylesheet" href="{% static 'assets/css/style.css' %}">
+    <!-- -->
+  {% endblock style %}
+  <script>
+    // Remove duplicate service worker registrations and combine into one
+    async function initializeServiceWorker() {
+        if (!('serviceWorker' in navigator)) return;
+
+        try {
+            const registration = await navigator.serviceWorker.register('/static/js/serviceworker.js');
+            console.log('ServiceWorker registration successful');
+
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('Notification permission granted');
+                await registerPushSubscription(registration);
+            }
+        } catch (err) {
+            console.error('ServiceWorker registration failed:', err);
+        }
+    }
+
+
+
+user
+
+
+    async function registerPushSubscription(registration) {
+        try {
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: '{{ VAPID_PUBLIC_KEY|safe }}'
+            });
+            
+            console.log('Push subscription:', subscription);
+            
+            await fetch('/save-subscription/', {
+                method: 'POST',
+                body: JSON.stringify(subscription),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            console.log('Push subscription saved on server');
+        } catch (err) {
+            console.error('Push subscription failed:', err);
+        }
+    }
+
+    // PWA installation handling
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        showInstallPrompt();
+    });
+
+    function showInstallPrompt() {
+        const promptDiv = document.createElement('div');
+        promptDiv.className = 'install-prompt';
+        promptDiv.innerHTML = `
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <strong>Install App!</strong> Install WF Sales for better experience
+                <button id="installBtn" class="btn btn-primary btn-sm ms-3">Install</button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.body.appendChild(promptDiv);
+
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to install prompt: ${outcome}`);
+            deferredPrompt = null;
+            promptDiv.remove();
+        });
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', initializeServiceWorker);
+  </script>
+  <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'assets/js/app.js' %}"></script>
+  <!-- PWA and icon links - remove duplicates and consolidate here -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/pwa/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/pwa/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/pwa/favicon-16x16.png' %}">
+  <link rel="manifest" href="/manifest.json" crossorigin="use-credentials">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="WF Sales">
+  <meta name="theme-color" content="#000000">
+  <!-- Core JS files -->
+  <script src="{% static 'assets/js/vendor/jquery.min.js' %}"></script>
+  <script src="{% static 'assets/js/vendor/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'assets/js/app.js' %}"></script>
+  <!-- Remove or comment out problematic imports -->
+  {% comment %}
+  <script src="{% static 'assets/js/Wallet.mlGYZajl.js' %}"></script>
+  <script src="{% static 'assets/js/asyncToGenerator.O4pnRyQq.js' %}"></script>
+  <script src="{% static 'assets/js/index.CucWK6IV.js' %}"></script>
+  <script src="{% static 'assets/js/index.umd.BXzp7Rme.js' %}"></script>
+  {% endcomment %}
+  {% block stylesheets %}
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{% static 'assets/css/plugins/select2.min.css' %}" rel="stylesheet">
+  {% endblock %}
+</head>
+<body class="{% block body %}{% endblock body %}">
+
+  {% block pre_loader %}
+    {% include 'includes/pre-loader.html' %}
+  {% endblock pre_loader %}
+
+  {% block sidebar %}
+    {% include 'includes/sidebar.html' %}
+  {% endblock sidebar %}
+
+  {% block header %}
+    {% include 'includes/navigation.html' %}
+  {% endblock header %}
+
+  	<!-- [ Main Content ] start -->
+  <div class="pcoded-main-container">
+    <div class="pcoded-wrapper">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+        
+			<div class="pcoded-content">
+				<div class="pcoded-inner-content">
+
+          {% block breadcrumbs %}
+            {% include 'includes/breadcrumbs.html' %}
+          {% endblock breadcrumbs %}
+
+          <div class="main-body">
+						<div class="page-wrapper">
+              {% block content %}{% endblock content %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- <div id="pwaDebug" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+    <button onclick="checkPWAStatus()" class="btn btn-info">Check PWA Status</button>
+    <div id="pwaStatus" class="mt-2" style="background: rgba(255,255,255,0.9); padding: 10px; border-radius: 5px;"></div>
+  </div> -->
+
+  <script>
+    async function checkPWAStatus() {
+        const status = {
+            standalone: window.matchMedia('(display-mode: standalone)').matches,
+            serviceWorker: 'serviceWorker' in navigator,
+            pushManager: 'PushManager' in window,
+        };
+
+        if (status.serviceWorker) {
+            const reg = await navigator.serviceWorker.getRegistration();
+            status.serviceWorkerRegistered = !!reg;
+            
+            if (reg) {
+                const subscription = await reg.pushManager.getSubscription();
+                status.pushSubscription = !!subscription;
+            }
+        }
+
+        alert(JSON.stringify(status, null, 2));
+    }
+
+    // PWA Installation
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('pwaDebug').innerHTML += `
+            <button onclick="installPWA()" class="btn btn-success ms-2">Install App</button>
+        `;
+    });
+
+    async function installPWA() {
+        if (!deferredPrompt) {
+            alert('Installation prompt not available');
+            return;
+        }
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        alert(`Installation ${outcome}`);
+        deferredPrompt = null;
+    }
+  </script>
+
+  <script>
+    document.querySelector('head').insertAdjacentHTML("beforeend", '<link rel="stylesheet" class="layout-css" href="">');
+
+    if ('{{ request.user.profile.dark_mode }}' === 'True') {
+      removeClassByPrefix(document.querySelector(".pcoded-navbar"), 'menu-');
+      document.querySelector(".pcoded-navbar").classList.add("navbar-dark");
+      document.querySelector(".layout-css").setAttribute('href', '{% static 'assets/css/layouts/dark.css' %}');
+    } else {
+      document.querySelector(".layout-css").setAttribute('href', '');
+    }
+
+    function removeClassByPrefix(node, prefix) {
+      for (let i = 0; i < node.classList.length; i++) {
+        let value = node.classList[i];
+        if (value.startsWith(prefix)) {
+          node.classList.remove(value);
+        }
+      }
+    }
+  </script>
+
+  <script>
+function displayStatus(message) {
+    const statusDiv = document.getElementById('pwaStatus');
+    statusDiv.innerHTML += `<div>${message}</div>`;
+}
+
+async function checkPWAStatus() {
+    const statusDiv = document.getElementById('pwaStatus');
+    statusDiv.innerHTML = ''; // Clear previous status
+
+    try {
+        // Check if running as PWA
+        displayStatus(`Running as PWA: ${window.matchMedia('(display-mode: standalone)').matches}`);
+        
+        // Check Service Worker support
+        displayStatus(`Service Worker supported: ${'serviceWorker' in navigator}`);
+        
+        // Check Service Worker registration
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.getRegistration();
+            displayStatus(`Service Worker registered: ${!!registration}`);
+            
+            if (registration) {
+                displayStatus(`Service Worker scope: ${registration.scope}`);
+                
+                // Check Push subscription
+                const subscription = await registration.pushManager.getSubscription();
+                displayStatus(`Push subscription active: ${!!subscription}`);
+            }
+        }
+
+        // Check if installable
+        displayStatus(`Install prompt available: ${!!window.deferredPrompt}`);
+        
+        // Display platform info
+        displayStatus(`Platform: ${navigator.platform}`);
+        displayStatus(`User Agent: ${navigator.userAgent}`);
+
+    } catch (error) {
+        displayStatus(`Error: ${error.message}`);
+    }
+}
+
+// PWA Installation handling
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installButton = document.createElement('button');
+    installButton.className = 'btn btn-success mt-2';
+    installButton.textContent = 'Install App';
+    installButton.onclick = installPWA;
+    document.getElementById('pwaDebug').appendChild(installButton);
+    displayStatus('Install prompt ready');
+});
+
+async function installPWA() {
+    if (!deferredPrompt) {
+        displayStatus('Installation prompt not available');
+        return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    displayStatus(`Installation ${outcome}`);
+    deferredPrompt = null;
+}
+
+// Check PWA status on load
+window.addEventListener('load', () => {
+    // Add mobile detection
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    displayStatus(`Device type: ${isMobile ? 'Mobile' : 'Desktop'}`);
+    
+    // Initialize status check
+    setTimeout(checkPWAStatus, 1000);
+});
+</script>
+
+  {% include 'includes/scripts.html' %}
+
+  {% block fixed_plugin %}
+    {% include 'includes/fixed-plugin.html' %}
+  {% endblock fixed_plugin %}
+  
+  {% block extra_js %}
+{% endblock %}
+
+{% block fab %}
+<div class="fab-container">
+    <button class="btn btn-primary fab-button" onclick="toggleFabMenu()">
+        <i class="feather icon-plus"></i>
+    </button>
+    <div class="fab-menu">
+        <div class="fab-item">
+            <a href="{% url 'orders:order_create' %}" class="btn btn-info fab-button">
+                <i class="feather icon-file-text"></i>
+            </a>
+        </div>
+        <div class="fab-item">
+            <a href="{% url 'quotes:quote_create' %}" class="btn btn-success fab-button">
+                <i class="feather icon-dollar-sign"></i>
+            </a>
+        </div>
+        <!-- Add more fab items as needed -->
+    </div>
+</div>
+{% endblock %}
+
+<script>
+function toggleFabMenu() {
+    const menu = document.querySelector('.fab-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Hide fab menu when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.fab-container')) {
+        document.querySelector('.fab-menu').style.display = 'none';
+    }
+});
+</script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const originalFetch = window.fetch;
+            window.fetch = function() {
+                let [resource, config] = arguments;
+                if(config === undefined) {
+                    config = {};
+                }
+                if(config.method === 'POST' || config.method === 'PUT' || config.method === 'DELETE') {
+                    if(config.headers === undefined) {
+                        config.headers = {};
+                    }
+                    config.headers['X-CSRFToken'] = csrfToken;
+                }
+                return originalFetch(resource, config);
+            };
+        });
+    </script>
+    {% block vendor_js %}
+<!-- Add core vendor files -->
+<script src="{% static 'assets/js/vendor/jquery.min.js' %}"></script>
+<script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+{% endblock %}
+{% block javascripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'assets/js/plugins/select2.min.js' %}"></script>
+<script>
+$(document).ready(function() {
+    $('.select2').select2({
+        theme: 'bootstrap4',
+        width: '100%'
+    });
+    
+    let formCount = {{ formset.total_form_count }};
+    
+    $('#add-form').click(function() {
+        let form = $('.item-form:first').clone(true);
+        form.find('input').val('');
+        form.find('textarea').val('');
+        
+        $('#items-table tbody').append(form);
+        
+        formCount++;
+        $('#id_items-TOTAL_FORMS').val(formCount);
+    });
+    
+    $('.remove-form').click(function() {
+        $(this).closest('tr').find('input[type=checkbox]').prop('checked', true);
+        $(this).closest('tr').hide();
+    });
+});
+</script>
+{% endblock %}
+</body>
+</html>

@@ -1,0 +1,127 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="mb-4">
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="search" 
+                           name="q" 
+                           class="form-control form-control-lg" 
+                           placeholder="Search across all records..." 
+                           value="{{ query }}"
+                           autofocus>
+                    <button class="btn btn-primary btn-lg" type="submit">
+                        <i class="feather icon-search"></i> Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if query %}
+        <div class="row">
+            <!-- Quotes Section -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Quotes</h5>
+                        {% if quotes %}
+                            <span class="badge bg-primary">{{ quotes|length }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-0">
+                        {% if quotes %}
+                            <div class="list-group list-group-flush">
+                                {% for quote in quotes %}
+                                    <a href="{% url 'quotes:quote_detail' quote.pk %}" 
+                                       class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ quote.quote_number }}</h6>
+                                            <small>{{ quote.created_at|date:"d/m/Y" }}</small>
+                                        </div>
+                                        <p class="mb-1">{{ quote.customer.company }}</p>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-center py-3">No quotes found</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Section -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Orders</h5>
+                        {% if orders %}
+                            <span class="badge bg-primary">{{ orders|length }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-0">
+                        {% if orders %}
+                            <div class="list-group list-group-flush">
+                                {% for order in orders %}
+                                    <a href="{% url 'orders:order_detail' order.pk %}" 
+                                       class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ order.order_number }}</h6>
+                                            <small>{{ order.created_at|date:"d/m/Y" }}</small>
+                                        </div>
+                                        <p class="mb-1">{{ order.company.company }}</p>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-center py-3">No orders found</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collections & Stock -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Collections & Stock</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% if collections %}
+                                {% for collection in collections %}
+                                    <div class="list-group-item">
+                                        <h6 class="mb-1">Collection: {{ collection.order_item.order.order_number }}</h6>
+                                        <p class="mb-1">{{ collection.order_item.description }}</p>
+                                        <small>{{ collection.supplier.suppliername }}</small>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            {% if stock %}
+                                {% for item in stock %}
+                                    <div class="list-group-item">
+                                        <h6 class="mb-1">Stock: {{ item.order_item.order.order_number }}</h6>
+                                        <p class="mb-1">{{ item.order_item.description }}</p>
+                                        <small>Invoice: {{ item.external_invoice_number }}</small>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            {% if not collections and not stock %}
+                                <p class="text-center py-3">No collections or stock found</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="feather icon-search" style="font-size: 48px;"></i>
+            <h4 class="mt-3">Enter a search term to begin</h4>
+            <p>Search across quotes, orders, collections, and stock</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

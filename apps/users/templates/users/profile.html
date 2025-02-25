@@ -1,0 +1,39 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Profile {% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Profile</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                {% if request.user.profile.avatar %}
+                                    <img src="{{ request.user.profile.avatar.url }}" 
+                                         class="img-fluid rounded-circle mb-3" 
+                                         width="150" alt="Profile Image">
+                                {% else %}
+                                    <img src="{% static 'assets/images/user/avatar-5.jpg' %}" 
+                                         class="img-fluid rounded-circle mb-3" 
+                                         width="150" alt="Default Profile Image">
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h4>{{ request.user.get_full_name|default:request.user.username }}</h4>
+                            <p><strong>Email:</strong> {{ request.user.email }}</p>
+                            <p><strong>Member since:</strong> {{ request.user.date_joined|date }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
