@@ -1,0 +1,265 @@
+<!-- filepath: c:\###PYTHONANY_WORKING\WFDASH\dashboard\templates\dashboard\customer_dashboard.html -->
+{% extends 'layouts/base.html' %}
+{% load static humanize %} {# Add humanize for number formatting #}
+
+{% block title %} {{ customer.customer }} Dashboard {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="pcoded-content">
+    <div class="pcoded-inner-content">
+        <div class="main-body">
+            <div class="page-wrapper">
+                <!-- [ Main Content ] start -->
+                <div class="row">
+                    <!-- Customer Info Card -->
+                    <div class="col-md-12 col-xl-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5>{{ customer.customer }}</h5>
+                                <h6 class="text-muted">{{ customer.company }}</h6>
+                                <hr>
+                                <p><i class="feather icon-mail me-2"></i>{{ customer.email|default:"N/A" }}</p>
+                                <p><i class="feather icon-phone me-2"></i>{{ customer.number|default:"N/A" }}</p>
+                                <p><i class="feather icon-user me-2"></i>Rep: {{ customer.rep|default:"N/A" }}</p>
+                                <p><i class="feather icon-calendar me-2"></i>Added: {{ customer.dateadded|date:"Y-m-d"|default:"N/A" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="col-md-12 col-xl-8">
+                        <div class="row">
+                            <!-- Quote Stats -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-8">
+                                                <h4 class="text-c-yellow">{{ total_quotes }}</h4>
+                                                <h6 class="text-muted m-b-0">Total Quotes</h6>
+                                            </div>
+                                            <div class="col-4 text-end">
+                                                <i class="feather icon-file-text f-28"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-c-yellow">
+                                        <div class="row align-items-center">
+                                            <div class="col-9">
+                                                <p class="text-white m-b-0">
+                                                    {% for status, count in quote_status_counts.items %}
+                                                        {{ status|default:"Unknown" }}: {{ count }}
+                                                        {% if not forloop.last %}|{% endif %}
+                                                    {% empty %}
+                                                        No quotes found.
+                                                    {% endfor %}
+                                                </p>
+                                            </div>
+                                            <div class="col-3 text-end">
+                                                <i class="feather icon-trending-up text-white f-16"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Order Stats -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-8">
+                                                <h4 class="text-c-green">{{ total_orders }}</h4>
+                                                <h6 class="text-muted m-b-0">Total Orders</h6>
+                                            </div>
+                                            <div class="col-4 text-end">
+                                                <i class="feather icon-shopping-cart f-28"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-c-green">
+                                        <div class="row align-items-center">
+                                            <div class="col-9">
+                                                <p class="text-white m-b-0">
+                                                    {% for status, count in order_status_counts.items %}
+                                                        {{ status|default:"Unknown" }}: {{ count }}
+                                                        {% if not forloop.last %}|{% endif %}
+                                                    {% empty %}
+                                                        No orders found.
+                                                    {% endfor %}
+                                                </p>
+                                            </div>
+                                            <div class="col-3 text-end">
+                                                <i class="feather icon-trending-up text-white f-16"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                             <!-- Order Value Stats -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-8">
+                                                <h4 class="text-c-blue">R {{ total_order_value|floatformat:2|intcomma }}</h4>
+                                                <h6 class="text-muted m-b-0">Total Order Value</h6>
+                                            </div>
+                                            <div class="col-4 text-end">
+                                                <i class="feather icon-dollar-sign f-28"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                             <!-- Order Items Stats -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-8">
+                                                <h4 class="text-c-red">{{ total_order_items }}</h4>
+                                                <h6 class="text-muted m-b-0">Total Order Items</h6>
+                                            </div>
+                                            <div class="col-4 text-end">
+                                                <i class="feather icon-package f-28"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Tables -->
+                <div class="row">
+                    <!-- Quotes Table -->
+                    <div class="col-xl-12 col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Quotes for {{ customer.customer }}</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Quote #</th>
+                                                <th>Description</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for quote in quotes_list %}
+                                            <tr>
+                                                <td>{{ quote.quote_number }}</td>
+                                                <td>{{ quote.description|truncatechars:50 }}</td>
+                                                <td>{{ quote.created_at|date:"Y-m-d" }}</td>
+                                                <td><span class="badge bg-light-{{ quote.get_status_badge_class|default:'secondary' }}">{{ quote.status|default:"N/A" }}</span></td>
+                                                <td>
+                                                    <a href="{% url 'quotes:quote_detail' quote.pk %}" class="btn btn-sm btn-outline-primary"><i class="feather icon-eye"></i> View</a>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="5" class="text-center">No quotes found for this customer.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Orders Table -->
+                    <div class="col-xl-12 col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Orders for {{ customer.customer }}</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Order #</th>
+                                                <th>Related Quote #</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in orders_list %}
+                                            <tr>
+                                                <td>{{ order.order_number }}</td>
+                                                <td>{{ order.quote.quote_number|default:"N/A" }}</td>
+                                                <td>{{ order.created_at|date:"Y-m-d" }}</td>
+                                                <td><span class="badge bg-light-{{ order.get_status_badge_class|default:'secondary' }}">{{ order.status|default:"N/A" }}</span></td>
+                                                 <td>
+                                                    <a href="{% url 'orders:order_detail' order.pk %}" class="btn btn-sm btn-outline-primary"><i class="feather icon-eye"></i> View</a>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="5" class="text-center">No orders found for this customer.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- Order Items Table -->
+                    <div class="col-xl-12 col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Order Items for {{ customer.customer }}</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Order #</th>
+                                                <th>Description</th>
+                                                <th>Qty</th>
+                                                <th>Price</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in order_items_list %}
+                                            <tr>
+                                                <td><a href="{% url 'orders:order_detail' item.order.pk %}">{{ item.order.order_number }}</a></td>
+                                                <td>{{ item.description|truncatechars:50 }}</td>
+                                                <td>{{ item.quantity|default:0 }}</td>
+                                                <td>R {{ item.selling_price|default:0.00|floatformat:2|intcomma }}</td>
+                                                <td>R {{ item.get_total_price|default:0.00|floatformat:2|intcomma }}</td> {# Assumes get_total_price method exists #}
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="5" class="text-center">No order items found for this customer.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- [ Main Content ] end -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

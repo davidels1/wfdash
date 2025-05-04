@@ -1,4 +1,5 @@
 {% extends "layouts/base.html" %}
+{% load static %}
 
 {% block title %} Add Customer {% endblock %}
 
@@ -10,55 +11,65 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
+    <div class="row">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <div class="d-flex align-items-center">
-                        <i class="feather icon-user-plus h4 mb-0 me-2"></i>
-                        <h4 class="card-title mb-0">Add New Customer</h4>
-                    </div>
+                    <h4 class="card-title">Add New Customer</h4>
                 </div>
                 <div class="card-body">
-                    <form method="post" class="form-horizontal">
+                    <!-- Add error container for duplicate messages -->
+                    <div id="duplicate-error" class="alert alert-danger mb-3" style="display:none; cursor:pointer;">
+                        <i class="feather icon-alert-triangle mr-2"></i>
+                        <span id="error-message"></span>
+                    </div>
+                    
+                    <form id="customerForm" method="post">
                         {% csrf_token %}
-                        {% for field in form %}
-                        <div class="form-group row mb-4">
-                            <label class="col-sm-3 col-form-label">
-                                {% if field.name == 'customer' %}
-                                    <i class="feather icon-user me-2"></i>
-                                {% elif field.name == 'email' %}
-                                    <i class="feather icon-mail me-2"></i>
-                                {% elif field.name == 'number' %}
-                                    <i class="feather icon-phone me-2"></i>
-                                {% elif field.name == 'company' %}
-                                    <i class="feather icon-briefcase me-2"></i>
-                                {% endif %}
-                                {{ field.label }}
-                            </label>
-                            <div class="col-sm-9">
-                                {{ field }}
-                                {% if field.help_text %}
-                                <small class="form-text text-muted">{{ field.help_text }}</small>
-                                {% endif %}
-                                {% if field.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ field.errors }}
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
                         <div class="row">
-                            <div class="col-sm-9 offset-sm-3">
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    <i class="feather icon-save me-1"></i>
-                                    Add Customer
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Customer Name</label>
+                                    {{ form.customer }}
+                                    <div class="invalid-feedback" id="customer-feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Company</label>
+                                    {{ form.company }}
+                                    <div class="invalid-feedback" id="company-feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Email</label>
+                                    {{ form.email }}
+                                    <div class="invalid-feedback" id="email-feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Phone Number</label>
+                                    {{ form.number }}
+                                    <div class="invalid-feedback" id="number-feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Address</label>
+                                    {{ form.address }}
+                                </div>
+                            </div>
+                            
+                            <div class="col-12 mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="feather icon-plus"></i> Add Customer
                                 </button>
-                                <a href="{% url 'wfdash:customers_list' %}" class="btn btn-light btn-sm">
-                                    <i class="feather icon-list me-1"></i>
-                                    View All Customers
-                                </a>
                             </div>
                         </div>
                     </form>
@@ -67,32 +78,216 @@
         </div>
     </div>
 </div>
-{% endblock content %}
 
+<!-- Show existing customers 
+{% if customers %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recently Added Customers</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" id="recent-customers-container">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Customer Name</th>
+                                <th>Email</th>
+                                <th>Number</th>
+                                <th>Company</th>
+                                <th>Date Added</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in customers|slice:":5" %}
+                            <tr>
+                                <td>{{ customer.customer }}</td>
+                                <td>{{ customer.email }}</td>
+                                <td>{{ customer.number }}</td>
+                                <td>{{ customer.company }}</td>
+                                <td>{{ customer.dateadded|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'wfdash:customer_edit' customer.id %}" class="btn btn-info btn-sm">
+                                        <i class="feather icon-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center py-2">
+                    <a href="{% url 'wfdash:customers_list' %}" class="btn btn-light btn-sm">
+                        View All Customers
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}-->
+{% endblock content %}
 
 {% block extra_js %}
 {{ block.super }}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
 <script>
-    $(document).ready(function() {
-        toastr.options = {
-            "closeButton": true,
-            "progressBar": true,
-            "positionClass": "toast-top-right",
-            "timeOut": "3000"
-        };
+document.addEventListener('DOMContentLoaded', function() {
+    // Get form and error elements
+    const form = document.getElementById('customerForm');
+    const duplicateError = document.getElementById('duplicate-error');
+    const errorMessage = document.getElementById('error-message');
     
-        {% if messages %}
-            {% for message in messages %}
-                {% if message.tags == 'success' %}
-                    toastr.success('{{ message }}');
-                    // Clear form after success
-                    $('form')[0].reset();
-                {% endif %}
-            {% endfor %}
-        {% endif %}
+    // Add click handler to duplicate error message
+    duplicateError.addEventListener('click', function() {
+        const message = errorMessage.textContent;
+        const match = message.match(/\(ID: (\d+)\)/);
+        if (match && match[1]) {
+            window.location.href = '/wfdash/customer_edit/' + match[1] + '/';
+        }
     });
+    
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Hide any previous error messages
+        duplicateError.style.display = 'none';
+        
+        // Clear previous error messages
+        document.querySelectorAll('.is-invalid').forEach(el => {
+            el.classList.remove('is-invalid');
+        });
+        
+        // Get form data
+        const formData = new FormData(form);
+        
+        // Send AJAX request
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw data;
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Reset form
+                form.reset();
+                
+                // Show success message
+                alert('Customer added successfully!');
+                
+                // REFRESH RECENTLY ADDED CUSTOMERS
+                refreshRecentCustomers();
+                
+                // If we're in a popup, handle the selection
+                if (window.opener && !window.opener.closed) {
+                    try {
+                        if (typeof window.opener.addCustomerToSelect === 'function') {
+                            window.opener.addCustomerToSelect(data.customer_id, data.customer_name);
+                            window.close();
+                        }
+                    } catch (e) {
+                        console.error('Error communicating with opener window:', e);
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            if (error.errors) {
+                // Handle form validation errors
+                Object.keys(error.errors).forEach(field => {
+                    const inputField = document.getElementById('id_' + field);
+                    if (inputField) {
+                        inputField.classList.add('is-invalid');
+                        
+                        // Find feedback element
+                        const feedbackElement = document.getElementById(field + '-feedback');
+                        if (feedbackElement) {
+                            feedbackElement.textContent = error.errors[field].join(', ');
+                        }
+                    }
+                    
+                    // Special handling for duplicate customer
+                    if (field === 'customer' && error.errors[field][0].includes('Duplicate customer found')) {
+                        errorMessage.textContent = error.errors[field][0];
+                        duplicateError.style.display = 'block';
+                    }
+                });
+            } else {
+                // Generic error
+                alert('An error occurred. Please try again.');
+            }
+        });
+    });
+    
+    // Function to refresh recently added customers
+    function refreshRecentCustomers() {
+        fetch('/wfdash/recent_customers/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.html) {
+                document.getElementById('recent-customers-container').innerHTML = data.html;
+            }
+        })
+        .catch(error => console.error('Error refreshing recent customers:', error));
+    }
+    
+    // Initialize company selection to populate address
+    const companySelect = document.querySelector('select[name="company"]');
+    if (companySelect) {
+        companySelect.addEventListener('change', function() {
+            const companyId = this.value;
+            if (companyId) {
+                fetch(`/wfdash/get_company_address/${companyId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.address) {
+                            document.getElementById('id_address').value = data.address;
+                        }
+                    })
+                    .catch(error => console.error('Error fetching company address:', error));
+            } else {
+                document.getElementById('id_address').value = '';
+            }
+        });
+    }
+});
+
+// This function will be called from select2 initialization when the page loads
+function initializeSelect2() {
+    if (typeof $ !== 'undefined' && $.fn.select2) {
+        $('.select2').select2({
+            placeholder: "Select a company",
+            allowClear: true
+        });
+    } else {
+        console.warn("jQuery or Select2 not loaded. Will retry in 1 second");
+        setTimeout(initializeSelect2, 1000);
+    }
+}
+
+// Try to initialize select2 after the page is loaded
+window.addEventListener('load', function() {
+    // Give all scripts time to load
+    setTimeout(initializeSelect2, 500);
+});
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>

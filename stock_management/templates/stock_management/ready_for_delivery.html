@@ -1,57 +1,137 @@
 {% extends "layouts/base.html" %}
 {% load static %}
+{% load order_tags %}
+
 
 {% block content %}
 <div class="container-fluid">
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5>Ready for Delivery</h5>
+            <div class="d-flex">
+                <button class="btn btn-outline-secondary btn-sm me-2" id="expandAllBtn">
+                    <i class="fas fa-expand-alt me-1"></i> Expand All
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="collapseAllBtn">
+                    <i class="fas fa-compress-alt me-1"></i> Collapse All
+                </button>
+            </div>
         </div>
         <div class="card-body">
-            {% if grouped_items %}
-                <div class="accordion" id="deliveryAccordion">
-                    {% for invoice_number, group in grouped_items.items %}
-                        <div class="accordion-item">
+            <!-- Add search and filter options here -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" id="deliverySearchInput" class="form-control" placeholder="Search by order #, description, company, or quantity...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select id="companyFilter" class="form-select">
+                        <option value="">All Companies</option>
+                        {% for company_name in all_companies %}
+                            <option value="{{ company_name }}">{{ company_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <!-- Empty results message (initially hidden) -->
+            <div id="noResultsMessage" class="alert alert-info d-none">
+                <i class="fas fa-info-circle me-2"></i> No items match your search criteria.
+            </div>
+            {% if companies %}
+                <div class="accordion" id="companyAccordion">
+                    {% for company_name, company_data in companies.items %}
+                        <div class="accordion-item company-group" data-company="{{ company_name }}">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" 
                                         data-bs-toggle="collapse" 
-                                        data-bs-target="#collapse{{ forloop.counter }}">
-                                    Delivery Group #{{ forloop.counter }} 
-                                    <span class="badge bg-primary ms-2">{{ group.total_items }} items</span>
-                                    <span class="ms-2">{{ group.customer }}</span>
+                                        data-bs-target="#company{{ forloop.counter }}">
+                                    <span class="company-name">{{ company_name }}</span>
+                                    <span class="badge bg-primary ms-2">{{ company_data.total_items }} items</span>
                                 </button>
                             </h2>
-                            <div id="collapse{{ forloop.counter }}" 
+                            <div id="company{{ forloop.counter }}" 
                                  class="accordion-collapse collapse" 
-                                 data-bs-parent="#deliveryAccordion">
+                                 data-bs-parent="#companyAccordion">
                                 <div class="accordion-body">
-                                    <div class="table-responsive">
-                                        <table class="table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Order #</th>
-                                                    <th>Description</th>
-                                                    <th>Quantity</th>
-                                                    <th>Date Loaded</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {% for item in group.items %}
-                                                <tr>
-                                                    <td>{{ item.order_item.order.order_number }}</td>
-                                                    <td>{{ item.order_item.description }}</td>
-                                                    <td>{{ item.received_qty }}</td>
-                                                    <td>{{ item.loaded_date|date:"d/m/Y" }}</td>
-                                                </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                        <button type="button" 
-                                                class="btn btn-success mark-delivered-btn"
-                                                data-items="{{ group.item_ids|join:',' }}"
-                                                data-invoice="{{ invoice_number }}">
-                                            Mark Group as Delivered
-                                        </button>
+                                    <div class="accordion" id="invoiceAccordion{{ forloop.counter }}">
+                                        {% for invoice_number, invoice_data in company_data.invoices.items %}
+                                            <div class="accordion-item invoice-group searchable-group" 
+                                                 id="invoice-{{ invoice_number|slugify }}"
+                                                 data-company="{{ company_name }}"
+                                                 data-invoice="{{ invoice_number }}"
+                                                 class="{% if items.0.order_item.order.order_number and 'breakdown' in items.0.order_item.order.order_number|lower %}breakdown-order{% endif %}">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed ps-4" type="button" 
+                                                            data-bs-toggle="collapse" 
+                                                            data-bs-target="#invoice{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
+                                                        <i class="fas fa-box me-2"></i>
+                                                        {% with first_order=invoice_data.items.0.order_item.order.order_number %}
+                                                        {% with same_order=True %}
+                                                        {% for item in invoice_data.items %}
+                                                            {% if item.order_item.order.order_number != first_order %}
+                                                                {% with same_order=False %}{% endwith %}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                        
+                                                        {% if same_order %}
+                                                            <!-- All items are from the same order -->
+                                                            <span>Order #{{ first_order }}</span>
+                                                            {% if first_order and 'breakdown' in first_order|lower %}
+                                                            <span class="breakdown-badge"><i class="fas fa-tools"></i> BREAKDOWN</span>
+                                                            {% endif %}
+                                                        {% else %}
+                                                            <!-- Items from multiple orders -->
+                                                            <span>Multiple Orders</span>
+                                                        {% endif %}
+                                                        {% endwith %}
+                                                        {% endwith %}
+                                                        <span class="badge bg-info ms-2">{{ invoice_data.items|length }} items</span>
+                                                    </button>
+                                                </h2>
+                                                <div id="invoice{{ forloop.parentloop.counter }}-{{ forloop.counter }}" 
+                                                     class="accordion-collapse collapse">
+                                                    <div class="accordion-body ps-4">
+                                                        <div class="table-responsive">
+                                                            <table class="table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Order #</th>
+                                                                        <th>Description</th>
+                                                                        <th>Quantity</th>
+                                                                        <th>Date Loaded</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {% for item in invoice_data.items %}
+                                                                    <tr class="searchable-item" 
+                                                                        data-order="{{ item.order_item.order.order_number }}"
+                                                                        data-description="{{ item.order_item.description }}"
+                                                                        data-quantity="{{ item.received_qty }}"
+                                                                        data-company="{{ company_name }}">
+                                                                        <td>{{ item.order_item.order.order_number }}</td>
+                                                                        <td class="description-cell">{{ item.order_item.description }}</td>
+                                                                        <td>{{ item.received_qty }}</td>
+                                                                        <td>{{ item.loaded_date|date:"d/m/Y" }}</td>
+                                                                    </tr>
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                            <button type="button" 
+                                                                    class="btn btn-success mark-delivered-btn"
+                                                                    data-items="{{ invoice_data.item_ids|join:',' }}"
+                                                                    data-invoice="{{ invoice_number }}"
+                                                                    data-company="{{ company_name }}">
+                                                                <i class="feather icon-truck me-1"></i> Mark Group as Delivered
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
                                     </div>
                                 </div>
                             </div>
@@ -86,6 +166,7 @@
                     </div>
                     <input type="hidden" id="actualInvoiceNumber">
                     <input type="hidden" id="itemIds">
+                    <input type="hidden" id="customerName">
                 </form>
             </div>
             <div class="modal-body" id="errorMessage" style="display:none">
@@ -120,6 +201,137 @@
         cursor: not-allowed;
         opacity: 0.75;
     }
+    
+    /* Fade out animation for completed deliveries */
+    .fade-out {
+        transition: opacity 0.5s, transform 0.5s;
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    
+    /* Text wrapping for description cells */
+    .description-cell {
+        max-width: 350px;
+        word-wrap: break-word;
+        white-space: normal;
+    }
+    
+    /* Empty data styling */
+    .no-items-message {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+
+    .searchable-item.d-none {
+        display: none !important;
+    }
+
+    /* Search input styling */
+    #deliverySearchInput {
+        border-right: none;
+    }
+
+    #clearSearchBtn {
+        border-left: none;
+        color: #6c757d;
+    }
+
+    #clearSearchBtn:hover {
+        color: #343a40;
+    }
+
+    /* Company accordion styling */
+    .company-name {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    /* Invoice accordion styling */
+    .invoice-group .accordion-button {
+        background-color: #f8f9fa;
+    }
+
+    /* Nested accordion visual cues */
+    .invoice-group .accordion-button::before {
+        content: '';
+        width: 12px;
+        display: inline-block;
+    }
+
+    /* Improve readability of description */
+    .description-cell {
+        max-width: 350px;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: break-word;
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        .badge {
+            font-size: 0.65rem;
+        }
+        
+        .accordion-button {
+            padding: 0.75rem 1rem;
+        }
+    }
+
+    /* Enhance description cell text wrapping */
+    .description-cell {
+        max-width: 300px; /* Slightly smaller than before */
+        min-width: 150px; /* Ensure minimum width */
+        white-space: normal !important; /* Force text wrapping */
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: break-word;
+        overflow: hidden; /* Prevent overflow */
+        padding-right: 10px; /* Add some padding */
+        text-overflow: ellipsis; /* Show ellipsis for extremely long content */
+    }
+
+    /* Make sure the table cells don't expand beyond their column widths */
+    .table td, .table th {
+        word-break: keep-all;
+        vertical-align: top;
+    }
+
+    /* Set specific widths for other columns to balance layout */
+    .table th:nth-child(1), .table td:nth-child(1) { /* Order # column */
+        width: 100px;
+    }
+
+    .table th:nth-child(3), .table td:nth-child(3) { /* Quantity column */
+        width: 80px;
+        white-space: nowrap;
+    }
+
+    .table th:nth-child(4), .table td:nth-child(4) { /* Date column */
+        width: 100px;
+        white-space: nowrap;
+    }
+
+    /* Add to your existing CSS in the style block */
+    .fade-out {
+        transition: opacity 0.5s ease, height 0.5s ease, margin 0.5s ease, padding 0.5s ease;
+        opacity: 0;
+        height: 0;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .alert-success {
+        margin-top: 20px;
+        padding: 20px;
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>
 {% endblock %}
 
@@ -138,9 +350,11 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const itemIds = this.dataset.items;
             const invoiceNumber = this.dataset.invoice;
+            const customer = this.dataset.customer;
             
             document.getElementById('itemIds').value = itemIds;
             document.getElementById('actualInvoiceNumber').value = invoiceNumber;
+            document.getElementById('customerName').value = customer;
             document.getElementById('confirmInvoiceNumber').value = '';
             errorMessage.style.display = 'none';
             
@@ -155,15 +369,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const actualInvoice = document.getElementById('actualInvoiceNumber').value;
             const deliveryDate = document.getElementById('deliveryDate').value;
             const itemIds = document.getElementById('itemIds').value;
+            const customer = document.getElementById('customerName').value;
             
             if (enteredInvoice !== actualInvoice) {
                 errorMessage.style.display = 'block';
+                toastr.warning('Invoice number does not match. Please check and try again.', 'Verification Failed');
                 return; // Stop here and keep modal open
             }
             
             // Disable button while processing
             button.disabled = true;
             button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Confirming...';
+            
+            // Show info toast that processing has started
+            toastr.info('Processing delivery confirmation...', 'Please Wait');
             
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             
@@ -187,23 +406,192 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (data.status === 'success') {
-                modal.hide(); // Only hide modal on success
-                alert('Delivery status updated successfully!');
-                window.location.reload();
+                // Hide modal
+                const modalElement = document.getElementById('deliveryModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                modalInstance.hide();
+                
+                // Show success toast notification
+                toastr.success(`Successfully delivered to ${customer}`, 'Delivery Confirmed');
+                
+                // Find and remove the invoice group
+                // Important fix: Use the proper selector for the element - it's an accordion-item with specific data attributes
+                const invoiceElement = document.querySelector(`.invoice-group[data-invoice="${actualInvoice}"][data-company="${customer}"]`);
+                
+                if (invoiceElement) {
+                    // Add fade-out class for animation
+                    invoiceElement.classList.add('fade-out');
+                    
+                    // After animation completes, remove the element
+                    setTimeout(() => {
+                        // First check if the parent company will be empty after removing this invoice
+                        const parentCompany = invoiceElement.closest('.company-group');
+                        const siblingInvoices = parentCompany.querySelectorAll('.invoice-group:not(.fade-out)');
+                        
+                        // Now remove the invoice element
+                        invoiceElement.remove();
+                        
+                        // If this was the last invoice in the company, hide the company too
+                        if (siblingInvoices.length <= 1) { // Using 1 because the current element is still counted
+                            parentCompany.classList.add('fade-out');
+                            setTimeout(() => {
+                                parentCompany.remove();
+                                
+                                // Check if all companies are now gone
+                                const remainingCompanies = document.querySelectorAll('.company-group:not(.fade-out)');
+                                if (remainingCompanies.length === 0) {
+                                    // No more items to deliver, show a message
+                                    document.querySelector('.card-body').innerHTML = 
+                                        '<div class="alert alert-success text-center"><i class="fas fa-check-circle me-2"></i> All items have been delivered.</div>';
+                                }
+                            }, 500);
+                        }
+                    }, 500);
+                } else {
+                    console.warn(`Could not find element for invoice: ${actualInvoice}, company: ${customer}`);
+                    // If we can't find the specific element, refresh the page as fallback
+                    location.reload();
+                }
             } else {
                 throw new Error(data.message || 'Error updating delivery status');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error updating delivery status: ' + error.message);
+            toastr.error(error.message, 'Delivery Error');
+            errorMessage.style.display = 'none';
         } finally {
-            // Reset button state if we're not refreshing the page
-            if (!button.disabled) {
-                button.disabled = false;
-                button.textContent = 'Confirm Delivery';
-            }
+            // Reset button state
+            button.disabled = false;
+            button.innerHTML = 'Confirm Delivery';
         }
     });
+    
+    // Add click handler for Enter key in the invoice field
+    document.getElementById('confirmInvoiceNumber').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('confirmDeliveryBtn').click();
+        }
+    });
+
+    // Add search functionality
+    const searchInput = document.getElementById('deliverySearchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const companyFilter = document.getElementById('companyFilter');
+    const noResultsMessage = document.getElementById('noResultsMessage');
+    const expandAllBtn = document.getElementById('expandAllBtn');
+    const collapseAllBtn = document.getElementById('collapseAllBtn');
+
+    // Function to filter items based on search text
+    function filterItems() {
+        const searchText = searchInput.value.toLowerCase();
+        const selectedCompany = companyFilter.value;
+        
+        // Count visible items for showing/hiding the "no results" message
+        let visibleGroups = 0;
+        
+        // First hide all company groups that don't match the company filter
+        document.querySelectorAll('.company-group').forEach(companyGroup => {
+            const companyName = companyGroup.dataset.company;
+            const shouldShowCompany = !selectedCompany || companyName === selectedCompany;
+            
+            if (shouldShowCompany) {
+                companyGroup.classList.remove('d-none');
+                
+                // Now process all invoice groups within this company
+                const invoiceGroups = companyGroup.querySelectorAll('.invoice-group');
+                let visibleInvoiceGroups = 0;
+                
+                invoiceGroups.forEach(invoiceGroup => {
+                    const allItems = invoiceGroup.querySelectorAll('.searchable-item');
+                    let visibleItems = 0;
+                    
+                    // Check each item against the search text
+                    allItems.forEach(item => {
+                        const orderNumber = item.dataset.order.toLowerCase();
+                        const description = item.dataset.description.toLowerCase();
+                        const quantity = item.dataset.quantity.toLowerCase();
+                        const company = item.dataset.company.toLowerCase();
+                        
+                        const matchesSearch = !searchText || 
+                            orderNumber.includes(searchText) || 
+                            description.includes(searchText) || 
+                            quantity.includes(searchText) ||
+                            company.includes(searchText);
+                        
+                        // Show or hide based on match
+                        if (matchesSearch) {
+                            item.classList.remove('d-none');
+                            visibleItems++;
+                        } else {
+                            item.classList.add('d-none');
+                        }
+                    });
+                    
+                    // Show/hide invoice group based on whether it has visible items
+                    if (visibleItems > 0) {
+                        invoiceGroup.classList.remove('d-none');
+                        visibleInvoiceGroups++;
+                    } else {
+                        invoiceGroup.classList.add('d-none');
+                    }
+                });
+                
+                // Show/hide company group based on whether it has visible invoice groups
+                if (visibleInvoiceGroups > 0) {
+                    visibleGroups++;
+                    
+                    // Auto-expand the company if it's the only visible one
+                    if (searchText && visibleInvoiceGroups === 1) {
+                        // Find the collapse element and show it
+                        const collapseId = companyGroup.querySelector('.accordion-button').dataset.bsTarget;
+                        const collapseElement = document.querySelector(collapseId);
+                        if (collapseElement) {
+                            const bsCollapse = new bootstrap.Collapse(collapseElement, { toggle: false });
+                            bsCollapse.show();
+                        }
+                    }
+                } else {
+                    companyGroup.classList.add('d-none');
+                }
+            } else {
+                companyGroup.classList.add('d-none');
+            }
+        });
+        
+        // Show/hide no results message
+        if (visibleGroups === 0) {
+            noResultsMessage.classList.remove('d-none');
+        } else {
+            noResultsMessage.classList.add('d-none');
+        }
+    }
+
+    // Add event listeners for search and filter
+    searchInput.addEventListener('input', filterItems);
+    companyFilter.addEventListener('change', filterItems);
+    clearSearchBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        filterItems();
+    });
+
+    // Expand/collapse all functionality
+    expandAllBtn.addEventListener('click', function() {
+        document.querySelectorAll('.accordion-collapse').forEach(collapse => {
+            const bsCollapse = new bootstrap.Collapse(collapse, { toggle: false });
+            bsCollapse.show();
+        });
+    });
+
+    collapseAllBtn.addEventListener('click', function() {
+        document.querySelectorAll('.accordion-collapse').forEach(collapse => {
+            const bsCollapse = new bootstrap.Collapse(collapse, { toggle: false });
+            bsCollapse.hide();
+        });
+    });
+
+    // Initialize search on page load
+    filterItems();
 });
 </script>
 {% endblock %}

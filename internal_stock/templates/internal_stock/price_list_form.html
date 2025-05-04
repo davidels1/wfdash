@@ -1,0 +1,108 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5>{{ title }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.supplier.id_for_label }}" class="form-label">Supplier *</label>
+                                {{ form.supplier }}
+                                {% if form.supplier.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.supplier.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.name.id_for_label }}" class="form-label">Price List Name *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.name.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.year.id_for_label }}" class="form-label">Year *</label>
+                                {{ form.year }}
+                                {% if form.year.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.year.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.valid_from.id_for_label }}" class="form-label">Valid From *</label>
+                                {{ form.valid_from }}
+                                {% if form.valid_from.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.valid_from.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.valid_until.id_for_label }}" class="form-label">Valid Until (Optional)</label>
+                                {{ form.valid_until }}
+                                <small class="form-text text-muted">Leave empty if ongoing</small>
+                                {% if form.valid_until.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.valid_until.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.default_markup.id_for_label }}" class="form-label">Default Markup % *</label>
+                                {{ form.default_markup }}
+                                <small class="form-text text-muted">Default markup for all items in this price list</small>
+                                {% if form.default_markup.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.default_markup.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                            {{ form.notes }}
+                            <small class="form-text text-muted">Additional information about this price list</small>
+                            {% if form.notes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.notes.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'internal_stock:price_list_index' %}" class="btn btn-secondary">
+                                <i class="feather icon-x"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="feather icon-save"></i> Save Price List
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

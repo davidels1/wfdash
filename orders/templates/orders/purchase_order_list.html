@@ -50,3 +50,32 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle download buttons
+    document.querySelectorAll('a[href*="download_po"]').forEach(link => {
+        link.addEventListener('click', function() {
+            const poNumber = this.closest('tr').querySelector('td:first-child').textContent.trim();
+            toastr.info(`Preparing download for PO #${poNumber}...`, 'Download');
+        });
+    });
+    
+    // Handle Django messages
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                toastr.success('{{ message }}', 'Success');
+            {% elif message.tags == 'info' %}
+                toastr.info('{{ message }}', 'Information');
+            {% elif message.tags == 'warning' %}
+                toastr.warning('{{ message }}', 'Warning');
+            {% elif message.tags == 'error' %}
+                toastr.error('{{ message }}', 'Error');
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+});
+</script>
+{% endblock %}

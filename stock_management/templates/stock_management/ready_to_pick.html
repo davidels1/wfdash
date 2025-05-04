@@ -1,56 +1,102 @@
 {% extends "layouts/base.html" %}
+{% load order_tags %}
+
 
 {% block content %}
-{% csrf_token %}  <!-- Add this at the top of your content block -->
+{% csrf_token %}  <!-- Keep the CSRF token at the top -->
 <div class="container-fluid">
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5>Ready to Pick</h5>
+            <div class="d-flex">
+                <button class="btn btn-outline-secondary btn-sm expand-all-btn me-2">
+                    <i class="fas fa-expand-alt me-1"></i> Expand All
+                </button>
+            </div>
         </div>
         <div class="card-body">
-            {% if invoices %}
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Invoice #</th>
-                            <th>Customer</th>
-                            <th>Items</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for invoice, items in invoices.items %}
-                        <tr>
-                            <td>{{ invoice }}</td>
-                            <td>{{ items.0.order_item.order.company.company }}</td>
-                            <td>{{ items|length }} items</td>
-                            <td>
-                                <div class="btn-group">
-                                    <button class="btn btn-primary btn-sm view-picking-slip" 
-                                            data-invoice="{{ invoice }}">
-                                        <i class="feather icon-eye"></i> View
-                                    </button>
-                                    <a href="{% url 'stock_management:picking_slip_pdf' invoice %}" 
-                                       class="btn btn-info btn-sm"
-                                       target="_blank">
-                                        <i class="feather icon-file-text"></i> PDF
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <!-- Add search and filter bar here -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" id="pickSearchInput" class="form-control" placeholder="Search by invoice #, customer, or item description...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearPickSearchBtn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
+            
+            <!-- No results message (initially hidden) -->
+            <div id="noPickResultsMessage" class="alert alert-info d-none">
+                <i class="fas fa-info-circle me-2"></i> No items match your search criteria.
+            </div>
+            
+            {% if customers %}
+                <!-- Grouped by Customer Accordions -->
+                <div class="accordion" id="customerAccordion">
+                    {% for customer_name, invoices in customers.items %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ forloop.counter }}" 
+                                        aria-expanded="false" 
+                                        aria-controls="collapse{{ forloop.counter }}">
+                                    <strong>{{ customer_name }}</strong>
+                                    <span class="badge bg-primary ms-2">{{ invoices|length }} invoices</span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ forloop.counter }}" 
+                                 class="accordion-collapse collapse" 
+                                 aria-labelledby="heading{{ forloop.counter }}" 
+                                 data-bs-parent="#customerAccordion">
+                                <div class="accordion-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Invoice #</th>
+                                                    <th>Items</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for invoice_number, items in invoices.items %}
+                                                    <tr>
+                                                        <td>{{ invoice_number }}</td>
+                                                        <td>{{ items|length }} items</td>
+                                                        <td>
+                                                            <div class="btn-group">
+                                                                <button class="btn btn-primary btn-sm view-picking-slip" 
+                                                                        data-invoice="{{ invoice_number }}">
+                                                                    <i class="feather icon-eye"></i> View
+                                                                </button>
+                                                                <a href="{% url 'stock_management:picking_slip_pdf' invoice_number|urlencode %}" 
+                                                                   class="btn btn-info btn-sm"
+                                                                   target="_blank">
+                                                                    <i class="feather icon-file-text"></i> PDF
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
             {% else %}
-            <p class="text-center">No items ready to pick</p>
+                <p class="text-center">No items ready to pick</p>
             {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Modal -->
+<!-- Modal - Keep this unchanged -->
 <div class="modal fade" id="pickingSlipModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -110,6 +156,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Add a function to count total items by customer
+    function countCustomerItems() {
+        const customerCounts = {};
+        const data = {{ picking_data|safe }};
+        
+        for (const invoice in data) {
+            const items = data[invoice];
+            if (items && items.length > 0) {
+                const customer = items[0].customer;
+                if (!customerCounts[customer]) {
+                    customerCounts[customer] = {
+                        invoices: 0,
+                        items: 0
+                    };
+                }
+                customerCounts[customer].invoices++;
+                customerCounts[customer].items += items.length;
+            }
+        }
+        
+        return customerCounts;
+    }
+
+    // Keep the rest of your script unchanged
     function displayPickingSlip(invoice, items) {
         console.log('Displaying picking slip for invoice:', invoice);
         const content = document.getElementById('pickingSlipContent');
@@ -127,31 +197,38 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p>Date: ${new Date().toLocaleDateString()}</p>
                     </div>
                 </div>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Item Description</th>
-                            <th>Qty</th>
-                            <th>Supplier</th>
-                            <th>PO Number</th>
-                            <th class="no-print">Picked</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${items.map(item => `
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
                             <tr>
-                                <td>${item.description}</td>
-                                <td>${item.quantity}</td>
-                                <td>${item.supplier}</td>
-                                <td>${item.po_number}</td>
-                                <td class="no-print">
-                                    <input type="checkbox" class="pick-checkbox" 
-                                           data-item-id="${item.id}">
-                                </td>
+                                <th style="width: 40%">Item Description</th>
+                                <th style="width: 10%">Qty</th>
+                                <th style="width: 20%">Supplier</th>
+                                <th style="width: 20%">PO Number</th>
+                                <th style="width: 10%" class="text-center no-print">Picked</th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            ${items.map(item => `
+                                <tr class="{% if item.order_item.order and 'breakdown' in item.order_item.order.order_number|lower %}breakdown-order{% endif %}">
+                                    <td class="description-cell">
+                                        {% if item.order_item.order and 'breakdown' in item.order_item.order.order_number|lower %}
+                                        <span class="breakdown-badge"><i class="fas fa-tools"></i> BREAKDOWN</span>
+                                        {% endif %}
+                                        ${item.description}
+                                    </td>
+                                    <td>${item.quantity}</td>
+                                    <td class="supplier-cell">${item.supplier}</td>
+                                    <td class="po-cell">${item.po_number}</td>
+                                    <td class="text-center no-print">
+                                        <input type="checkbox" class="form-check-input pick-checkbox" 
+                                               data-item-id="${item.id}">
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         `;
         updatePickingStatus(invoice);
@@ -180,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    // Replace the existing markAsPicked function with:
+    // Keep the rest of your markAsPicked and savePickingProgress functions unchanged
     window.markAsPicked = async function(checkbox) {
         try {
             const response = await fetch(`/stock/mark-picked/${checkbox.dataset.itemId}/`, {
@@ -205,14 +282,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error updating picking status: ' + error.message);
+            toastr.error(error.message, 'Error updating picking status');
             checkbox.checked = !checkbox.checked;
         }
     };
 
-    // Replace the existing savePickingProgress function with:
     window.savePickingProgress = async function() {
         const saveButton = document.querySelector('.btn-success');
+        let allPicked = false;
+        let pickedItems = [];
+        
         try {
             // Disable the save button while processing
             saveButton.disabled = true;
@@ -222,18 +301,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const invoice = invoiceText.split('#')[1].trim();
             
             if (!invoice) {
-                alert('Error: Could not find invoice number');
+                toastr.error('Could not find invoice number', 'Error');
                 return;
             }
 
             const checkboxes = document.querySelectorAll('.pick-checkbox');
-            const pickedItems = Array.from(checkboxes).map(cb => ({
+            pickedItems = Array.from(checkboxes).map(cb => ({
                 id: cb.dataset.itemId,
                 picked: cb.checked
             }));
 
             // Check if all items are picked
-            const allPicked = pickedItems.every(item => item.picked);
+            allPicked = pickedItems.every(item => item.picked);
 
             const response = await fetch('/stock/save-picking-progress/', {
                 method: 'POST',
@@ -254,28 +333,125 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             if (data.status === 'success') {
                 if (allPicked) {
-                    // If all items are picked, close modal and refresh
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('pickingSlipModal'));
-                    modal.hide();
-                    window.location.reload();
+                    // Show success message with toastr
+                    toastr.success('All items picked successfully!', 'Picking Complete');
+                    
+                    // Close modal and refresh after a short delay
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('pickingSlipModal'));
+                        modal.hide();
+                        window.location.reload();
+                    }, 1500);
                 } else {
-                    // If not all items picked, just show success message
-                    alert('Progress saved successfully');
+                    // Show progress saved message
+                    toastr.success('Your picking progress has been saved', 'Progress Saved');
+                    saveButton.disabled = false;
+                    saveButton.textContent = 'Save Progress';
                 }
             } else {
                 throw new Error(data.message || 'Error saving progress');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error saving progress: ' + error.message);
-        } finally {
-            // Re-enable the save button if we're not refreshing
-            if (!pickedItems?.every(item => item.picked)) {
-                saveButton.disabled = false;
-                saveButton.textContent = 'Save Progress';
-            }
+            toastr.error(error.message, 'Error Saving Progress');
+            
+            // Re-enable the save button
+            saveButton.disabled = false;
+            saveButton.textContent = 'Save Progress';
         }
     };
+
+    // Add search functionality
+    const pickSearchInput = document.getElementById('pickSearchInput');
+    const clearPickSearchBtn = document.getElementById('clearPickSearchBtn');
+    const noPickResultsMessage = document.getElementById('noPickResultsMessage');
+    const expandAllBtn = document.querySelector('.expand-all-btn');
+
+    // Function to expand/collapse all accordions
+    expandAllBtn.addEventListener('click', function() {
+        const allAccordions = document.querySelectorAll('.accordion-collapse');
+        const isAnyCollapsed = Array.from(allAccordions).some(
+            acc => !acc.classList.contains('show')
+        );
+        
+        allAccordions.forEach(acc => {
+            const bsCollapse = bootstrap.Collapse.getInstance(acc) || new bootstrap.Collapse(acc, {toggle: false});
+            if (isAnyCollapsed) {
+                bsCollapse.show();
+                expandAllBtn.innerHTML = '<i class="fas fa-compress-alt me-1"></i> Collapse All';
+            } else {
+                bsCollapse.hide();
+                expandAllBtn.innerHTML = '<i class="fas fa-expand-alt me-1"></i> Expand All';
+            }
+        });
+    });
+
+    // Function to filter items
+    function filterPickItems() {
+        const searchText = pickSearchInput.value.toLowerCase();
+        let visibleCustomers = 0;
+        
+        // Process all customer sections
+        document.querySelectorAll('.accordion-item').forEach(customerItem => {
+            // Get the customer name from the header
+            const customerName = customerItem.querySelector('.accordion-button strong').textContent.toLowerCase();
+            let visibleRows = 0;
+            
+            // Get all invoice rows
+            const invoiceRows = customerItem.querySelectorAll('tbody tr');
+            
+            invoiceRows.forEach(row => {
+                const invoiceNumber = row.cells[0].textContent.toLowerCase();
+                const itemsCount = row.cells[1].textContent.toLowerCase();
+                
+                // Search by customer name, invoice number, or items count
+                const matchesSearch = !searchText || 
+                    customerName.includes(searchText) || 
+                    invoiceNumber.includes(searchText) || 
+                    itemsCount.includes(searchText);
+                
+                if (matchesSearch) {
+                    row.classList.remove('d-none');
+                    visibleRows++;
+                } else {
+                    row.classList.add('d-none');
+                }
+            });
+            
+            // Show/hide customer section based on matches
+            if (visibleRows > 0) {
+                customerItem.classList.remove('d-none');
+                visibleCustomers++;
+                
+                // Auto-expand if search is active and has matches
+                if (searchText) {
+                    const collapseEl = customerItem.querySelector('.accordion-collapse');
+                    const bsCollapse = bootstrap.Collapse.getInstance(collapseEl) || 
+                                       new bootstrap.Collapse(collapseEl, {toggle: false});
+                    bsCollapse.show();
+                }
+            } else {
+                customerItem.classList.add('d-none');
+            }
+        });
+        
+        // Show/hide no results message
+        if (visibleCustomers === 0) {
+            noPickResultsMessage.classList.remove('d-none');
+        } else {
+            noPickResultsMessage.classList.add('d-none');
+        }
+    }
+
+    // Add event listeners
+    pickSearchInput.addEventListener('input', filterPickItems);
+    clearPickSearchBtn.addEventListener('click', function() {
+        pickSearchInput.value = '';
+        filterPickItems();
+    });
+
+    // Initialize search on page load
+    filterPickItems();
 });
 </script>
 {% endblock %}
@@ -311,6 +487,115 @@ document.addEventListener('DOMContentLoaded', function() {
     width: 1rem;
     height: 1rem;
     margin-right: 0.5rem;
+}
+
+/* New styles for handling long descriptions */
+.description-cell {
+    max-width: 300px;
+    word-wrap: break-word; 
+    word-break: break-word;
+    white-space: normal;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.form-check-input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* Make table headers sticky for better usability */
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+}
+
+/* Enhanced text wrapping for all table cells */
+.table td {
+    max-width: 0;  /* This forces the cell to respect width constraints */
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+}
+
+/* Specific column widths - adjust as needed */
+.description-cell {
+    max-width: 300px; 
+    width: 40%;
+}
+
+.supplier-cell {
+    max-width: 150px;
+    width: 20%;
+}
+
+.po-cell {
+    max-width: 150px;
+    width: 20%;
+}
+
+/* Fix table layout to control column widths better */
+.table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* Accordion styling enhancements */
+.accordion-button:not(.collapsed) {
+    background-color: #f8f9fa;
+    color: #212529;
+    box-shadow: none;
+}
+
+.accordion-button {
+    font-weight: 500;
+}
+
+.accordion-button .badge {
+    font-size: 0.75rem;
+    font-weight: normal;
+}
+
+/* Highlight a row when hovered */
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,.075);
+}
+
+/* Search input styling */
+.input-group .form-control {
+    border-right: none;
+}
+
+.input-group .btn-outline-secondary {
+    border-left: none;
+    color: #6c757d;
+}
+
+.input-group .btn-outline-secondary:hover {
+    color: #343a40;
+    background-color: transparent;
+}
+
+/* Hidden items */
+.d-none {
+    display: none !important;
+}
+
+/* Alert message styling */
+#noPickResultsMessage, #noDeliveryResultsMessage {
+    margin-bottom: 20px;
+    animation: fadeIn 0.5s;
+}
+
+/* Animation for alerts */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 </style>
 {% endblock %}

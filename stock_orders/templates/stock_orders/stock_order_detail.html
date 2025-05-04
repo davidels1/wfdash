@@ -1,0 +1,444 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}  <!-- Add this line to load your custom filters -->
+
+{% block title %}Stock Order #{{ stock_order.order_number }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col-md-12">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Stock Order Details</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/">
+                            <i class="feather icon-home"></i>
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'stock_orders:list' %}">Stock Orders</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <span>{{ stock_order.order_number }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Status Alert -->
+    {% if stock_order.status == 'draft' %}
+    <div class="alert alert-secondary">
+        <i class="feather icon-edit me-2"></i> This stock order is in <strong>draft</strong> status. Process it to send a purchase order to the supplier.
+    </div>
+    {% elif stock_order.status == 'pending' %}
+    <div class="alert alert-info">
+        <i class="feather icon-clock me-2"></i> This stock order is <strong>pending</strong>. Process it to send a purchase order to the supplier.
+    </div>
+    {% elif stock_order.status == 'processed' %}
+    <div class="alert alert-primary">
+        <i class="feather icon-check-circle me-2"></i> Purchase order has been sent to the supplier. You can now assign a driver for collection.
+    </div>
+    {% elif stock_order.status == 'assigned' %}
+    <div class="alert alert-warning">
+        <i class="feather icon-truck me-2"></i> This stock order has been assigned to <strong>{{ stock_order.driver.get_full_name }}</strong> for collection.
+    </div>
+    {% elif stock_order.status == 'collected' %}
+    <div class="alert alert-success">
+        <i class="feather icon-check-circle me-2"></i> This stock order has been collected and is being processed for stock.
+    </div>
+    {% elif stock_order.status == 'in_stock' %}
+    <div class="alert alert-success">
+        <i class="feather icon-check-circle me-2"></i> This stock order has been added to inventory.
+    </div>
+    {% elif stock_order.status == 'canceled' %}
+    <div class="alert alert-danger">
+        <i class="feather icon-x-circle me-2"></i> This stock order has been <strong>canceled</strong>.
+    </div>
+    {% endif %}
+
+    <!-- Order Actions -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Stock Order Actions</h5>
+                </div>
+                <div class="card-body d-flex flex-wrap gap-2">
+                    {% if stock_order.status == 'draft' or stock_order.status == 'pending' %}
+                    <a href="{% url 'stock_orders:process' stock_order.id %}" class="btn btn-primary">
+                        <i class="feather icon-send me-1"></i> Process Order
+                    </a>
+                    {% endif %}
+                    
+    <!-- Order Actions 
+
+                    {% if stock_order.status == 'processed' %}
+                    <a href="{% url 'stock_orders:assign_driver' stock_order.id %}" class="btn btn-warning">
+                        <i class="feather icon-truck me-1"></i> Assign Driver
+                    </a>
+                    {% endif %}
+
+-->
+
+                    
+                    {% if stock_order.status == 'assigned' %}
+                    <form method="post" action="{% url 'stock_orders:mark_collected' stock_order.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">
+                            <i class="feather icon-check me-1"></i> Mark as Collected
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    <a href="{% url 'stock_orders:list' %}" class="btn btn-outline-secondary">
+                        <i class="feather icon-list me-1"></i> Back to List
+                    </a>
+                    
+                    {% if stock_order.status != 'canceled' and stock_order.status != 'in_stock' %}
+                    <button type="button" class="btn btn-outline-danger ms-auto" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                        <i class="feather icon-x-circle me-1"></i> Cancel Order
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Stock Order Details -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5>Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th width="35%">Order Number:</th>
+                                <td>{{ stock_order.order_number }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    {% if stock_order.status == 'draft' %}
+                                    <span class="badge bg-secondary">Draft</span>
+                                    {% elif stock_order.status == 'pending' %}
+                                    <span class="badge bg-info">Pending</span>
+                                    {% elif stock_order.status == 'processed' %}
+                                    <span class="badge bg-primary">Processed</span>
+                                    {% elif stock_order.status == 'assigned' %}
+                                    <span class="badge bg-warning">Assigned</span>
+                                    {% elif stock_order.status == 'collected' %}
+                                    <span class="badge bg-success">Collected</span>
+                                    {% elif stock_order.status == 'in_stock' %}
+                                    <span class="badge bg-success">In Stock</span>
+                                    {% elif stock_order.status == 'canceled' %}
+                                    <span class="badge bg-danger">Canceled</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Created By:</th>
+                                <td>{{ stock_order.created_by.get_full_name|default:stock_order.created_by.username }}</td>
+                            </tr>
+                            <tr>
+                                <th>Created Date:</th>
+                                <td>{{ stock_order.created_at|date:"F j, Y, g:i a" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Expected Delivery:</th>
+                                <td>{% if stock_order.expected_delivery_date %}{{ stock_order.expected_delivery_date|date:"F j, Y" }}{% else %}Not specified{% endif %}</td>
+                            </tr>
+                            {% if stock_order.po_number %}
+                            <tr>
+                                <th>PO Number:</th>
+                                <td>{{ stock_order.po_number }}</td>
+                            </tr>
+                            <tr>
+                                <th>PO Date:</th>
+                                <td>{{ stock_order.po_date|date:"F j, Y, g:i a" }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if stock_order.driver %}
+                            <tr>
+                                <th>Assigned Driver:</th>
+                                <td>{{ stock_order.driver.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Assigned Date:</th>
+                                <td>{{ stock_order.assigned_at|date:"F j, Y, g:i a" }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if stock_order.collected_at %}
+                            <tr>
+                                <th>Collected Date:</th>
+                                <td>{{ stock_order.collected_at|date:"F j, Y, g:i a" }}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    
+                    {% if stock_order.notes %}
+                    <div class="mt-3">
+                        <h6 class="text-muted">Notes:</h6>
+                        <div class="border rounded p-3 bg-light">
+                            {{ stock_order.notes|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Supplier Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5>Supplier Information</h5>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-3">{{ stock_order.supplier.suppliername }}</h5>
+                    
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th width="35%">Phone:</th>
+                                <td>{{ stock_order.supplier.suppliernumber|default:"Not specified" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Address:</th>
+                                <td>{{ stock_order.supplier.supplieraddress|default:"Not specified"|linebreaks }}</td>
+                            </tr>
+                            {% if stock_order.supplier.supply_tags %}
+                            <tr>
+                                <th>Tags:</th>
+                                <td>
+                                    {% for tag in stock_order.supplier.supply_tags|split:"," %}
+                                        <span class="badge bg-info">{{ tag|strip }}</span>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Order Items -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Order Items</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Description</th>
+                            <th>SKU</th>
+                            <th class="text-center">Quantity</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.sku|default:"-" }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end">£{{ item.unit_price|floatformat:2 }}</td>
+                            <td class="text-end">£{{ item.total|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No items added to this order</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="5" class="text-end">Total Amount:</th>
+                            <th class="text-end">£{{ total_amount|floatformat:2 }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Order Status Timeline -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Order Timeline</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-unstyled timeline-activity">
+                <li class="timeline-item">
+                    <div class="timeline-badge bg-success">
+                        <i class="feather icon-plus"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h6 class="mb-1">Stock Order Created</h6>
+                        <p class="text-muted mb-0">{{ stock_order.created_at|date:"F j, Y, g:i a" }}</p>
+                    </div>
+                </li>
+                
+                {% if stock_order.po_date %}
+                <li class="timeline-item">
+                    <div class="timeline-badge bg-primary">
+                        <i class="feather icon-send"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h6 class="mb-1">Purchase Order Sent</h6>
+                        <p class="text-muted mb-0">{{ stock_order.po_date|date:"F j, Y, g:i a" }}</p>
+                        <p>PO #{{ stock_order.po_number }}</p>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if stock_order.assigned_at %}
+                <li class="timeline-item">
+                    <div class="timeline-badge bg-warning">
+                        <i class="feather icon-truck"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h6 class="mb-1">Driver Assigned</h6>
+                        <p class="text-muted mb-0">{{ stock_order.assigned_at|date:"F j, Y, g:i a" }}</p>
+                        <p>{{ stock_order.driver.get_full_name }}</p>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if stock_order.collected_at %}
+                <li class="timeline-item">
+                    <div class="timeline-badge bg-success">
+                        <i class="feather icon-check-circle"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h6 class="mb-1">Order Collected</h6>
+                        <p class="text-muted mb-0">{{ stock_order.collected_at|date:"F j, Y, g:i a" }}</p>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if stock_order.status == 'in_stock' %}
+                <li class="timeline-item">
+                    <div class="timeline-badge bg-success">
+                        <i class="feather icon-box"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h6 class="mb-1">Added to Stock</h6>
+                        <p class="text-muted mb-0">{{ stock_order.updated_at|date:"F j, Y, g:i a" }}</p>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if stock_order.status == 'canceled' %}
+                <li class="timeline-item">
+                    <div class="timeline-badge bg-danger">
+                        <i class="feather icon-x-circle"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h6 class="mb-1">Order Canceled</h6>
+                        <p class="text-muted mb-0">{{ stock_order.updated_at|date:"F j, Y, g:i a" }}</p>
+                    </div>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Order Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="feather icon-alert-circle me-2"></i>
+                    Cancel Stock Order
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this stock order?</p>
+                <p><strong>This action cannot be undone.</strong></p>
+                
+                <form id="cancelForm" method="post" action="{% url 'stock_orders:cancel' stock_order.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="cancelReason" class="form-label">Reason for Cancellation</label>
+                        <textarea id="cancelReason" name="cancel_reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">No, Keep It</button>
+                <button type="submit" form="cancelForm" class="btn btn-danger">Yes, Cancel Order</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline-activity {
+        position: relative;
+        padding-left: 40px;
+        margin-left: 20px;
+    }
+    
+    .timeline-activity:before {
+        content: "";
+        position: absolute;
+        left: 20px;
+        top: 0;
+        height: 100%;
+        width: 2px;
+        background: #e9ecef;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    
+    .timeline-badge {
+        position: absolute;
+        left: -40px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        z-index: 1;
+    }
+    
+    .timeline-content {
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .timeline-item:last-child .timeline-content {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}

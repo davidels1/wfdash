@@ -11,4 +11,5 @@ urlpatterns = [
     path('bulk-assign/', views.bulk_assign_driver, name='bulk_assign_driver'),
     path('completed-collections/', views.completed_collections, name='completed_collections'),
     path('activate-collection/<int:collection_id>/', views.activate_collection, name='activate_collection'),
+    path('add-manual-collection/', views.add_manual_collection, name='add_manual_collection'),
 ]

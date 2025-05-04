@@ -1,0 +1,543 @@
+:root {
+    --primary-color: #edae41;
+    --primary-light: #f9e9c5;
+    --primary-dark: #c7901e;
+    --secondary-color: #2c3e50;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --success-color: #28a745;
+    --error-color: #dc3545;
+    --body-bg: #f8f9fa;
+    --card-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: var(--body-bg);
+    color: var(--dark-color);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.portal-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-top: env(safe-area-inset-top);
+}
+
+header {
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 1rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    max-height: 50px;
+}
+
+.portal-logo {
+    max-height: 60px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+footer {
+    background-color: var(--dark-color);
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    font-size: 0.9rem;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Welcome screen styles */
+.welcome-container {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 2rem auto;
+    max-width: 320px;
+}
+
+/* Button styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    border: none;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+.btn i {
+    margin-right: 0.5rem;
+}
+
+/* Add to home screen button */
+.add-to-home {
+    background-color: var(--light-color);
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    margin-top: 2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.add-to-home i {
+    margin-right: 0.5rem;
+}
+
+/* Form styles */
+form {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+/* Success page */
+.success-container {
+    text-align: center;
+    background-color: white;
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--box-shadow);
+    margin: 2rem auto;
+    max-width: 500px;
+}
+
+.success-icon {
+    font-size: 4rem;
+    color: var(--success-color);
+    margin-bottom: 1rem;
+}
+
+.reference-number {
+    background-color: var(--light-color);
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    font-weight: bold;
+    margin: 1rem 0;
+}
+
+/* Media Queries */
+@media (min-width: 768px) {
+    .action-buttons {
+        flex-direction: row;
+        max-width: 600px;
+    }
+    
+    .btn-large {
+        padding: 1.25rem 2.5rem;
+        font-size: 1.25rem;
+    }
+}
+
+/* Offline page styles */
+.offline-container {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.offline-icon {
+    font-size: 4rem;
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+}
+
+/* IMPROVED BUTTON STYLING */
+.option-card {
+    border-radius: 16px;
+    overflow: hidden;
+    border: none;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.option-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+}
+
+.option-card .card-body {
+    padding: 2rem;
+    border-bottom: 5px solid transparent;
+}
+
+/* First option - Quote Request */
+.col-md-5:first-child .option-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%);
+}
+
+.col-md-5:first-child .option-card .card-body {
+    border-bottom-color: var(--primary-color);
+}
+
+.col-md-5:first-child .option-card i {
+    color: var(--primary-color);
+}
+
+/* Second option - Place Order */
+.col-md-5:last-child .option-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%);
+}
+
+.col-md-5:last-child .option-card .card-body {
+    border-bottom-color: var(--secondary-color);
+}
+
+.col-md-5:last-child .option-card i {
+    color: var(--secondary-color);
+}
+
+.option-card h3 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.option-card p {
+    color: #6c757d;
+}
+
+.option-card i {
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.option-card:hover i {
+    transform: scale(1.1);
+}
+
+/* Install banner */
+.install-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    padding: 1rem;
+    z-index: 1000;
+}
+
+.install-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.install-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.install-text strong {
+    font-size: 1.1rem;
+}
+
+.install-text span {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+#install-button {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+    
+    .option-card {
+        margin-bottom: 1rem;
+    }
+    
+    .option-card .card-body {
+        padding: 1.5rem;
+    }
+}
+
+/* Add touch hint for mobile */
+@media (max-width: 767px) {
+    .option-card::after {
+        content: '';
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        opacity: 0.7;
+    }
+}
+
+/* PWA installed styles */
+.pwa-installed header {
+    padding-top: env(safe-area-inset-top);
+}
+
+.pwa-installed footer {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Welcome section */
+.portal-welcome {
+    text-align: center;
+    padding: 2rem 0 3rem;
+}
+
+.welcome-heading {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+}
+
+.brand-highlight {
+    color: var(--primary-color);
+}
+
+.welcome-subtext {
+    font-size: 1.25rem;
+    color: #6c757d;
+    font-weight: 300;
+}
+
+/* Action cards */
+.action-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.action-card {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.action-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 100%;
+    transition: var(--transition);
+}
+
+.quote-card::before {
+    background-color: var(--primary-color);
+}
+
+.order-card::before {
+    background-color: var(--secondary-color);
+}
+
+.action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.card-icon {
+    font-size: 2.5rem;
+    margin-right: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.quote-card .card-icon {
+    color: var(--primary-color);
+    background-color: var(--primary-light);
+}
+
+.order-card .card-icon {
+    color: var(--secondary-color);
+    background-color: rgba(44, 62, 80, 0.1);
+}
+
+.card-text {
+    flex: 1;
+}
+
+.card-text h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.card-text p {
+    color: #6c757d;
+    margin: 0;
+}
+
+.card-arrow {
+    margin-left: 1rem;
+    color: #ced4da;
+    transition: var(--transition);
+}
+
+.action-card:hover .card-arrow {
+    transform: translateX(5px);
+    color: var(--primary-color);
+}
+
+/* Contact info */
+.contact-info {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: auto;
+    padding: 1.5rem 0;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    color: #6c757d;
+}
+
+.contact-item i {
+    margin-right: 0.5rem;
+    color: var(--primary-color);
+}
+
+/* Media queries */
+@media (min-width: 768px) {
+    .action-cards {
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .action-card {
+        padding: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .contact-info {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .welcome-heading {
+        font-size: 2rem;
+    }
+    
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+    }
+}
+
+/* PWA installed styles */
+.pwa-installed .portal-container {
+    padding-top: env(safe-area-inset-top);
+}
+
+.pwa-installed footer {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+}

@@ -1,0 +1,424 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Quotes Pending Approval {% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">
+                        Quotes Pending Approval 
+                        {% if not is_admin and not is_quoter and not is_buyer %}
+                            <small class="text-muted">(Showing only your quotes)</small>
+                        {% endif %}
+                    </h4>
+                    <div class="card-tools">
+                        <form method="get" class="d-flex gap-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="search" placeholder="Search..." value="{{ request.GET.search }}">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="feather icon-search"></i>
+                                </button>
+                            </div>
+                            <select name="company" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All Companies</option>
+                                <option value="CNL" {% if request.GET.company == 'CNL' %}selected{% endif %}>CNL</option>
+                                <option value="ISHERWOOD" {% if request.GET.company == 'ISHERWOOD' %}selected{% endif %}>ISHERWOOD</option>
+                            </select>
+                            <select name="date_range" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All Time</option>
+                                <option value="today" {% if request.GET.date_range == 'today' %}selected{% endif %}>Today</option>
+                                <option value="week" {% if request.GET.date_range == 'week' %}selected{% endif %}>This Week</option>
+                                <option value="month" {% if request.GET.date_range == 'month' %}selected{% endif %}>This Month</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if quotes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Quote #</th>
+                                        <th>Customer</th>
+                                        <th>Letterhead</th>
+                                        <th>Claimed By</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for quote in quotes %}
+                                        <tr class="quote-row" data-rep="{{ quote.rep.username }}">
+                                            <td>
+                                                {{ quote.quote_number }}
+                                                <!-- Add rep name in small text below quote number -->
+                                                <div class="rep-indicator">
+                                                    <small class="text-muted">
+                                                        <i class="feather icon-user-check"></i> {{ quote.rep.first_name|default:quote.rep.username }}
+                                                    </small>
+                                                </div>
+                                            </td>
+                                            <td>{{ quote.customer.company }}</td>
+                                            <td>
+                                                <span class="badge {% if quote.company_letterhead == 'CNL' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                                    {{ quote.company_letterhead }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if quote.assigned_to %}
+                                                    <span class="badge {% if quote.assigned_to == request.user %}bg-warning{% else %}bg-info{% endif %}">
+                                                        <i class="feather icon-user"></i> {{ quote.assigned_to.username }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="feather icon-circle"></i> Unclaimed
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ quote.pdf_generated_at|date:"d M Y" }}</td>
+                                            <td>
+                                                <!-- View PDF Button -->
+                                                <a href="{{ quote.pdf_file.url }}" target="_blank" class="btn btn-info btn-sm">
+                                                    <i class="feather icon-file-text"></i> View PDF
+                                                </a>
+                                                
+                                                <!-- View Details Button -->
+                                                <a href="{% url 'quotes:quote_detail' quote.pk %}" class="btn btn-primary btn-sm">
+                                                    <i class="feather icon-eye"></i> Details
+                                                </a>
+                                                
+                                                <!-- Approval actions - only show for the quote's rep or admins -->
+                                                {% if is_admin or is_quoter or is_buyer or quote.rep == request.user %}
+                                                    <!-- Approve Button with direct link to the approval form -->
+                                                    <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success btn-sm">
+                                                        <i class="feather icon-check"></i> Approve
+                                                    </a>
+                                                    
+                                                    <!-- Reject Button (modal trigger) -->
+                                                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal{{ quote.pk }}">
+                                                        <i class="feather icon-x"></i> Reject
+                                                    </button>
+                                                    
+                                                    <!-- Rejection Modal remains unchanged -->
+                                                    <div class="modal fade" id="rejectModal{{ quote.pk }}" tabindex="-1" aria-hidden="true">
+                                                        <div class="modal-dialog">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">Reject Quote #{{ quote.quote_number }}</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <form method="post" action="{% url 'quotes:reject_quote' quote.pk %}">
+                                                                    {% csrf_token %}
+                                                                    <div class="modal-body">
+                                                                        <div class="form-group">
+                                                                            <label>Reason for rejection:</label>
+                                                                            <textarea name="rejection_reason" class="form-control" rows="3" required></textarea>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                        <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if quotes.has_other_pages %}
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center mt-4">
+                                    {% if quotes.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ quotes.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for i in quotes.paginator.page_range %}
+                                        {% if quotes.number == i %}
+                                            <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                                        {% else %}
+                                            <li class="page-item"><a class="page-link" href="?page={{ i }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}">{{ i }}</a></li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if quotes.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ quotes.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center my-5">
+                            {% if not is_admin and not is_quoter and not is_buyer %}
+                                <i class="feather icon-check-circle text-success" style="font-size: 4rem;"></i>
+                                <h3 class="mt-3">No quotes pending your approval</h3>
+                                <p class="text-muted">You're only shown quotes that you created.</p>
+                            {% else %}
+                                <i class="feather icon-check-circle text-success" style="font-size: 4rem;"></i>
+                                <h3 class="mt-3">No quotes pending approval</h3>
+                                <p class="text-muted">All quotes have been processed.</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Add this to make the badge for your own quotes stand out */
+.badge.bg-warning {
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Make the pending approval title more prominent */
+.card-title {
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+.card-title small {
+    font-size: 0.9rem;
+    font-weight: normal;
+    opacity: 0.7;
+}
+
+/* Style for rep name display */
+.rep-indicator {
+    margin-top: 4px;
+    font-size: 0.8rem;
+}
+
+.rep-indicator small {
+    opacity: 0.7;
+}
+
+/* Color indicator for each rep */
+.quote-row {
+    border-left: 4px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+/* Generate colors based on rep username */
+.quote-row[data-rep="john"] { border-left-color: #4285F4; }
+.quote-row[data-rep="alice"] { border-left-color: #EA4335; }
+.quote-row[data-rep="bob"] { border-left-color: #FBBC05; }
+.quote-row[data-rep="susan"] { border-left-color: #34A853; }
+.quote-row[data-rep="mike"] { border-left-color: #9C27B0; }
+.quote-row[data-rep="admin"] { border-left-color: #607D8B; }
+/* Add more colors as needed for your reps */
+
+/* For any rep not listed above, use a dynamic color */
+
+/* Add these new styles for better modal display on mobile */
+.modal {
+    z-index: 1050 !important; /* Ensure higher z-index than any other content */
+}
+
+.modal-backdrop {
+    z-index: 1040 !important; /* Must be lower than modal but higher than page content */
+}
+
+/* Mobile-specific modal fixes */
+@media (max-width: 767px) {
+    .modal-dialog {
+        margin: 0.5rem auto;
+        max-width: 95%;
+        position: relative !important;
+    }
+    
+    .modal-content {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        border: 1px solid rgba(0,0,0,0.2);
+    }
+    
+    /* Make sure modal is fully visible */
+    .modal.show .modal-dialog {
+        transform: none !important;
+    }
+}
+
+/* Fix for modal content appearing behind other elements */
+body.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+</style>
+
+<script>
+// Script to dynamically assign colors to reps not manually defined
+document.addEventListener('DOMContentLoaded', function() {
+    const colorsList = [
+        '#4285F4', '#EA4335', '#FBBC05', '#34A853', '#9C27B0',
+        '#FF5722', '#795548', '#607D8B', '#3F51B5', '#009688',
+        '#673AB7', '#FFC107', '#CDDC39', '#2196F3', '#FF9800'
+    ];
+    
+    const quoteLiRows = document.querySelectorAll('.quote-row');
+    const assignedColors = {};
+    let colorIndex = 0;
+    
+    quoteLiRows.forEach(row => {
+        const rep = row.getAttribute('data-rep');
+        
+        // Skip if already has a border color from CSS
+        if (window.getComputedStyle(row).borderLeftColor !== 'rgb(0, 0, 0)' && 
+            window.getComputedStyle(row).borderLeftColor !== 'transparent') {
+            return;
+        }
+        
+        // Assign a color if not already assigned
+        if (!assignedColors[rep]) {
+            assignedColors[rep] = colorsList[colorIndex % colorsList.length];
+            colorIndex++;
+        }
+        
+        row.style.borderLeftColor = assignedColors[rep];
+    });
+});
+
+// Add this function to handle the reject modal form submission
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all rejection forms
+    const rejectionForms = document.querySelectorAll('.modal form[action*="reject_quote"]');
+    
+    rejectionForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading state on the button
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+            
+            // Get the form data
+            const formData = new FormData(form);
+            
+            // Submit the form via fetch API
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Redirect to the same page or reload to show updated status
+                    window.location.reload();
+                } else {
+                    throw new Error('Something went wrong');
+                }
+            })
+            .catch(error => {
+                // Reset button state
+                setTimeout(() => {
+                    if (submitButton.disabled) {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalText;
+                        alert('Request timed out. Please try again.');
+                    }
+                }, 10000); // 10 second timeout
+                
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+                
+                // Show error message
+                alert('An error occurred while rejecting the quote. Please try again.');
+                console.error('Error:', error);
+            });
+        });
+    });
+});
+
+// Add this to the existing script
+if ('ontouchstart' in window) {
+    // Add extra handling for touch devices
+    const rejectButtons = document.querySelectorAll('button[data-bs-target^="#rejectModal"]');
+    rejectButtons.forEach(button => {
+        button.addEventListener('touchend', function(e) {
+            // Ensure the click event fires properly
+            e.preventDefault();
+            this.click();
+        });
+    });
+}
+
+// Add this to fix modal display issues on mobile
+document.addEventListener('DOMContentLoaded', function() {
+    // Fix mobile modal display issues
+    const modals = document.querySelectorAll('.modal');
+    
+    modals.forEach(modal => {
+        modal.addEventListener('shown.bs.modal', function() {
+            // Force recalculation of modal position
+            const modalDialog = this.querySelector('.modal-dialog');
+            if (modalDialog) {
+                // Remove any inline styles that might be causing issues
+                modalDialog.style.removeProperty('margin-top');
+                modalDialog.style.removeProperty('transform');
+            }
+            
+            // Make sure the modal is at the end of the body to avoid z-index issues
+            document.body.appendChild(this);
+            
+            // Ensure the modal is visible
+            this.style.display = 'block';
+            this.style.zIndex = '1050';
+            
+            // Add an additional class for mobile-specific styling
+            if (window.innerWidth < 768) {
+                this.classList.add('mobile-modal');
+            }
+        });
+        
+        // Add empty handler to prevent any default behavior issues
+        modal.addEventListener('hide.bs.modal', function(e) {
+            // Prevent any potential conflicts
+        });
+    });
+    
+    // If using BS5 or newer, make sure modals are properly initialized
+    if (typeof bootstrap !== 'undefined') {
+        modals.forEach(modal => {
+            new bootstrap.Modal(modal);
+        });
+    }
+});
+</script>
+{% endblock %}

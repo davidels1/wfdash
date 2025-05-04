@@ -1,0 +1,267 @@
+{% extends "layouts/base.html" %}
+{% load custom_filters %}
+{% load order_tags %}
+
+{% block title %}Order Items by Status{% endblock %}
+
+{% block breadcrumbs %}
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col-md-12">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Order Items by Status</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'index' %}">
+                            <i class="feather icon-home"></i>
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'orders:order_list' %}">Orders</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <span>Items by Status</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>Order Items by Status</h5>
+                <div>
+                    <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary">
+                        <i class="feather icon-list"></i> Order View
+                    </a>
+                    <a href="{% url 'orders:order_create' %}" class="btn btn-primary">
+                        <i class="feather icon-plus"></i> New Order
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Search and Filter -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <form method="get" class="d-flex">
+                        <input type="text" name="search" class="form-control me-2" 
+                               placeholder="Search items..." value="{{ search_query }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="feather icon-search"></i>
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-6 text-end">
+                    <span class="text-muted">
+                        Grouping by: <strong>Status</strong> → <strong>Order</strong> → <strong>Items</strong>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Status Groups Accordion -->
+            <div class="accordion" id="statusAccordion">
+                {% for status_code, status_group in status_groups.items %}
+                {% if status_group.count > 0 %}
+                <div class="accordion-item status-{{ status_code }}">
+                    <h2 class="accordion-header" id="heading-{{ status_code }}">
+                        <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                                type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapse-{{ status_code }}" 
+                                aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
+                                aria-controls="collapse-{{ status_code }}">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <span>
+                                    <span class="badge bg-{{ status_group.color }} me-2">{{ status_group.count }}</span>
+                                    {{ status_group.name }}
+                                </span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ status_code }}" 
+                         class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                         aria-labelledby="heading-{{ status_code }}" 
+                         data-bs-parent="#statusAccordion">
+                        <div class="accordion-body p-0">
+                            <!-- Orders Within This Status -->
+                            <div class="accordion" id="orderAccordion-{{ status_code }}">
+                                {% for order_group in status_group.orders %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="order-heading-{{ order_group.order.id }}">
+                                        <button class="accordion-button collapsed" 
+                                                type="button" data-bs-toggle="collapse" 
+                                                data-bs-target="#order-collapse-{{ order_group.order.id }}-{{ status_code }}" 
+                                                aria-expanded="false" 
+                                                aria-controls="order-collapse-{{ order_group.order.id }}-{{ status_code }}">
+                                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                                <span>
+                                                    <span class="badge bg-secondary me-2">{{ order_group.count }}</span>
+                                                    Order #{{ order_group.order.order_number }} - 
+                                                    {{ order_group.order.company.company }}
+                                                </span>
+                                                <a href="{% url 'orders:order_detail' order_group.order.id %}" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   onclick="event.stopPropagation();">
+                                                    <i class="feather icon-eye"></i>
+                                                </a>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="order-collapse-{{ order_group.order.id }}-{{ status_code }}" 
+                                         class="accordion-collapse collapse" 
+                                         aria-labelledby="order-heading-{{ order_group.order.id }}" 
+                                         data-bs-parent="#orderAccordion-{{ status_code }}">
+                                        <div class="accordion-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Description</th>
+                                                            <th>Quantity</th>
+                                                            <th>Supplier</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for item in order_group.items %}
+                                                        <tr>
+                                                            <td class="item-description">
+                                                                {{ item.description }}
+                                                                {% if item.notes %}
+                                                                <small class="text-muted d-block">
+                                                                    {{ item.notes }}
+                                                                </small>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>{{ item.quantity }}</td>
+                                                            <td>
+                                                                {% if item.supplier %}
+                                                                {{ item.supplier.suppliername }}
+                                                                {% else %}
+                                                                <span class="text-muted">Not assigned</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                <a href="{% url 'orders:process_order' order_group.order.id %}" 
+                                                                   class="btn btn-sm btn-outline-primary">
+                                                                    <i class="feather icon-edit"></i> Process
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Status-specific styling */
+    .status-pending .accordion-button {
+        border-left: 5px solid #dc3545;
+    }
+    
+    .status-assigned .accordion-button {
+        border-left: 5px solid #ffc107;
+    }
+    
+    .status-processed .accordion-button {
+        border-left: 5px solid #28a745;
+    }
+    
+    .status-po_generated .accordion-button {
+        border-left: 5px solid #17a2b8;
+    }
+    
+    .status-collected .accordion-button {
+        border-left: 5px solid #007bff;
+    }
+    
+    .status-delivered .accordion-button {
+        border-left: 5px solid #6610f2;
+    }
+    
+    /* Nested accordion styling */
+    .accordion-body .accordion-item {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+    
+    .accordion-body .accordion-item:first-child {
+        border-top: none;
+    }
+    
+    /* Item description styling */
+    .item-description {
+        max-width: 40%;
+        word-wrap: break-word;
+    }
+    
+    /* Improve accordion button contrast */
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(0, 0, 0, 0.03);
+        font-weight: 500;
+    }
+    
+    /* Add transition for smoother experience */
+    .accordion-button {
+        transition: all 0.3s ease;
+    }
+    
+    .accordion-button:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Make entire table rows clickable for better UX
+    document.querySelectorAll('tbody tr').forEach(row => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', function(e) {
+            // Don't handle clicks on buttons or links
+            if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || 
+                e.target.closest('a') || e.target.closest('button')) {
+                return;
+            }
+            
+            // Find the process button in this row and click it
+            const processBtn = this.querySelector('.btn-outline-primary');
+            if (processBtn) {
+                processBtn.click();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

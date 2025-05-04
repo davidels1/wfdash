@@ -1,0 +1,328 @@
+{% extends "layouts/base.html" %}
+{% load custom_filters %}
+{% load order_tags %}
+
+{% block title %}Orders by Status{% endblock %}
+
+{% block breadcrumbs %}
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col-md-12">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Orders by Status</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'index' %}">
+                            <i class="feather icon-home"></i>
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'orders:order_list' %}">Orders</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <span>Orders by Status</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>Orders by Status</h5>
+                <div>
+                    <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary">
+                        <i class="feather icon-list"></i> Standard View
+                    </a>
+                    <a href="{% url 'orders:order_create' %}" class="btn btn-primary">
+                        <i class="feather icon-plus"></i> New Order
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Search bar -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <form method="get" class="d-flex">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Search orders..." name="search" value="{{ search_query }}">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="feather icon-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Status tabs -->
+            <div class="accordion" id="statusAccordion">
+                {% for status_code, status_display in status_choices %}
+                <div class="accordion-item status-{{ status_code|slugify }}">
+                    <h2 class="accordion-header" id="heading-{{ status_code|slugify }}">
+                        <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}"
+                                type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapse-{{ status_code|slugify }}"
+                                aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}"
+                                aria-controls="collapse-{{ status_code|slugify }}">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <span class="status-header-title">
+                                    <span class="status-indicator"></span>
+                                    <span class="badge bg-{{ status_colors|get_item:status_code }} me-2">
+                                        {{ status_orders|get_item:status_code|length }}
+                                    </span>
+                                    {{ status_display }}
+                                </span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ status_code|slugify }}"
+                         class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+                         aria-labelledby="heading-{{ status_code|slugify }}"
+                         data-bs-parent="#statusAccordion">
+                        <div class="accordion-body p-0">
+                            <!-- Orders Within This Status -->
+                            <div class="accordion" id="orderAccordion-{{ status_code|slugify }}">
+                                {% with order_list=status_orders|get_item:status_code %}
+                                {% if order_list %}
+                                    {% for order in order_list %}
+                                    <!-- Add this class to orders with pending items -->
+                                    {% count_pending_items order as pending_count %}
+                                    <div class="accordion-item {% if pending_count > 0 %}has-pending-items{% endif %}">
+                                        <h2 class="accordion-header" id="order-heading-{{ order.id }}">
+                                            <button class="accordion-button collapsed"
+                                                    type="button" data-bs-toggle="collapse"
+                                                    data-bs-target="#order-collapse-{{ order.id }}"
+                                                    aria-expanded="false"
+                                                    aria-controls="order-collapse-{{ order.id }}">
+                                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                                    <span>
+                                                        <span class="badge bg-secondary me-2">{{ order.items.count }}</span>
+                                                        Order #{{ order.order_number }} -
+                                                        {{ order.company.company }}
+                                                        <!-- Add special class for pending items badge -->
+                                                        {% if pending_count > 0 %}
+                                                        <span class="badge pending-status ms-2">
+                                                            Pending Items ({{ pending_count }})
+                                                        </span>
+                                                        {% else %}
+                                                        <span class="badge bg-{{ status_colors|get_item:status_code }} ms-2">
+                                                            {{ status_display }}
+                                                        </span>
+                                                        {% endif %}
+                                                        {% if order.quote %}
+                                                        <span class="badge bg-success ms-1"
+                                                              data-bs-toggle="tooltip"
+                                                              title="Linked to Quote #{{ order.quote.quote_number }}">
+                                                            <i class="feather icon-file-text"></i>
+                                                        </span>
+                                                        {% endif %}
+                                                    </span>
+                                                    <div>
+                                                        <span class="text-muted me-2">{{ order.created_at|date:"d/m/Y" }}</span>
+                                                        <a href="{% url 'orders:order_detail' order.pk %}"
+                                                           class="btn btn-sm btn-info"
+                                                           onclick="event.stopPropagation();"
+                                                           data-bs-toggle="tooltip"
+                                                           title="View Order">
+                                                            <i class="feather icon-eye"></i>
+                                                        </a>
+                                                        <a href="{% url 'orders:process_order' order.pk %}"
+                                                           class="btn btn-sm btn-primary"
+                                                           onclick="event.stopPropagation();"
+                                                           data-bs-toggle="tooltip"
+                                                           title="Process Order">
+                                                            <i class="feather icon-edit"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </h2>
+                                        <div id="order-collapse-{{ order.id }}"
+                                             class="accordion-collapse collapse"
+                                             aria-labelledby="order-heading-{{ order.id }}"
+                                             data-bs-parent="#orderAccordion-{{ status_code|slugify }}">
+                                            <div class="accordion-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                        <!-- Table headers come BEFORE items -->
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Description</th>
+                                                                <th>Quantity</th>
+                                                                <th>Status</th>
+                                                                <th>Notes</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for item in order.items.all %}
+                                                            <tr>
+                                                                <td class="item-description">{{ item.description }}</td>
+                                                                <td>{{ item.quantity }}</td>
+                                                                <td>
+                                                                    <span class="badge bg-{{ item.item_status|item_status_color }}">
+                                                                        {{ item.get_item_status_display }}
+                                                                    </span>
+                                                                </td>
+                                                                <td>{{ item.notes|default:"-" }}</td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <div class="alert alert-info m-3">
+                                    <i class="feather icon-info me-2"></i>No orders with "{{ status_display }}" status found.
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Status-specific styling with colored borders only (no backgrounds) */
+    .status-new .accordion-button {
+        border-left: 8px solid #0d6efd;
+    }
+
+
+        /* Custom styling for pending items badge */
+    .badge.pending-status {
+        background-color: #ffc107 !important; /* Yellow/amber warning color */
+        color: #000 !important; /* Black text for better contrast */
+        font-weight: 600;
+    }
+
+
+
+    .status-processing .accordion-button {
+        border-left: 8px solid #fd7e14;
+    }
+
+    .status-completed .accordion-button {
+        border-left: 8px solid #198754;
+    }
+
+    .status-cancelled .accordion-button {
+        border-left: 8px solid #dc3545;
+    }
+
+    /* Status indicator styling */
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .status-new .status-indicator {
+        background-color: #0d6efd;
+    }
+
+    .status-processing .status-indicator {
+        background-color: #fd7e14;
+    }
+
+    .status-completed .status-indicator {
+        background-color: #198754;
+    }
+
+    .status-cancelled .status-indicator {
+        background-color: #dc3545;
+    }
+
+    /* Individual item status colors */
+    .status-delivered {
+        background-color: #4caf50; /* Success green */
+        border-left: 4px solid #2e7d32;
+    }
+
+    .status-processed {
+        background-color: #2196f3; /* Info blue */
+        border-left: 4px solid #1565c0;
+    }
+
+    /* Add specific styling for pending items - amber/orange color */
+    .status-pending {
+        background-color: #ffc107; /* Warning amber */
+        border-left: 4px solid #ff9800;
+    }
+
+    /* Replace existing badge styling for pending items */
+    .badge.bg-pending,
+    .badge[class*="bg-"][data-status="pending"],
+    .item-status-badge.bg-warning {
+        background-color: #ffc107 !important; /* Warning amber */
+        color: #000 !important;
+        font-weight: 600;
+    }
+
+    .status-collected {
+        background-color: #00bcd4; /* Cyan */
+        border-left: 4px solid #00838f;
+    }
+
+    /* Make item status badge more prominent */
+    .item-status-badge {
+        font-weight: 500;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    /* Update this to use a CSS selector that works in all browsers */
+    .badge.pending-badge {
+        background-color: #ffc107 !important; /* Warning amber */
+        color: #000 !important;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Make entire table rows clickable for better UX
+    document.querySelectorAll('tbody tr').forEach(row => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', function(e) {
+            // Don't handle clicks on buttons or links
+            if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' ||
+                e.target.closest('a') || e.target.closest('button')) {
+                return;
+            }
+
+            // Find the parent order and navigate to process page
+            const orderId = this.closest('.accordion-collapse').id.replace('order-collapse-', '');
+            window.location.href = `/orders/${orderId}/process/`;
+        });
+    });
+});
+</script>
+{% endblock %}

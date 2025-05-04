@@ -11,8 +11,8 @@
                     <a href="{% url 'orders:download_po' po.id %}" class="btn btn-primary">
                         <i class="feather icon-download"></i> Download PDF
                     </a>
-                    <a href="{% url 'orders:email_po' po.id %}" class="btn btn-success">
-                        <i class="feather icon-mail"></i> Send Email
+                    <a href="#" class="btn btn-secondary disabled" onclick="emailDisabled(event)">
+                        <i class="feather icon-mail"></i> Email PO (Disabled)
                     </a>
                     <a href="{% url 'orders:order_detail' po.order.id %}" class="btn btn-secondary">
                         <i class="feather icon-arrow-left"></i> Back to Order
@@ -29,4 +29,20 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle download and email buttons with notifications
+    document.querySelector('a[href*="download_po"]')?.addEventListener('click', function() {
+        toastr.info('Preparing PDF download...', 'Download Started');
+    });
+});
+
+function emailDisabled(e) {
+    e.preventDefault();
+    toastr.info('Email functionality is currently disabled');
+}
+</script>
 {% endblock %}

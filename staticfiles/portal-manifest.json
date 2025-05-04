@@ -1,0 +1,23 @@
+{
+  "name": "WF Sales Customer Portal",
+  "short_name": "WF Portal",
+  "start_url": "/portal/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e7f20d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/images/pwa/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/pwa/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

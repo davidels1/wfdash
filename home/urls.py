@@ -2,14 +2,25 @@ from django.urls import path
 from home import views
 from django.contrib.auth import views as auth_views
 
+
+
+def redirect_to_admin(request):
+    return redirect('/admin/')
+
+
+
 urlpatterns = [
   # Dashboard
-  path('', views.default, name='index'),
+  path('', views.default, name='login_v3'),
   path('dashboard/ecommerce/', views.dashboard_ecommerce, name='dashboard_ecommerce'),
   path('dashboard/crm/', views.dashboard_crm, name='dashboard_crm'),
   path('dashboard/analytics/', views.dashboard_analytics, name='dashboard_analytics'),
   path('dashboard/crypto/', views.dashboard_crypto, name='dashboard_crypto'),
   path('dashboard/project/', views.dashboard_project, name='dashboard_project'),
+
+
+  path('', redirect_to_admin, name='index'),
+
 
   # Page Layouts
   path('page-layouts/vertical/static-layout/', views.static_layout, name='static_layout'),
@@ -204,7 +215,7 @@ urlpatterns = [
   path('accounts/password-reset-done/', auth_views.PasswordResetDoneView.as_view(
     template_name='accounts/password-reset-done.html'
   ), name='password_reset_done'),
-  path('accounts/password-reset-confirm/<uidb64>/<token>/', 
+  path('accounts/password-reset-confirm/<uidb64>/<token>/',
     views.UserPasswordResetConfirmView.as_view(), name='password_reset_confirm'),
   path('accounts/password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(
     template_name='accounts/password-reset-complete.html'

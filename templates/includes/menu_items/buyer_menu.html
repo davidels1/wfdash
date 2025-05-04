@@ -51,6 +51,7 @@
         
         <li><a href="{% url 'quotes:quote_list' %}"><i class="feather icon-list me-2"></i>Quote List</a></li>
         <li><a href="{% url 'quotes:generated_quotes' %}"><i class="feather icon-box me-2"></i>Generated Quotes</a></li>
+        <li><a href="{% url 'quotes:archived_quotes' %}"><i class="feather icon-briefcase me-2"></i>Archived Quotes</a></li>
     </ul>
 </li>
 
@@ -64,9 +65,25 @@
 
         <li><a href="{% url 'orders:order_create' %}"><i class="feather icon-plus-circle me-2"></i>New Order</a></li>
         <li><a href="{% url 'orders:order_list' %}"><i class="feather icon-list me-2"></i>Order List</a></li>
+        <li><a href="{% url 'orders:order_list_optimized' %}"><i class="feather icon-list me-2"></i>Order List_OPTIMIZED</a></li>
         <li><a href="{% url 'orders:purchase_order_list' %}"><i class="feather icon-file-text me-2"></i>Purchase Orders</a></li>
     </ul>
 </li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <!-- Driver Operations -->
 <li class="nav-item pcoded-hasmenu">

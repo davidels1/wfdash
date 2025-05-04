@@ -14,13 +14,20 @@
       '<div class="style-block">' +
       '<h6 class="mb-2">Datta Able Live Menu Customizer</h6>' +
       '<hr class="my-0">' +
+
+      // Reset Button - New
+      '<div class="my-3">' +
+      '<button id="reset-settings" class="btn btn-danger btn-sm w-100">Reset All Settings</button>' +
+      '</div>' +
+
       '<h6>Layouts</h6>' +
       '<div class="theme-color layout-type">' +
       '<a href="#!" class=" active" data-value="menu-dark" data-bs-toggle="tooltip" title="Default Layout"><span></span><span></span></a>' +
       '<a href="#!" class="" data-value="menu-light" data-bs-toggle="tooltip" title="Light"><span></span><span></span></a>' +
       '<a href="#!" class="" data-value="dark" data-bs-toggle="tooltip" title="Dark"><span></span><span></span></a>' +
-      '<a href="#!" class="" data-value="reset" data-bs-toggle="tooltip" title="Reset">Reset to Default</a>' +
       '</div>' +
+
+      /* Prebuild Layout section commented out
       '<h6>Prebuild Layout</h6>' +
       '<p class="f-12"><span class="text-c-red">*</span> in Prebuild Layout you redirect to new page</p>' +
       '<div class="theme-color prelayout-color">' +
@@ -35,6 +42,8 @@
       '<a href="{% url 'index_8' %}" class="" data-value="l8" target="_blank"><span></span><span></span></a>' +
       '<a href="{% url 'index_1' %}" class="" data-value="l1" target="_blank"><span></span><span></span></a>' +
       '</div>' +
+      */
+
       '<div class="form-group mb-3">' +
       '<div class="switch switch-primary d-inline m-r-10">' +
       '<input type="checkbox" id="icon-colored">' +
@@ -59,10 +68,9 @@
       '<div class="theme-color header-color">' +
       '<a href="#!" class=" active" data-value="header-default"><span></span><span></span></a>' +
       '<a href="#!" class="" data-value="header-blue"><span></span><span></span></a>' +
-      '<a href="#!" class="" data-value="header-red"><span></span><span></span></a>' +
-      '<a href="#!" class="" data-value="header-purple"><span></span><span></span></a>' +
-      '<a href="#!" class="" data-value="header-lightblue"><span></span><span></span></a>' +
-      '<a href="#!" class="" data-value="header-dark"><span></span><span></span></a>' +
+      '<a href="#!" class="" data-value="header-green"><span></span><span></span></a>' +
+      '<a href="#!" class="" data-value="header-orange"><span></span><span></span></a>' +
+      // Add more colors here
       '</div>' +
       '<h6>Menu background</h6>' +
       '<div class="theme-color navbar-color">' +
@@ -84,6 +92,7 @@
       '</div>' +
       '<h6>Navbar Image</h6>' +
       '<div class="theme-color navbar-images">' +
+      '<a href="#!" class="active" data-value=""><span class="text-center bg-light" style="width: 30px; height: 30px; line-height: 30px; font-size: 12px;">NONE</span></a>' +
       '<a href="#!" class="" data-value="navbar-image-1"><span></span><span></span></a>' +
       '<a href="#!" class="" data-value="navbar-image-2"><span></span><span></span></a>' +
       '<a href="#!" class="" data-value="navbar-image-3"><span></span><span></span></a>' +
@@ -120,98 +129,18 @@
       '</div>' +
       '<label>Box Layouts</label>' +
       '</div>' +
-
-      '</div>' +
-      '<div class="tab-pane fade" id="pills-extra" role="tabpanel" aria-labelledby="pills-extra-tab">' +
-      '<h6>Menu Dropdown Icon</h6>' +
-      '<div class="theme-color">' +
-      '<div class="form-group d-inline">' +
-      '<div class="radio radio-primary d-inline">' +
-      '<input type="radio" name="radio-in-1" id="drpicon-1" checked onchange="drpicon(\'style1\')">' +
-      '<label for="drpicon-1" class="cr"><i class="feather icon-chevron-right"></i></label>' +
-      '</div>' +
-      '</div>' +
-      '<div class="form-group d-inline">' +
-      '<div class="radio radio-primary d-inline">' +
-      '<input type="radio" name="radio-in-1" id="drpicon-2" onchange="drpicon(\'style2\')">' +
-      '<label for="drpicon-2" class="cr"><i class="feather icon-chevrons-right"></i></label>' +
-      '</div>' +
-      '</div>' +
-      '<div class="form-group d-inline">' +
-      '<div class="radio radio-primary d-inline">' +
-      '<input type="radio" name="radio-in-1" id="drpicon-3" onchange="drpicon(\'style3\')">' +
-      '<label for="drpicon-3" class="cr"><i class="feather icon-plus"></i></label>' +
-      '</div>' +
-      '</div>' +
-      '</div>' +
-      '<h6>Menu List Icon</h6>' +
-      '<div class="theme-color">' +
-      '<div class="form-group d-inline">' +
-      '<div class="radio radio-primary d-inline">' +
-      '<input type="radio" name="radio-in" id="subitem-1" checked onchange="menuitemicon(\'style1\')">' +
-      '<label for="subitem-1" class="cr"><i class=" "> </i>     </label>' +
-      '</div>' +
-      '</div>' +
-      '<div class="form-group d-inline">' +
-      '<div class="radio radio-primary d-inline">' +
-      '<input type="radio" name="radio-in" id="subitem-2" onchange="menuitemicon(\'style2\')">' +
-      '<label for="subitem-2" class="cr"><i class="feather icon-minus"></i></label>' +
-      '</div>' +
-      '</div>' +
-      '<div class="form-group d-inline">' +
-      '<div class="radio radio-primary d-inline">' +
-      '<input type="radio" name="radio-in" id="subitem-3" onchange="menuitemicon(\'style3\')">' +
-      '<label for="subitem-3" class="cr"><i class="feather icon-check"></i></label>' +
-      '</div>' +
-      '</div>' +
-      '<div class="form-group d-inline">' +
-      '<div class="radio radio-primary d-inline">' +
-      '<input type="radio" name="radio-in" id="subitem-4" onchange="menuitemicon(\'style4\')">' +
-      '<label for="subitem-4" class="cr"><i class="icon feather icon-corner-down-right"></i></label>' +
-      '</div>' +
-      '</div>' +
-      '<div class="form-group d-inline">' +
-      '<div class="radio radio-primary d-inline">' +
-      '<input type="radio" name="radio-in" id="subitem-5" onchange="menuitemicon(\'style5\')">' +
-      '<label for="subitem-5" class="cr"><i class="icon feather icon-chevrons-right"></i></label>' +
-      '</div>' +
-      '</div>' +
-      '<div class="form-group d-inline">' +
-      '<div class="radio radio-primary d-inline">' +
-      '<input type="radio" name="radio-in" id="subitem-6" onchange="menuitemicon(\'style6\')">' +
-      '<label for="subitem-6" class="cr"><i class="icon feather icon-chevron-right"></i></label>' +
-      '</div>' +
-      '</div>' +
-      '</div>' +
-      '<h6>Active Color</h6>' +
-      '<div class="theme-color active-color small">' +
-      '<a href="#!" class=" active" data-value="active-default"></a>' +
-      '<a href="#!" class="" data-value="active-blue"></a>' +
-      '<a href="#!" class="" data-value="active-red"></a>' +
-      '<a href="#!" class="" data-value="active-purple"></a>' +
-      '<a href="#!" class="" data-value="active-lightblue"></a>' +
-      '<a href="#!" class="" data-value="active-dark"></a>' +
-      '</div>' +
-      '<h6>Menu Title Color</h6>' +
-      '<div class="theme-color title-color small">' +
-      '<a href="#!" class=" active" data-value="title-default"></a>' +
-      '<a href="#!" class="" data-value="title-blue"></a>' +
-      '<a href="#!" class="" data-value="title-red"></a>' +
-      '<a href="#!" class="" data-value="title-purple"></a>' +
-      '<a href="#!" class="" data-value="title-lightblue"></a>' +
-      '<a href="#!" class="" data-value="title-dark"></a>' +
-      '</div>' +
-      '<div class="form-group mb-0">' +
-      '<div class="switch switch-primary d-inline m-r-10">' +
-      '<input type="checkbox" id="caption-hide">' +
-      '<label for="caption-hide" class="cr"></label>' +
-      '</div>' +
-      '<label>Menu Title Hide</label>' +
-      '</div>' +
       '</div>' +
       '</div>' +
       '</div>' +
       '</div>');
+
+    // Add reset button handler
+    document.getElementById('reset-settings').addEventListener('click', function() {
+      localStorage.removeItem('themeSettings');
+      console.log('Settings reset');
+      window.location.reload();
+    });
+
     setTimeout(function () {
       document.querySelector('#pills-cust-tabContent').style.cssText = `
               height: calc(100vh - 430px);
@@ -537,19 +466,78 @@
       });
     });
 
-    // Checkbox handlers
+    // Brand Color
+    document.querySelectorAll('.brand-color > a').forEach(element => {
+      element.addEventListener('click', function() {
+        let temp = this.getAttribute('data-value');
+        setBrandColor(temp);
+        saveSettings();
+      });
+    });
+
+    // Active Color
+    document.querySelectorAll('.active-color > a').forEach(element => {
+      element.addEventListener('click', function() {
+        let temp = this.getAttribute('data-value');
+        setActiveColor(temp);
+        saveSettings();
+      });
+    });
+
+    // Title Color
+    document.querySelectorAll('.title-color > a').forEach(element => {
+      element.addEventListener('click', function() {
+        let temp = this.getAttribute('data-value');
+        setTitleColor(temp);
+        saveSettings();
+      });
+    });
+
+    // Navbar Images
+    document.querySelectorAll('.navbar-images > a').forEach(element => {
+      element.addEventListener('click', function() {
+        let temp = this.getAttribute('data-value');
+        setNavbarImage(temp);
+        saveSettings();
+      });
+    });
+
+    // Menu Dropdown Icon
+    document.querySelectorAll('input[name="radio-in-1"]').forEach(element => {
+      element.addEventListener('change', function() {
+        saveSettings();
+      });
+    });
+
+    // Menu List Icon
+    document.querySelectorAll('input[name="radio-in"]').forEach(element => {
+      element.addEventListener('change', function() {
+        saveSettings();
+      });
+    });
+
+    // Checkbox handlers - add all checkboxes
     document.querySelector("#theme-rtl").addEventListener('change', function() {
-      document.querySelector('.pcoded-navbar').classList.toggle('navbar-dark');
       saveSettings();
     });
 
     document.querySelector("#menu-fixed").addEventListener('change', function() {
-      document.querySelector('.pcoded-navbar').classList.toggle('menupos-static');
       saveSettings();
     });
 
     document.querySelector("#header-fixed").addEventListener('change', function() {
-      document.querySelector('.pcoded-header').classList.toggle('headerpos-fixed');
+      saveSettings();
+    });
+
+    document.querySelector("#box-layouts").addEventListener('change', function() {
+      saveSettings();
+    });
+
+    document.querySelector("#icon-colored").addEventListener('change', function() {
+      saveSettings();
+    });
+
+    document.querySelector("#caption-hide").addEventListener('change', function() {
       saveSettings();
     });
   });
@@ -575,11 +563,45 @@
     document.querySelector('body').classList.add(temp);
   }
 
+  function setBrandColor(temp) {
+    removeClassByPrefix(document.querySelector('.pcoded-navbar'), 'brand-');
+    if (temp !== 'brand-default') {
+      document.querySelector('.pcoded-navbar').classList.add(temp);
+    }
+  }
+
+  function setActiveColor(temp) {
+    removeClassByPrefix(document.querySelector('.pcoded-navbar'), 'active-');
+    if (temp !== 'active-default') {
+      document.querySelector('.pcoded-navbar').classList.add(temp);
+    }
+  }
+
+  function setTitleColor(temp) {
+    removeClassByPrefix(document.querySelector('.pcoded-navbar'), 'title-');
+    if (temp !== 'title-default') {
+      document.querySelector('.pcoded-navbar').classList.add(temp);
+    }
+  }
+
+  function setNavbarImage(temp) {
+    removeClassByPrefix(document.querySelector('.pcoded-navbar'), 'navbar-image-');
+    if (temp) {
+      document.querySelector('.pcoded-navbar').classList.add(temp);
+    }
+  }
+
+  function drpicon(temp) {
+    removeClassByPrefix(document.querySelector(".pcoded-navbar"), 'drp-icon-');
+    if (temp !== 'style1') {
+      document.querySelector(".pcoded-navbar").classList.add('drp-icon-' + temp);
+    }
+    saveSettings();
+  }
+
   function menuitemicon(temp) {
-    if (temp == "style1") {
-      removeClassByPrefix(document.querySelector(".pcoded-navbar"), 'menu-item-icon-');
-    } else {
-      removeClassByPrefix(document.querySelector(".pcoded-navbar"), 'menu-item-icon-');
+    removeClassByPrefix(document.querySelector(".pcoded-navbar"), 'menu-item-icon-');
+    if (temp !== 'style1') {
       document.querySelector(".pcoded-navbar").classList.add('menu-item-icon-' + temp);
     }
     saveSettings();
@@ -596,29 +618,173 @@
 
   // Save settings to localStorage
   function saveSettings() {
+    // Get the active dropdown icon style
+    let drpIconStyle = 'style1';
+    document.querySelectorAll('input[name="radio-in-1"]').forEach(radio => {
+      if (radio.checked) {
+        drpIconStyle = radio.id.replace('drpicon-', '');
+      }
+    });
+
+    // Get the active menu item icon style
+    let menuIconStyle = 'style1';
+    document.querySelectorAll('input[name="radio-in"]').forEach(radio => {
+      if (radio.checked) {
+        menuIconStyle = radio.id.replace('subitem-', '');
+      }
+    });
+
+    // Get navbar image if any
+    let navbarImage = '';
+    const activeNavbarImage = document.querySelector('.navbar-images > a.active');
+    if (activeNavbarImage) {
+      navbarImage = activeNavbarImage.getAttribute('data-value');
+    }
+
     const settings = {
-      themeColor: document.querySelector('.theme-color > a.active').getAttribute('data-value'),
-      headerColor: document.querySelector('.header-color > a.active').getAttribute('data-value'),
-      navbarColor: document.querySelector('.navbar-color > a.active').getAttribute('data-value'),
+      // Layout settings
       layoutType: document.querySelector('.layout-type > a.active').getAttribute('data-value'),
       rtlLayout: document.querySelector("#theme-rtl").checked,
-      menuFixed: document.querySelector("#menu-fixed").checked,
+      boxLayout: document.querySelector("#box-layouts").checked,
+
+      // Header settings
+      headerColor: document.querySelector('.header-color > a.active').getAttribute('data-value'),
       headerFixed: document.querySelector("#header-fixed").checked,
-      menuIcon: document.querySelector('.pcoded-navbar').className.match(/menu-item-icon-(\S+)/)?.[1] || 'style1'
+
+      // Navbar/Menu settings
+      navbarColor: document.querySelector('.navbar-color > a.active').getAttribute('data-value'),
+      brandColor: document.querySelector('.brand-color > a.active').getAttribute('data-value'),
+      activeColor: document.querySelector('.active-color > a.active')?.getAttribute('data-value') || 'active-default',
+      titleColor: document.querySelector('.title-color > a.active')?.getAttribute('data-value') || 'title-default',
+      menuFixed: document.querySelector("#menu-fixed").checked,
+      captionHide: document.querySelector("#caption-hide")?.checked || false,
+      navbarImage: navbarImage, // Will be empty string for "None" option
+
+      // Icon settings
+      iconColored: document.querySelector("#icon-colored").checked,
+      drpIconStyle: drpIconStyle,
+      menuIconStyle: menuIconStyle,
+
+      // Enhanced background settings
+      bodyBackground: document.body.style.backgroundColor || '',
+      darkMode: document.querySelector(".layout-css")?.getAttribute('href') || ''
     };
+
     localStorage.setItem('themeSettings', JSON.stringify(settings));
+    console.log('Settings saved:', settings);
   }
 
   // Apply saved settings
   function applyThemeSettings(settings) {
-    setThemeColor(settings.themeColor);
-    setHeaderColor(settings.headerColor);
-    setNavbarColor(settings.navbarColor);
+    // Apply layout settings
     setLayoutType(settings.layoutType);
-    
-    if (settings.rtlLayout) document.querySelector("#theme-rtl").click();
-    if (settings.menuFixed) document.querySelector("#menu-fixed").click();
-    if (settings.headerFixed) document.querySelector("#header-fixed").click();
-    if (settings.menuIcon !== 'style1') menuitemicon(settings.menuIcon);
+    if (settings.rtlLayout) {
+      document.querySelector("#theme-rtl").checked = true;
+      document.querySelector('head').insertAdjacentHTML("beforeend", '<link rel="stylesheet" class="rtl-css" href="{% static "assets/css/layouts/rtl.css" %}">');
+    }
+    if (settings.boxLayout) {
+      document.querySelector("#box-layouts").checked = true;
+      document.querySelector("body").classList.add("container", "box-layout");
+    }
+
+    // Apply header settings
+    setHeaderColor(settings.headerColor);
+    document.querySelector('.header-color > a.active').classList.remove('active');
+    document.querySelector(`.header-color > a[data-value="${settings.headerColor}"]`).classList.add('active');
+    if (settings.headerFixed) {
+      document.querySelector("#header-fixed").checked = true;
+      document.querySelector(".pcoded-header").classList.add("headerpos-fixed");
+    }
+
+    // Apply navbar/menu settings
+    setNavbarColor(settings.navbarColor);
+    document.querySelector('.navbar-color > a.active').classList.remove('active');
+    document.querySelector(`.navbar-color > a[data-value="${settings.navbarColor}"]`).classList.add('active');
+
+    setBrandColor(settings.brandColor);
+    document.querySelector('.brand-color > a.active').classList.remove('active');
+    document.querySelector(`.brand-color > a[data-value="${settings.brandColor}"]`).classList.add('active');
+
+    // Apply Active and Title colors if they exist in the DOM
+    if (document.querySelector('.active-color') && settings.activeColor) {
+      setActiveColor(settings.activeColor);
+      document.querySelector('.active-color > a.active').classList.remove('active');
+      document.querySelector(`.active-color > a[data-value="${settings.activeColor}"]`).classList.add('active');
+    }
+
+    if (document.querySelector('.title-color') && settings.titleColor) {
+      setTitleColor(settings.titleColor);
+      document.querySelector('.title-color > a.active').classList.remove('active');
+      document.querySelector(`.title-color > a[data-value="${settings.titleColor}"]`).classList.add('active');
+    }
+
+    if (settings.menuFixed) {
+      document.querySelector("#menu-fixed").checked = true;
+      document.querySelector(".pcoded-navbar").classList.remove("menupos-static");
+    } else {
+      document.querySelector(".pcoded-navbar").classList.add("menupos-static");
+    }
+
+    if (settings.captionHide && document.querySelector("#caption-hide")) {
+      document.querySelector("#caption-hide").checked = true;
+      document.querySelector(".pcoded-navbar").classList.add("caption-hide");
+    }
+
+    // Apply navbar image if present
+    if (settings.navbarImage) {
+      setNavbarImage(settings.navbarImage);
+      if (document.querySelector('.navbar-images > a.active')) {
+        document.querySelector('.navbar-images > a.active').classList.remove('active');
+      }
+      document.querySelector(`.navbar-images > a[data-value="${settings.navbarImage}"]`).classList.add('active');
+    } else {
+      // Set the NONE option to active
+      if (document.querySelector('.navbar-images > a.active')) {
+        document.querySelector('.navbar-images > a.active').classList.remove('active');
+      }
+      document.querySelector('.navbar-images > a[data-value=""]').classList.add('active');
+    }
+
+    // Apply icon settings
+    if (settings.iconColored) {
+      document.querySelector("#icon-colored").checked = true;
+      document.querySelector(".pcoded-navbar").classList.add("icon-colored");
+    }
+
+    // Apply dropdown icon style
+    if (settings.drpIconStyle && settings.drpIconStyle !== 'style1') {
+      const drpIconElement = document.querySelector(`#drpicon-${settings.drpIconStyle}`);
+      if (drpIconElement) {
+        drpIconElement.checked = true;
+        document.querySelector(".pcoded-navbar").classList.add(`drp-icon-${settings.drpIconStyle}`);
+      }
+    }
+
+    // Apply menu item icon style
+    if (settings.menuIconStyle && settings.menuIconStyle !== 'style1') {
+      const menuIconElement = document.querySelector(`#subitem-${settings.menuIconStyle}`);
+      if (menuIconElement) {
+        menuIconElement.checked = true;
+        document.querySelector(".pcoded-navbar").classList.add(`menu-item-icon-${settings.menuIconStyle}`);
+      }
+    }
+
+    // Apply background settings
+    if (settings.bodyBackground) {
+      document.body.style.backgroundColor = settings.bodyBackground;
+    }
+
+    // Apply dark mode if needed
+    if (settings.darkMode && settings.darkMode.includes('dark.css')) {
+      document.querySelector(".layout-css")?.setAttribute('href', settings.darkMode);
+      // Ensure dark theme is set properly
+      removeClassByPrefix(document.querySelector(".pcoded-navbar"), 'menu-');
+      document.querySelector(".pcoded-navbar").classList.add("navbar-dark");
+    }
+
+    console.log('Settings applied:', settings);
   }
+
+  // Your existing functions (setThemeColor, setHeaderColor, etc.) would remain
 </script>
+

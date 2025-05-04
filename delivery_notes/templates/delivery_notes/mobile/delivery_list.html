@@ -1,0 +1,228 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Delivery Notes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Delivery Notes</h5>
+                    <a href="{% url 'delivery_notes:create' %}" class="btn btn-primary">
+                        <i class="feather icon-plus me-1"></i> New Delivery Note
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if delivery_notes %}
+                        <!-- Group by status first -->
+                        {% regroup delivery_notes by status as status_list %}
+                        
+                        <!-- Display each status group in an accordion -->
+                        <div class="accordion" id="deliveryAccordion">
+                            {% for status_group in status_list %}
+                                <div class="accordion-item mb-3 status-{{ status_group.grouper }}">
+                                    <h2 class="accordion-header" id="heading-{{ status_group.grouper }}">
+                                        <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#collapse-{{ status_group.grouper }}" 
+                                                aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
+                                                aria-controls="collapse-{{ status_group.grouper }}">
+                                            <div class="d-flex justify-content-between w-100">
+                                                <span class="fw-bold">
+                                                    {% if status_group.grouper == 'draft' %}
+                                                        Draft
+                                                    {% elif status_group.grouper == 'delivered' %}
+                                                        Delivered
+                                                    {% elif status_group.grouper == 'signed' %}
+                                                        Signed
+                                                    {% elif status_group.grouper == 'converted' %}
+                                                        Converted to Quote
+                                                    {% elif status_group.grouper == 'ordered' %}
+                                                        Ordered
+                                                    {% else %}
+                                                        {{ status_group.grouper|title }}
+                                                    {% endif %}
+                                                </span>
+                                                <span class="badge rounded-pill bg-{{ status_group.grouper }}">
+                                                    {{ status_group.list|length }}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-{{ status_group.grouper }}" 
+                                         class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                                         aria-labelledby="heading-{{ status_group.grouper }}" 
+                                         data-bs-parent="#deliveryAccordion">
+                                        <div class="accordion-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Delivery #</th>
+                                                            <th>Company</th>
+                                                            <th>Date</th>
+                                                            <th>Items</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for delivery in status_group.list|dictsort:"company.company" %}
+                                                            <tr>
+                                                                <td><a href="{% url 'delivery_notes:detail' delivery.pk %}">{{ delivery.delivery_number }}</a></td>
+                                                                <td>{{ delivery.company.company }}</td>
+                                                                <td>{{ delivery.delivery_date|date:"d M Y" }}</td>
+                                                                <td>{{ delivery.items.count }}</td>
+                                                                <td>
+                                                                    <div class="d-flex">
+                                                                        <a href="{% url 'delivery_notes:detail' delivery.pk %}" class="btn btn-sm btn-primary me-1">
+                                                                            <i class="feather icon-eye"></i>
+                                                                        </a>
+                                                                        {% if delivery.pdf_file %}
+                                                                        <a href="{{ delivery.pdf_file.url }}" target="_blank" class="btn btn-sm btn-secondary">
+                                                                            <i class="feather icon-file-text"></i>
+                                                                        </a>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">No delivery notes found.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Status-specific styling with colored borders */
+    .accordion-item.status-draft {
+        border-left: 4px solid #6c757d;
+    }
+    
+    .accordion-item.status-delivered {
+        border-left: 4px solid #17a2b8;
+    }
+    
+    .accordion-item.status-signed {
+        border-left: 4px solid #28a745;
+    }
+    
+    .accordion-item.status-converted {
+        border-left: 4px solid #007bff;
+    }
+    
+    .accordion-item.status-ordered {
+        border-left: 4px solid #fd7e14;
+    }
+    
+    /* Status badge colors */
+    .badge.bg-draft {
+        background-color: #6c757d;
+    }
+    
+    .badge.bg-delivered {
+        background-color: #17a2b8;
+    }
+    
+    .badge.bg-signed {
+        background-color: #28a745;
+    }
+    
+    .badge.bg-converted {
+        background-color: #007bff;
+    }
+    
+    .badge.bg-ordered {
+        background-color: #fd7e14;
+    }
+    
+    /* Accordion styling */
+    .accordion-button:not(.collapsed) {
+        background-color: #f8f9fa;
+        box-shadow: none;
+        color: #212529;
+    }
+    
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,.125);
+    }
+    
+    /* Badge styling */
+    .accordion-button .badge {
+        font-weight: 500;
+        padding: 0.4em 0.65em;
+        margin-left: 10px;
+    }
+    
+    /* Table styling */
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    /* Button styling */
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .btn-sm i {
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Apply colors based on company
+        const rows = document.querySelectorAll('.company-row');
+        let currentCompanyId = null;
+        let currentColor = null;
+        
+        rows.forEach(row => {
+            const companyId = row.getAttribute('data-company-id');
+            
+            // Ensure same company gets same color even if IDs don't end with same digit
+            if (companyId !== currentCompanyId) {
+                currentCompanyId = companyId;
+                // Generate a consistent color for this company
+                const hue = (parseInt(companyId) * 137) % 360; // Consistent but varied hue
+                row.style.borderLeftColor = `hsl(${hue}, 70%, 50%)`;
+                row.style.backgroundColor = `hsl(${hue}, 70%, 95%)`;
+            } else {
+                // Same company as previous, use same color
+                const prevRow = row.previousElementSibling;
+                if (prevRow) {
+                    row.style.borderLeftColor = prevRow.style.borderLeftColor;
+                    row.style.backgroundColor = prevRow.style.backgroundColor;
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

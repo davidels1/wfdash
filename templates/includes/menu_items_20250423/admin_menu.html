@@ -1,0 +1,216 @@
+{% load i18n static admin_datta %}
+
+
+<!-- Admin Menu - Consolidated -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-settings"></i></span>
+        <span class="pcoded-mtext">Administration</span>
+    </a>
+    <ul class="pcoded-submenu">
+        {% if request.user.is_superuser %}
+            <li><a href="{% url 'admin:index' %}"><i class="feather icon-grid me-2"></i>Django Admin Dashboard</a></li>
+
+            <!-- User Management Section -->
+            <li><a href="{% url 'admin:auth_user_changelist' %}"><i class="feather icon-user me-2"></i>Users</a></li>
+            <li><a href="{% url 'admin:auth_group_changelist' %}"><i class="feather icon-users me-2"></i>Groups & Permissions</a></li>
+
+            <!-- Company & Customer Section -->
+            <li><a href="{% url 'admin:wfdash_companydetails_changelist' %}"><i class="feather icon-briefcase me-2"></i>Company Management</a></li>
+            <li><a href="{% url 'admin:index' %}"><i class="feather icon-user-check me-2"></i>Customer Management</a></li>
+
+            <!-- Quotes & Orders Section -->
+            <li><a href="{% url 'admin:quotes_quoterequest_changelist' %}"><i class="feather icon-file-text me-2"></i>Quote Requests</a></li>
+
+            <!-- Added: Order Admin Section -->
+            <li><a href="{% url 'admin:orders_order_changelist' %}"><i class="feather icon-shopping-cart me-2"></i>Orders Admin</a></li>
+            <li><a href="{% url 'admin:orders_orderitem_changelist' %}"><i class="feather icon-layers me-2"></i>Order Items Admin</a></li>
+            <li><a href="{% url 'admin:orders_purchaseorder_changelist' %}"><i class="feather icon-file me-2"></i>Purchase Orders Admin</a></li>
+
+            <!-- Added: Delivery Notes Admin Section -->
+            <li><a href="{% url 'admin:delivery_notes_deliverynote_changelist' %}"><i class="feather icon-file-text me-2"></i>Delivery Notes Admin</a></li>
+            <li><a href="{% url 'admin:delivery_notes_deliveryitem_changelist' %}"><i class="feather icon-list me-2"></i>Delivery Items Admin</a></li>
+
+            <!-- Suppliers & Collections Section -->
+            <li><a href="{% url 'admin:index' %}"><i class="feather icon-truck me-2"></i>Supplier Management</a></li>
+            <li><a href="{% url 'admin:driver_list_supplier_changelist' %}"><i class="feather icon-map-pin me-2"></i>Supplier Locations</a></li>
+            <li><a href="{% url 'admin:driver_list_collection_changelist' %}"><i class="feather icon-package me-2"></i>Collections</a></li>
+
+            <!-- Stock & Inventory Section -->
+            <li><a href="{% url 'admin:stock_management_stockitem_changelist' %}"><i class="feather icon-database me-2"></i>Stock Items</a></li>
+
+            <!-- System Settings Section -->
+            <li><a href="{% url 'admin:sites_site_changelist' %}"><i class="feather icon-globe me-2"></i>Sites</a></li>
+            <li><a href="{% url 'admin:socialaccount_socialapp_changelist' %}"><i class="feather icon-log-in me-2"></i>Social Applications</a></li>
+        {% endif %}
+    </ul>
+</li>
+
+
+
+<!-- Email Tracking -->
+<li class="nav-item">
+    <a href="{% url 'quotes:email_tracking_dashboard' %}" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-bar-chart-2"></i></span>
+        <span class="pcoded-mtext">Email Tracking</span>
+    </a>
+</li>
+
+<!-- Company Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-briefcase"></i></span>
+        <span class="pcoded-mtext">Company Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'wfdash:company' %}"><i class="feather icon-plus me-2"></i>Add Company</a></li>
+        <li><a href="{% url 'wfdash:company_list' %}"><i class="feather icon-list me-2"></i>Companies List</a></li>
+    </ul>
+</li>
+
+<!-- Customer Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-users"></i></span>
+        <span class="pcoded-mtext">Customers</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'wfdash:customers' %}"><i class="feather icon-user-plus me-2"></i>Add Customer</a></li>
+        <li><a href="{% url 'wfdash:customers_list' %}"><i class="feather icon-list me-2"></i>Customer List</a></li>
+    </ul>
+</li>
+
+<!-- Supplier Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-smartphone"></i></span>
+        <span class="pcoded-mtext">Suppliers</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'wfdash:suppliers' %}"><i class="feather icon-plus-square me-2"></i>Add Supplier</a></li>
+        <li><a href="{% url 'wfdash:suppliers_list' %}"><i class="feather icon-list me-2"></i>Supplier List</a></li>
+    </ul>
+</li>
+
+<!-- Quote Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-file-text"></i></span>
+        <span class="pcoded-mtext">Quote Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'quotes:quote_create' %}"><i class="feather icon-plus-circle me-2"></i>New Quote</a></li>
+        <li><a href="{% url 'quotes:quote_list' %}"><i class="feather icon-list me-2"></i>Quote List</a></li>
+        <li><a href="{% url 'quotes:pending_approvals' %}"><i class="feather icon-check-circle me-2"></i>Quotes for Approval</a></li>
+        <li><a href="{% url 'quotes:generated_quotes' %}"><i class="feather icon-box me-2"></i>Generated Quotes</a></li>
+    </ul>
+</li>
+
+
+
+{# Example for templates/layouts/base.html or sidebar include #}
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-package"></i></span>
+        <span class="pcoded-mtext">Stock</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'internal_stock:list' %}"><i class="feather icon-box me-2"></i>Internal Stock Items</a></li>
+        <li><a href="{% url 'internal_stock:price_list_index' %}"><i class="feather icon-file-text me-2"></i>Supplier Price Lists</a></li>
+        <li><a href="{% url 'internal_stock:create_price_list' %}"><i class="feather icon-plus-circle me-2"></i>New Price List</a></li>
+    </ul>
+</li>
+
+
+<!-- Order Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-shopping-cart"></i></span>
+        <span class="pcoded-mtext">Order Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'orders:order_create' %}"><i class="feather icon-plus-circle me-2"></i>New Order</a></li>
+        <li><a href="{% url 'orders:order_list' %}"><i class="feather icon-list me-2"></i>Order List</a></li>
+        <li><a href="{% url 'orders:purchase_order_list' %}"><i class="feather icon-file-text me-2"></i>Purchase Orders</a></li>
+
+        <li><a href="{% url 'orders:batch_match_quotes' %}"><i class="feather icon-file-text me-2"></i>Batch Match Quotes</a></li>
+
+
+
+
+
+    </ul>
+</li>
+
+<!-- Stock Orders Management - Add this after Order Management section -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-package"></i></span>
+        <span class="pcoded-mtext">Stock Orders</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'stock_orders:create' %}"><i class="feather icon-plus-circle me-2"></i>New Stock Order</a></li>
+        <li><a href="{% url 'stock_orders:list' %}"><i class="feather icon-list me-2"></i>Stock Order List</a></li>
+
+    </ul>
+</li>
+
+<!-- Delivery Notes Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-file-text"></i></span>
+        <span class="pcoded-mtext">Delivery Notes</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'delivery_notes:list' %}"><i class="feather icon-list me-2"></i>Delivery Notes List</a></li>
+        <li><a href="{% url 'delivery_notes:create' %}"><i class="feather icon-plus-circle me-2"></i>New Delivery Note</a></li>
+        <li><a href="{% url 'delivery_notes:create_from_stock' %}"><i class="feather icon-package me-2"></i>Create from Stock</a></li>
+    </ul>
+</li>
+
+
+
+<!-- Driver Operations -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-compass"></i></span>
+        <span class="pcoded-mtext">Driver Operations</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'driver_list:collection_pool' %}"><i class="feather icon-inbox me-2"></i>Collection Pool</a></li>
+        <li><a href="{% url 'driver_list:assigned_collections' %}"><i class="feather icon-check-square me-2"></i>Assigned Collections</a></li>
+        <li><a href="{% url 'driver_list:completed_collections' %}"><i class="feather icon-check-circle me-2"></i>Completed Collections</a></li>
+    </ul>
+</li>
+
+<!-- Stock Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-package"></i></span>
+        <span class="pcoded-mtext">Stock Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'stock_management:stock_verification' %}"><i class="feather icon-check me-2"></i>Stock Verification</a></li>
+        <li><a href="{% url 'stock_management:stock_list' %}"><i class="feather icon-list me-2"></i>Current Stock</a></li>
+        <li><a href="{% url 'stock_management:ready_to_pick' %}"><i class="feather icon-box me-2"></i>Ready to Pick</a></li>
+        <li><a href="{% url 'stock_management:delivery_pick_list' %}"><i class="feather icon-clipboard me-2"></i>Delivery Pick List</a></li>
+        <li><a href="{% url 'stock_management:ready_for_delivery' %}"><i class="feather icon-truck me-2"></i>Ready for Delivery</a></li>
+        <li><a href="{% url 'stock_management:office_stock' %}"><i class="feather icon-compass me-2"></i>Office Stock</a></li>
+    </ul>
+</li>
+
+
+
+<!-- Reports & Analytics-->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-bar-chart-2"></i></span>
+        <span class="pcoded-mtext">Reports</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'dashboard:index' %}"><i class="feather icon-pie-chart me-2"></i>Dashboard</a></li>
+        <li><a href="{% url 'dashboard:rep_dashboard' %}"><i class="feather icon-pie-chart me-2"></i>Rep Dashboard</a></li>
+    </ul>
+</li>
+
+

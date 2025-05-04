@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+{% load static %}
+{% load pwa %}
+{% progressive_web_app_meta %}
+
+<html lang="en" data-theme="{{ request.session.color_mode|default:'light' }}">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>WF Sales - {% block title %}ORDER TRACK | QUOTE MANAGEMENT{% endblock title %}</title>
+
+  <!-- Add this line somewhere in the head section -->
+  <meta name="csrf-token" content="{{ csrf_token }}">
+
+  <!-- PWA meta tags -->
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="WF Sales">
+  <meta name="theme-color" content="#000000">
+
+  <!-- iOS Quick Actions - Add below your existing PWA meta tags -->
+  <meta name="apple-touch-startup-image" content="{% static 'images/pwa/splash.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'images/pwa/apple-touch-icon.png' %}">
+
+  <!-- iOS Quick Actions -->
+  <link rel="apple-touch-startup-image" href="{% static 'images/pwa/apple-touch-icon.png' %}">
+  <meta name="apple-mobile-web-app-title" content="WF Sales">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <!-- Quick Action: New Quote -->
+  <link rel="apple-touch-icon-precomposed" sizes="192x192" href="{% static 'images/pwa/add-quote-192x192.png' %}" data-shortcut-name="New Quote" data-shortcut-url="/quotes/new">
+
+  <!-- Quick Action: Collections -->
+  <link rel="apple-touch-icon-precomposed" sizes="192x192" href="{% static 'images/pwa/collections-192x192.png' %}" data-shortcut-name="Collections" data-shortcut-url="/drivers/pool">
+
+  {% include 'includes/head.html' %}
+
+  {% block style %}
+    <!-- Favicon icon -->
+    <link rel="icon" href="{% static 'assets/images/favicon.ico' %}" type="image/x-icon">
+    <!-- PWA icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/pwa/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/pwa/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/pwa/favicon-16x16.png' %}">
+
+    <!-- fontawesome icon -->
+    <link rel="stylesheet" href="{% static 'assets/fonts/fontawesome/css/fontawesome-all.min.css' %}">
+    <!-- animation css -->
+    <link rel="stylesheet" href="{% static 'assets/css/plugins/animate.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/plugins/perfect-scrollbar.css' %}">
+
+    {% block extrastyle %}
+    <link rel="stylesheet" href="{% static 'assets/css/plugins/notifier.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    {% endblock extrastyle %}
+
+    <!-- vendor css -->
+    <link rel="stylesheet" href="{% static 'assets/css/style.css' %}">
+  {% endblock style %}
+
+  {% block stylesheets %}
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{% static 'assets/css/brand-colors.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/css/plugins/bootstrap.min.css' %}" rel="stylesheet">
+  <!-- Add your custom CSS after Bootstrap -->
+  <link href="{% static 'assets/css/custom.css' %}" rel="stylesheet">
+  {% endblock %}
+
+  {% block extra_css %}
+  <style>
+    /* Styling for problem notes */
+    .alert-danger small {
+        white-space: pre-wrap;
+    }
+
+    /* Override Bootstrap alert-danger styling */
+    .alert-danger {
+        background-color: #37474f; /* Light gray background */
+        color: rgb(233, 208, 48); /* Dark text */
+        border-color: #d3d3d3; /* Light gray border */
+    }
+
+    /* Filter button styling */
+    .quick-filter {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Make form more compact */
+    .form-label.small {
+        margin-bottom: 0.1rem;
+    }
+
+    /* Highlight active filter */
+    .quick-filter.active {
+        background-color: #4e73df;
+        color: white;
+        border-color: #4e73df;
+    }
+
+    /* Alert info styling */
+    body .alert-info,
+    .pcoded-main-container .alert-info,
+    #content .alert-info {
+        color: #d3a014 !important;
+        background-color: #37474f !important;
+        border-color: #b6effb !important;
+    }
+
+    /* PWA install prompt styling */
+    .install-prompt {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        z-index: 9999;
+    }
+
+    /* FAB styling */
+    .fab-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999;
+    }
+
+    .fab-button {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+
+    .fab-menu {
+        display: none;
+    }
+
+    /* Override toastr styling to ensure it's visible */
+    .toast-success {
+        background-color: #28a745 !important;
+        color: white !important;
+    }
+    .toast-error {
+        background-color: #dc3545 !important;
+        color: white !important;
+    }
+    .toast-info {
+        background-color: #17a2b8 !important;
+        color: white !important;
+    }
+    .toast-warning {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+
+    /* Ensure the toast container is visible and has proper z-index */
+    #toast-container {
+        z-index: 999999 !important;
+    }
+
+    /* Ensure toast message text is visible */
+    .toast-message {
+        color: #CAE00D !important;
+    }
+    .toast-warning .toast-message {
+        color: #ff5c0a !important;
+    }
+
+    /* Global Breakdown Order Styling */
+    .breakdown-order {
+        background-color: rgba(255, 193, 7, 0.05) !important;
+        border-left: 4px solid #ffc107 !important;
+        position: relative;
+    }
+
+    .breakdown-badge {
+        background-color: #f2ff00;
+        color: #212529;
+        padding: 0.25em 0.5em;
+        font-size: 0.75em;
+        font-weight: bold;
+        border-radius: 0.25rem;
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .fa-spin {
+        animation: spin 1s infinite linear;
+    }
+
+    /* Make the refresh button more visible on iOS */
+    #refreshButton {
+        padding: 10px;
+        font-size: 1.2rem;
+    }
+
+    /* Add to your base styles */
+    .pwa-navigation-control {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1050;
+        display: none; /* Hidden by default, shown when in PWA mode */
+    }
+
+    .btn-nav-back {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.9);
+        border: none;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        outline: none;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-nav-back:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.05);
+    }
+
+    .btn-nav-back:active {
+        transform: scale(0.95);
+    }
+
+    /* Animation for the back button */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .pwa-navigation-control.visible {
+        display: block;
+        animation: fadeIn 0.3s;
+    }
+
+    /* Landscape specific adjustments */
+    @media (orientation: landscape) {
+        .pwa-navigation-control {
+            top: 10px;
+            left: 10px;
+        }
+    }
+  </style>
+  {% endblock %}
+
+
+<!--   // iOS-specific shortcut handling - add this before the closing </head> tag
+  if ('standalone' in navigator && navigator.standalone) {
+    // App is running in iOS standalone mode
+    document.addEventListener('click', function(e) {
+      // Find if clicked element is a shortcut link or child of one
+      let target = e.target;
+      while (target && !target.hasAttribute('data-shortcut-url')) {
+        if (target.tagName === 'A') break;
+        target = target.parentElement;
+      }
+
+      // If it's a shortcut link, handle it
+      if (target && target.hasAttribute('data-shortcut-url')) {
+        e.preventDefault();
+        // Navigate to the shortcut URL
+        window.location = target.getAttribute('data-shortcut-url');
+      }
+    }, false);
+  }
+</script>
+</head>
+
+<body class="{% block body %}{% endblock body %}">
+
+<!-- Add this right after opening body tag in your base template -->
+<div id="pwa-back-button" class="pwa-navigation-control">
+    <button onclick="goBack()" class="btn-nav-back">
+        <i class="feather icon-arrow-left"></i>
+    </button>
+</div>
+
+  [ Main Content ] start
+  <script>
+    // Add this right after your body tag opens
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if the app is running in standalone/installed mode
+      if (window.matchMedia('(display-mode: standalone)').matches ||
+          window.navigator.standalone === true) {
+        // App is running as installed PWA - hide the install tip
+        const installTip = document.querySelector('.alert-info.d-md-none');
+        if (installTip) {
+          installTip.style.display = 'none';
+        }
+      }
+    });
+  </script>
+
+  <script>
+    // Add this to your base.html template within a script tag
+    document.addEventListener('DOMContentLoaded', function() {
+        // Detect if running as PWA
+        const isPwa = window.matchMedia('(display-mode: standalone)').matches || 
+                      window.navigator.standalone === true;
+        
+        // Show back button if in PWA mode and not on home page
+        if (isPwa && document.referrer && 
+            document.referrer.includes(window.location.hostname)) {
+            const backButton = document.getElementById('pwa-back-button');
+            backButton.classList.add('visible');
+        }
+        
+        // Initialize swipe navigation
+        initSwipeNavigation();
+    });
+
+    // Function to go back
+    function goBack() {
+        window.history.back();
+    }
+
+    // Swipe navigation implementation
+    function initSwipeNavigation() {
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const minSwipeDistance = 100;
+        const edgeThreshold = 50; // px from edge of screen
+        
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, false);
+        
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, false);
+        
+        function handleSwipe() {
+            const swipeDistance = touchEndX - touchStartX;
+            const windowWidth = window.innerWidth;
+            
+            // Only process significant swipes that start near edges
+            if (Math.abs(swipeDistance) > minSwipeDistance) {
+                // Right to left swipe (started near right edge)
+                if (swipeDistance < 0 && touchStartX > (windowWidth - edgeThreshold)) {
+                    console.log("Right to left edge swipe - go forward");
+                    window.history.forward();
+                } 
+                // Left to right swipe (started near left edge)
+                else if (swipeDistance > 0 && touchStartX < edgeThreshold) {
+                    console.log("Left to right edge swipe - go back");
+                    window.history.back();
+                }
+            }
+        }
+        
+        // Log events for debugging
+        console.log("Swipe navigation initialized");
+    }
+
+    // Add class to body if in standalone mode
+    if (window.matchMedia('(display-mode: standalone)').matches || 
+        window.navigator.standalone === true) {
+        document.body.classList.add('pwa-mode');
+    }
+
+    // iOS Safari specific adjustments
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+        // Add meta tag to prevent iOS from using its system gestures
+        const metaTag = document.createElement('meta');
+        metaTag.name = 'apple-mobile-web-app-capable';
+        metaTag.content = 'yes';
+        document.head.appendChild(metaTag);
+        
+        // iOS specific swipe adjustments
+        document.body.style.overscrollBehavior = 'none';
+        
+        // Register for edge swipes specifically for iOS
+        let edgeSwipeStartX = 0;
+        document.addEventListener('touchstart', function(e) {
+            edgeSwipeStartX = e.touches[0].clientX;
+        }, {passive: true});
+        
+        document.addEventListener('touchmove', function(e) {
+            const currentX = e.touches[0].clientX;
+            const windowWidth = window.innerWidth;
+            
+            // For right edge swipes
+            if (edgeSwipeStartX < 20 && currentX - edgeSwipeStartX > 50) {
+                e.preventDefault();
+                window.history.back();
+            }
+            
+            // For left edge swipes
+            if (edgeSwipeStartX > windowWidth - 20 && edgeSwipeStartX - currentX > 50) {
+                e.preventDefault();
+                window.history.forward();
+            }
+        }, {passive: false});
+    }
+  </script>
+
+  {% block pre_loader %}
+    {% include 'includes/pre-loader.html' %}
+  {% endblock pre_loader %}
+
+  {% block sidebar %}
+    {% include 'includes/sidebar.html' %}
+  {% endblock sidebar %}
+
+  {% block header %}
+    {% include 'includes/navigation.html' %}
+    <!-- Add this to your navbar -->
+    <li class="nav-item d-block d-md-none">
+        <a class="nav-link" href="#" id="refreshButton" title="Refresh">
+            <i class="fas fa-sync-alt"></i>
+        </a>
+    </li>
+  {% endblock header %}
+
+  <!-- [ Main Content ] start -->
+  <div class="pcoded-main-container">
+    <div class="pcoded-wrapper">
+      {% if messages %}
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          {% for message in messages %}
+            {% if 'success' in message.tags %}
+              toastr.success('{{ message }}', 'Success');
+            {% elif 'info' in message.tags %}
+              toastr.info('{{ message }}', 'Information');
+            {% elif 'warning' in message.tags %}
+              toastr.warning('{{ message }}', 'Warning');
+            {% elif 'error' in message.tags %}
+              toastr.error('{{ message }}', 'Error');
+            {% else %}
+              toastr.info('{{ message }}', 'Notification');
+            {% endif %}
+          {% endfor %}
+        });
+      </script>
+      {% endif %}
+
+      <!-- Mobile home screen tip
+      <div class="alert alert-info d-md-none mb-3">
+        <p><i class="feather icon-smartphone"></i> <strong>Pro Tip:</strong> You can add this form to your home screen!</p>
+        <p class="mb-0 small">
+          <strong>On iPhone:</strong> Share → Add to Home Screen<br>
+          <strong>On Android:</strong> Menu (⋮) → Add to Home Screen
+        </p>
+      </div>-->
+
+      <div class="pcoded-content">
+        <div class="pcoded-inner-content">
+          {% block breadcrumbs %}
+            {% include 'includes/breadcrumbs.html' %}
+          {% endblock breadcrumbs %}
+
+          <div class="main-body">
+            <div class="page-wrapper">
+              {% block content %}{% endblock content %}
+              <!-- Debug section - place at the bottom of your page content
+              {% if debug %}
+              <div class="card mt-3 mb-3">
+                <div class="card-header">PWA Debug Info</div>
+                <div class="card-body">
+                  <div id="pwaDebugInfo">Checking installation status...</div>-->
+                </div>
+              </div>
+<!-- Core JS Files - Consolidated
+             <script>
+        //        document.addEventListener('DOMContentLoaded', function() {
+        //          const debugInfo = document.getElementById('pwaDebugInfo');
+          //        let info = '';
+            //
+                  // Check if running as standalone PWA
+              //    if (window.matchMedia('(display-mode: standalone)').matches) {
+                //    info += '✓ Running as standalone PWA (Android/Chrome)<br>';
+                 // } else if (window.navigator.standalone === true) {
+                  //  info += '✓ Running as standalone PWA (iOS)<br>';
+                  //} else {
+                   // info += '✗ Not running as installed PWA<br>';
+                  //}
+
+                  // Check service worker
+             //     if ('serviceWorker' in navigator) {
+               //     info += '✓ Service Worker API supported<br>';
+                 //   navigator.serviceWorker.getRegistrations().then(registrations => {
+                   //   if (registrations.length > 0) {
+                    //    info += `✓ Service Worker registered: ${registrations.length} found<br>`;
+                    //  } else {
+                      //  info += '✗ No Service Workers registered<br>';
+                      //}
+                    //});
+                  //} else {
+            //        info += '✗ Service Worker API not supported<br>';
+              //    }
+
+                //  debugInfo.innerHTML = info;
+        //        });
+              </script>-->
+              <script>
+                // Check shortcut support on installation
+                window.addEventListener('appinstalled', async () => {
+                  // Wait a bit for the installation to complete
+                  setTimeout(async () => {
+                    try {
+                      if ('getInstalledRelatedApps' in navigator) {
+                        const relatedApps = await navigator.getInstalledRelatedApps();
+                        console.log('Related apps:', relatedApps);
+                      }
+
+                      // Log navigator launcher information if available
+                      if ('launchQueue' in window && 'files' in LaunchParams.prototype) {
+                        console.log('File handling supported');
+                      }
+
+                      // Check if we can access shortcuts
+                      if ('shortcuts' in navigator) {
+                        console.log('Shortcuts API supported');
+                      } else {
+                        console.log('Shortcuts API not supported');
+                      }
+                    } catch (err) {
+                      console.error('Error checking app capabilities:', err);
+                    }
+                  }, 1000);
+                });
+              </script>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include 'includes/scripts.html' %}
+
+  {% block fixed_plugin %}
+    {% include 'includes/fixed-plugin.html' %}
+  {% endblock fixed_plugin %}
+
+  {% block extra_js %}{% endblock %}
+
+  {% block fab %}
+  <div class="fab-container">
+    <button class="btn btn-primary fab-button" onclick="toggleFabMenu()">
+      <i class="feather icon-plus"></i>
+    </button>
+    <div class="fab-menu">
+      <div class="fab-item">
+        <a href="{% url 'orders:order_create' %}" class="btn btn-info fab-button">
+          <i class="feather icon-file-text"></i>
+        </a>
+      </div>
+      <div class="fab-item">
+        <a href="{% url 'quotes:quote_create' %}" class="btn btn-success fab-button">
+          <i class="feather icon-dollar-sign"></i>
+        </a>
+      </div>
+      <!-- Add more fab items as needed -->
+    </div>
+  </div>
+  {% endblock %}
+
+  <!-- Core JS Files - Consolidated -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'assets/js/app.js' %}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
+
+  <script>
+    // Global function to check and highlight breakdown orders
+    function highlightBreakdownOrders() {
+        // Find all elements containing order numbers
+        document.querySelectorAll('[data-order-number]').forEach(element => {
+            const orderNum = element.getAttribute('data-order-number').toLowerCase();
+            if (orderNum.includes('breakdown')) {
+                // Find the nearest parent container (row, card, etc.)
+                let container = element.closest('tr') || element.closest('.card') || 
+                               element.closest('.list-group-item');
+                if (container) {
+                    container.classList.add('breakdown-order');
+                    
+                    // Add badge if not already present
+                    if (!element.querySelector('.breakdown-badge')) {
+                        const badge = document.createElement('span');
+                        badge.className = 'breakdown-badge';
+                        badge.innerHTML = '<i class="fas fa-tools"></i> BREAKDOWN';
+                        element.prepend(badge);
+                    }
+                }
+            }
+        });
+    }
+    
+    // Run on initial load and after any AJAX completions
+    document.addEventListener('DOMContentLoaded', highlightBreakdownOrders);
+    $(document).ajaxComplete(function() {
+        highlightBreakdownOrders();
+    });
+    </script>
+
+
+
+  <script>
+    // Dark mode handling
+    document.querySelector('head').insertAdjacentHTML("beforeend", '<link rel="stylesheet" class="layout-css" href="">');
+
+    if ('{{ request.user.profile.dark_mode }}' === 'True') {
+      removeClassByPrefix(document.querySelector(".pcoded-navbar"), 'menu-');
+      document.querySelector(".pcoded-navbar").classList.add("navbar-dark");
+      document.querySelector(".layout-css").setAttribute('href', '{% static 'assets/css/layouts/dark.css' %}');
+    } else {
+      document.querySelector(".layout-css").setAttribute('href', '');
+    }
+
+    function removeClassByPrefix(node, prefix) {
+      if (!node) return;
+      for (let i = 0; i < node.classList.length; i++) {
+        let value = node.classList[i];
+        if (value.startsWith(prefix)) {
+          node.classList.remove(value);
+        }
+      }
+    }
+
+    // FAB menu toggle
+    function toggleFabMenu() {
+      const menu = document.querySelector('.fab-menu');
+      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Hide fab menu when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!event.target.closest('.fab-container')) {
+        document.querySelector('.fab-menu').style.display = 'none';
+      }
+    });
+
+    // Email handling
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add this to prevent any email links from causing issues
+      document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          toastr.info('Email functionality is currently disabled');
+        });
+      });
+
+      // Toastr configuration
+      toastr.options = {
+        "closeButton": true,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "timeOut": "3000",
+        "preventDuplicates": true,
+        "toastClass": "colored-toast",
+        "iconClass": "colored-toast-icon"
+      };
+
+      // Add custom CSS for toastr
+      const style = document.createElement('style');
+      style.textContent = `
+        /* Custom Toastr Colors */
+        .colored-toast.toast-success {
+            background-color: #28a745 !important;
+        }
+        .colored-toast.toast-error {
+            background-color: #dc3545 !important;
+        }
+        .colored-toast.toast-info {
+            background-color: #17a2b8 !important;
+        }
+        .colored-toast.toast-warning {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Initialize Select2
+      $('.select2').select2({
+        theme: 'bootstrap4',
+        width: '100%'
+      });
+    });
+
+    // CSRF token handling for fetch requests
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    // Patch fetch to include CSRF token
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+      options = options || {};
+      if (options.method === 'POST' || options.method === 'PUT' || options.method === 'DELETE') {
+        options.headers = options.headers || {};
+        options.headers['X-CSRFToken'] = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        options.credentials = 'same-origin';
+      }
+      return originalFetch(url, options);
+    };
+  </script>
+  <!-- Add this right before the closing body tag -->
+  {% if request.user.is_staff %}
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    <div class="toast align-items-center bg-dark text-secondary border-0" role="alert" aria-live="assertive" aria-atomic="true" id="notificationTestToast">
+      <div class="d-flex">
+        <div class="toast-body">
+          Notification sent successfully!
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Test Notification Button (Staff Only)
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1040;">
+    <button id="testNotificationBtn" class="btn btn-primary rounded-circle shadow-sm" style="width: 50px; height: 50px;">
+      <i class="feather icon-bell"></i>
+    </button>
+  </div>-->
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const notificationBtn = document.getElementById('testNotificationBtn');
+    const notificationToast = document.getElementById('notificationTestToast');
+    const toast = new bootstrap.Toast(notificationToast);
+
+    if (notificationBtn) {
+      notificationBtn.addEventListener('click', function() {
+        // Request notification permission if needed
+        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+          Notification.requestPermission().then(function(permission) {
+            if (permission === 'granted') {
+              sendTestNotification();
+            }
+          });
+        } else if (Notification.permission === 'granted') {
+          sendTestNotification();
+        } else {
+          alert('Notification permission denied. Please enable notifications in your browser settings.');
+        }
+      });
+    }
+
+  //  function sendTestNotification() {
+    //  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      //  const pageTitle = document.title || 'WF Sales Dashboard';
+        //const currentUrl = window.location.href;
+
+        // Send message to service worker
+    //    navigator.serviceWorker.controller.postMessage({
+      //    type: 'SHOW_TEST_NOTIFICATION',
+        //  notification: {
+          //    title: `Test from ${pageTitle}`,
+    //        body: `This is a test notification from ${window.location.pathname}`,
+      //      url: currentUrl
+        //  }
+    //    });
+
+        // Show success toast
+      //  toast.show();
+      //} else {
+    //    alert('Service worker not active. Please reload the page or reinstall the PWA.');
+     // }
+//    }
+  //});
+  </script>
+  {% endif %}
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we're in standalone mode (PWA on home screen)
+    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
+                              window.navigator.standalone || document.referrer.includes('android-app://');
+    
+    // Get refresh button element
+    const refreshButton = document.getElementById('refreshButton');
+    
+    // Only show refresh button in standalone mode
+    if (refreshButton) {
+        if (isInStandaloneMode) {
+            refreshButton.style.display = 'block';
+            
+            // Add click event listener to refresh the page
+            refreshButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Show a loading spinner in the button
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                // Refresh the page after a brief delay
+                setTimeout(function() {
+                    window.location.reload();
+                }, 300);
+            });
+        } else {
+            // Hide the button if not in standalone mode
+            refreshButton.style.display = 'none';
+        }
+    }
+});
+</script>
+</body>
+</html>

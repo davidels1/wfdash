@@ -1,0 +1,800 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load order_tags %}
+
+
+{% block content %}
+<div class="container-fluid">
+    {% csrf_token %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Stock Verification</h5>
+            <button type="button" class="btn btn-primary" id="bulkVerifyBtn" disabled>
+                <i class="feather icon-check-square me-1"></i> Bulk Verify
+            </button>
+        </div>
+        <div class="card-body">
+            {% if grouped_collections %}
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Search supplier, description, or PO...">
+                            <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                                <i class="feather icon-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="selectAllItems">
+                            <label class="form-check-label" for="selectAllItems">Select All Items</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" id="collectionsContainer">
+                    {% for supplier_name, supplier_data in grouped_collections.items %}
+                        <div class="col-12 mb-4">
+                            <h5 class="border-bottom pb-2">{{ supplier_name }}</h5>
+                            
+                            {% for po_number, collections in supplier_data.pos.items %}
+                                <div class="mb-3 po-section" data-po="{{ po_number|default:'no-po'|lower }}">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="text-muted mb-0">PO: {{ po_number }}</h6>
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input select-po" 
+                                                   id="select-po-{{ po_number|slugify }}"
+                                                   data-po="{{ po_number|default:'no-po'|lower }}">
+                                            <label class="form-check-label" for="select-po-{{ po_number|slugify }}">
+                                                Select All Items in this PO
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        {% for collection in collections %}
+                                        <div class="col-12 col-md-6 col-lg-4 mb-3 collection-item"
+                                             data-supplier="{{ collection.supplier.suppliername|lower }}"
+                                             data-po="{{ collection.order_item.purchase_order.po_number|default:'no-po'|lower }}"
+                                             data-description="{{ collection.order_item.description|lower }}"
+                                             class="{% if collection.order_item.order.order_number and 'breakdown' in collection.order_item.order.order_number|lower %}breakdown-order{% endif %}">
+                                            <div class="card h-100">
+                                                <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-2">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" class="form-check-input item-select" 
+                                                              data-id="{{ collection.id }}"
+                                                              data-qty="{{ collection.received_qty }}">
+                                                    </div>
+                                                    <span class="badge bg-info">
+                                                        {{ collection.supplier.suppliername }}
+                                                    </span>
+                                                    {% if collection.order_item.order.order_number and 'breakdown' in collection.order_item.order.order_number|lower %}
+                                                    <span class="breakdown-badge">
+                                                        <i class="fas fa-tools"></i> BREAKDOWN
+                                                    </span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="card-body">
+                                                    <h6 class="card-subtitle mb-2 text-muted">{{ collection.order_item.description }}</h6>
+                                                    <p class="mb-1"><strong>Qty:</strong> {{ collection.received_qty }}</p>
+                                                    <p class="mb-1"><strong>Order:</strong> {{ collection.order_item.order.order_number|default:"No Order" }}</p>
+                                                    <p class="mb-2"><strong>PO:</strong> 
+                                                        {% if collection.order_item.purchase_order %}
+                                                            {{ collection.order_item.purchase_order.po_number }}
+                                                        {% else %}
+                                                            No PO
+                                                        {% endif %}
+                                                    </p>
+                                                    <button type="button"
+                                                            class="btn btn-primary w-100 verify-btn"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#verificationModal"
+                                                            data-collection-id="{{ collection.id }}"
+                                                            data-received-qty="{{ collection.received_qty }}">
+                                                        <i class="feather icon-check me-1"></i> Verify
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">No collections to verify</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Individual Verification Modal -->
+<div class="modal fade" id="verificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Verify Stock Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="verificationForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="collectionId" name="collection_id">
+                    <div class="mb-3">
+                        <label class="form-label">External Invoice Number *</label>
+                        <input type="text" class="form-control" id="externalInvoiceNumber" name="external_invoice_number" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">External Invoice Date *</label>
+                        <input type="date" class="form-control" id="externalInvoiceDate" name="external_invoice_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Received Quantity</label>
+                        <p id="receivedQty" class="form-control-plaintext"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Verified Quantity *</label>
+                        <input type="number" step="0.01" class="form-control" id="verifiedQuantity" name="verified_quantity" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="d-flex justify-content-between">
+                            <span>Order Quantity:</span>
+                            <span id="orderQty" class="fw-bold">{{ item.order_item.quantity }}</span>
+                        </label>
+                        <div class="progress mb-2" style="height: 5px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 100%"></div>
+                        </div>
+
+                        <label for="verifiedQuantity">Received Quantity:</label>
+                        <input type="number" step="0.01" class="form-control" name="verified_quantity" id="verifiedQuantity" 
+                               value="{{ received_qty }}" required>
+                        
+                        <div class="form-text mt-1">
+                            <span class="text-info">
+                                <i class="feather icon-info me-1"></i>
+                                If received quantity exceeds order quantity, excess will go to office stock.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="confirmVerificationBtn">Verify Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Verification Modal -->
+<div class="modal fade" id="bulkVerificationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Stock Verification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulkVerificationForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">External Invoice Number *</label>
+                                <input type="text" class="form-control" id="bulkExternalInvoiceNumber" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">External Invoice Date *</label>
+                                <input type="date" class="form-control" id="bulkExternalInvoiceDate" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="bulkNotes" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Selected Items (<span id="selectedItemsCount">0</span>)</label>
+                        <div class="alert alert-info">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="useReceivedQty" checked>
+                                <label class="form-check-label" for="useReceivedQty">
+                                    Use received quantities as verified quantities
+                                </label>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered" id="selectedItemsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th>Supplier</th>
+                                        <th>PO #</th>
+                                        <th>Received Qty</th>
+                                        <th>Verified Qty</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Items will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="confirmBulkVerificationBtn">Verify All Items</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Card styles */
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    /* Selected card styling */
+    .card.selected {
+        border: 2px solid #4e73df;
+        box-shadow: 0 0 10px rgba(78, 115, 223, 0.3);
+    }
+    
+    /* Checkbox styling */
+    .form-check-input {
+        cursor: pointer;
+        width: 1.2em;
+        height: 1.2em;
+    }
+    
+    /* Bulk button visibility */
+    #bulkVerifyBtn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+    
+    /* Search results highlight */
+    .highlight {
+        background-color: #ffeeba;
+    }
+    
+    /* No results message */
+    .no-results {
+        padding: 30px;
+        text-align: center;
+        width: 100%;
+        font-style: italic;
+        color: #6c757d;
+    }
+
+    /* Table input styling */
+    .qty-input {
+        width: 80px;
+        min-width: 80px;
+    }
+    
+    /* Toast notification positioning */
+    .toast-container {
+        z-index: 1060;
+    }
+    
+    /* Loading spinner */
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.5rem;
+    }
+    
+    /* Fade effect for items */
+    .fade-out {
+        opacity: 0;
+        transition: opacity 0.5s;
+    }
+    
+    /* Modal scrolling */
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    /* Toastr custom styling */
+    .colored-toast.toast-success {
+        background-color: #1cc88a;
+    }
+    .colored-toast.toast-error {
+        background-color: #e74a3b;
+    }
+    .colored-toast.toast-info {
+        background-color: #36b9cc;
+    }
+    .colored-toast.toast-warning {
+        background-color: #f6c23e;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize modals
+    const verificationModal = new bootstrap.Modal(document.getElementById('verificationModal'));
+    const bulkVerificationModal = new bootstrap.Modal(document.getElementById('bulkVerificationModal'));
+    
+    // Set today's date as default for both forms
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('externalInvoiceDate').value = today;
+    document.getElementById('bulkExternalInvoiceDate').value = today;
+    
+    // Track selected items
+    const selectedItems = new Set();
+    
+    // Configure toastr notifications
+    toastr.options = {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": true,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "preventDuplicates": false,
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "timeOut": "5000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut",
+        "toastClass": "colored-toast"
+    };
+    
+    // Individual verification button handler
+    document.querySelectorAll('.verify-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const collectionId = this.dataset.collectionId;
+            const receivedQty = this.dataset.receivedQty;
+            
+            document.getElementById('collectionId').value = collectionId;
+            document.getElementById('receivedQty').textContent = receivedQty;
+            document.getElementById('verifiedQuantity').value = receivedQty;
+            
+            // Reset form
+            document.getElementById('externalInvoiceNumber').value = '';
+            document.getElementById('notes').value = '';
+        });
+    });
+    
+    // Select all checkbox handler
+    document.getElementById('selectAllItems').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.item-select');
+        
+        checkboxes.forEach(checkbox => {
+            // Only affect visible items (in case of search filtering)
+            const item = checkbox.closest('.collection-item');
+            if (item.style.display !== 'none') {
+                checkbox.checked = this.checked;
+                
+                if (this.checked) {
+                    selectedItems.add(checkbox.dataset.id);
+                    checkbox.closest('.card').classList.add('selected');
+                } else {
+                    selectedItems.delete(checkbox.dataset.id);
+                    checkbox.closest('.card').classList.remove('selected');
+                }
+            }
+        });
+        
+        updateBulkButton();
+    });
+    
+    // Individual item selection handler
+    document.querySelectorAll('.item-select').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const itemId = this.dataset.id;
+            
+            if (this.checked) {
+                selectedItems.add(itemId);
+                this.closest('.card').classList.add('selected');
+            } else {
+                selectedItems.delete(itemId);
+                this.closest('.card').classList.remove('selected');
+                
+                // Uncheck "Select All" if any item is unchecked
+                document.getElementById('selectAllItems').checked = false;
+            }
+            
+            updateBulkButton();
+        });
+    });
+    
+    // Update bulk button state
+    function updateBulkButton() {
+        const bulkBtn = document.getElementById('bulkVerifyBtn');
+        bulkBtn.disabled = selectedItems.size === 0;
+        document.getElementById('selectedItemsCount').textContent = selectedItems.size;
+    }
+    
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const clearButton = document.getElementById('clearSearch');
+    
+    searchInput.addEventListener('input', filterItems);
+    
+    clearButton.addEventListener('click', function() {
+        searchInput.value = '';
+        filterItems();
+    });
+    
+    function filterItems() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const items = document.querySelectorAll('.collection-item');
+        let resultsFound = false;
+        
+        items.forEach(item => {
+            const supplier = item.dataset.supplier;
+            const po = item.dataset.po;
+            const description = item.dataset.description;
+            
+            if (supplier.includes(searchTerm) || 
+                po.includes(searchTerm) || 
+                description.includes(searchTerm) || 
+                searchTerm === '') {
+                item.style.display = '';
+                resultsFound = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Show no results message if needed
+        let noResultsMsg = document.querySelector('.no-results');
+        
+        if (!resultsFound && searchTerm !== '') {
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.className = 'no-results col-12';
+                noResultsMsg.textContent = 'No items found matching your search.';
+                document.getElementById('collectionsContainer').appendChild(noResultsMsg);
+            }
+        } else if (noResultsMsg) {
+            noResultsMsg.remove();
+        }
+    }
+    
+    // Bulk verification button click handler
+    document.getElementById('bulkVerifyBtn').addEventListener('click', function() {
+        populateBulkVerificationModal();
+        bulkVerificationModal.show();
+    });
+    
+    // Toggle use received qty as verified qty
+    document.getElementById('useReceivedQty').addEventListener('change', function() {
+        const qtyInputs = document.querySelectorAll('.verified-qty-input');
+        const receivedQtys = document.querySelectorAll('.received-qty');
+        
+        qtyInputs.forEach((input, index) => {
+            input.disabled = this.checked;
+            if (this.checked) {
+                input.value = receivedQtys[index].textContent;
+            }
+        });
+    });
+    
+    // Populate bulk verification modal with selected items
+    function populateBulkVerificationModal() {
+        const tbody = document.querySelector('#selectedItemsTable tbody');
+        tbody.innerHTML = '';
+        
+        const useReceivedQty = document.getElementById('useReceivedQty').checked;
+        
+        // Group selected items by PO number
+        const poGroups = {};
+        
+        // First, collect all PO information
+        selectedItems.forEach(itemId => {
+            const checkbox = document.querySelector(`.item-select[data-id="${itemId}"]`);
+            if (!checkbox) return;
+            
+            const card = checkbox.closest('.card');
+            const poElement = card.querySelector('p:nth-of-type(3)');
+            const po = poElement ? poElement.textContent.replace('PO:', '').trim() : 'No PO';
+            
+            if (!poGroups[po]) {
+                poGroups[po] = [];
+            }
+            
+            poGroups[po].push({
+                id: itemId,
+                description: card.querySelector('.card-subtitle').textContent.trim(),
+                supplier: card.querySelector('.badge').textContent.trim(),
+                receivedQty: checkbox.dataset.qty
+            });
+        });
+        
+        // Then render the grouped items in the modal
+        Object.entries(poGroups).forEach(([po, items], index) => {
+            // Add a PO header row
+            const poHeaderRow = document.createElement('tr');
+            poHeaderRow.className = 'table-primary';
+            poHeaderRow.innerHTML = `
+                <td colspan="5" class="fw-bold">PO: ${po} (${items.length} items)</td>
+            `;
+            tbody.appendChild(poHeaderRow);
+            
+            // Add the items for this PO
+            items.forEach(item => {
+                const itemRow = document.createElement('tr');
+                itemRow.innerHTML = `
+                    <td>${item.description}</td>
+                    <td>${item.supplier}</td>
+                    <td>${po}</td>
+                    <td class="text-center received-qty">${item.receivedQty}</td>
+                    <td>
+                        <input type="number" 
+                               class="form-control form-control-sm qty-input verified-qty-input" 
+                               value="${item.receivedQty}" 
+                               data-id="${item.id}"
+                               step="0.01"
+                               ${useReceivedQty ? 'disabled' : ''}>
+                    </td>
+                `;
+                tbody.appendChild(itemRow);
+            });
+            
+            // Add a spacer row if not the last group
+            if (index < Object.keys(poGroups).length - 1) {
+                const spacerRow = document.createElement('tr');
+                spacerRow.innerHTML = '<td colspan="5" class="p-0"><div class="my-2"></div></td>';
+                tbody.appendChild(spacerRow);
+            }
+        });
+    }
+    
+    // Individual verification form submission
+    document.getElementById('confirmVerificationBtn').addEventListener('click', async function() {
+        const form = document.getElementById('verificationForm');
+        
+        try {
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Disable button and show loading state
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Verifying...';
+            
+            const collectionId = document.getElementById('collectionId').value;
+            const formData = new FormData(form);
+            
+            const response = await fetch(`/stock/verify/${collectionId}/`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const textContent = await response.text();
+                console.error('Server returned non-JSON response:', textContent);
+                throw new Error('Server returned an invalid response. Please try again.');
+            }
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || `Server error: ${response.status}`);
+            }
+            
+            if (data.status === 'success') {
+                // Hide modal
+                verificationModal.hide();
+                
+                // Show success toast
+                toastr.success('Item verified successfully', 'Success');
+                
+                // Remove the verified item card with animation
+                const card = document.querySelector(`.verify-btn[data-collection-id="${collectionId}"]`).closest('.collection-item');
+                card.classList.add('fade-out');
+                
+                // Reload the page after a delay to prevent UI issues
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                throw new Error(data.message || 'Error verifying item');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toastr.error(error.message, 'Error');
+        } finally {
+            // Reset button state
+            this.disabled = false;
+            this.innerHTML = 'Verify Item';
+        }
+    });
+    
+    // Bulk verification form submission
+    document.getElementById('confirmBulkVerificationBtn').addEventListener('click', async function() {
+        try {
+            // Validation remains the same...
+            
+            // Get form data
+            const externalInvoiceNumber = document.getElementById('bulkExternalInvoiceNumber').value;
+            const externalInvoiceDate = document.getElementById('bulkExternalInvoiceDate').value;
+            
+            if (!externalInvoiceNumber || !externalInvoiceDate) {
+                toastr.error('Please fill in all required fields', 'Validation Error');
+                return;
+            }
+            
+            const notes = document.getElementById('bulkNotes').value;
+            
+            // Create items array with quantities
+            const items = [];
+            selectedItems.forEach(id => {
+                const qtyInput = document.querySelector(`.verified-qty-input[data-id="${id}"]`);
+                if (qtyInput) {
+                    items.push({
+                        id: id,
+                        qty: qtyInput.value
+                    });
+                }
+            });
+            
+            // Disable button and show loading
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+            
+            // Show info toast
+            toastr.info(`Processing ${selectedItems.size} items...`, 'Please wait');
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            const response = await fetch('/stock/bulk-verify/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    items: items,
+                    external_invoice_number: externalInvoiceNumber,
+                    external_invoice_date: externalInvoiceDate,
+                    notes: notes
+                })
+            });
+            
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const textContent = await response.text();
+                console.error('Server returned non-JSON response:', textContent);
+                throw new Error('Server returned an invalid response. Please try again.');
+            }
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || `Server error: ${response.status}`);
+            }
+            
+            // Handle the response...
+            if (data.status === 'success') {
+                toastr.success(`All items verified successfully`, 'Success');
+                bulkVerificationModal.hide();
+                
+                // Reload the page after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else if (data.status === 'partial') {
+                toastr.warning(`${data.success_count} verified, ${data.error_count} failed`, 'Partial Success');
+                
+                // Still reload after partial success
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else {
+                throw new Error(data.message || 'Error verifying items');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toastr.error(error.message || 'An unexpected error occurred', 'Error');
+        } finally {
+            // Reset button state
+            this.disabled = false;
+            this.innerHTML = 'Verify All Items';
+        }
+    });
+    
+    // Check if there are no more items and show a message
+    function checkEmptyState() {
+        const remainingItems = document.querySelectorAll('.collection-item').length;
+        if (remainingItems === 0) {
+            const container = document.getElementById('collectionsContainer');
+            container.innerHTML = '<div class="col-12"><div class="alert alert-success text-center">All items have been verified!</div></div>';
+        }
+    }
+
+    // PO-level selection
+    document.querySelectorAll('.select-po').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const po = this.dataset.po;
+            const poItems = document.querySelectorAll(`.collection-item[data-po="${po}"] .item-select`);
+            
+            poItems.forEach(item => {
+                item.checked = this.checked;
+                
+                // Update the selected items set and card styling
+                const itemId = item.dataset.id;
+                if (this.checked) {
+                    selectedItems.add(itemId);
+                    item.closest('.card').classList.add('selected');
+                } else {
+                    selectedItems.delete(itemId);
+                    item.closest('.card').classList.remove('selected');
+                }
+            });
+            
+            // Update the global select all checkbox state
+            updateSelectAllCheckbox();
+            updateBulkButton();
+        });
+    });
+
+    // Function to update the "Select All" checkbox state
+    function updateSelectAllCheckbox() {
+        const allCheckboxes = document.querySelectorAll('.item-select');
+        const checkedCheckboxes = document.querySelectorAll('.item-select:checked');
+        
+        document.getElementById('selectAllItems').checked = 
+            allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length;
+        document.getElementById('selectAllItems').indeterminate = 
+            checkedCheckboxes.length > 0 && checkedCheckboxes.length < allCheckboxes.length;
+    }
+
+    // Also update the code that keeps track of checkboxes to update PO checkboxes
+    document.querySelectorAll('.item-select').forEach(checkbox => {
+        const originalHandler = checkbox.onchange;
+        checkbox.onchange = function(event) {
+            // Call the original handler
+            if (originalHandler) {
+                originalHandler.call(this, event);
+            }
+            
+            // Additionally update the PO checkbox state
+            const poCheckbox = this.closest('.po-section').querySelector('.select-po');
+            if (poCheckbox) {
+                const poItems = this.closest('.po-section').querySelectorAll('.item-select');
+                const allChecked = Array.from(poItems).every(item => item.checked);
+                const noneChecked = Array.from(poItems).every(item => !item.checked);
+                
+                poCheckbox.checked = allChecked;
+                poCheckbox.indeterminate = !allChecked && !noneChecked;
+            }
+            
+            updateSelectAllCheckbox();
+        };
+    });
+});
+</script>
+{% endblock %}

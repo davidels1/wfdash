@@ -1,0 +1,15 @@
+{% extends "customer_portal/base.html" %}
+{% load static %}
+
+{% block title %}Offline - WF Sales Portal{% endblock %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <div class="offline-container">
+        <img src="{% static 'customer_portal/img/icon-192x192.png' %}" alt="WF Sales" class="mb-4" style="width:100px;">
+        <h1>You are offline</h1>
+        <p class="lead">Please check your internet connection and try again.</p>
+        <button class="btn btn-primary mt-3" onclick="window.location.reload()">Try Again</button>
+    </div>
+</div>
+{% endblock %}

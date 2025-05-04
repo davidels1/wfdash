@@ -2,15 +2,24 @@ from django import forms
 from wfdash.models import Customers
 from .models import QuoteRequest, QuoteItem
 
+# Create a custom field that shows customer name and company
+class CustomerChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        # Show customer name and company, or just company if customer name is empty
+        if obj.customer:
+            return f"{obj.customer} - {obj.company}"
+        return obj.company
+
 class QuoteRequestForm(forms.ModelForm):
-    customer = forms.ModelChoiceField(
-        queryset=Customers.objects.all(),
+    # Use the custom field
+    customer = CustomerChoiceField(
+        queryset=Customers.objects.all().order_by('company'),
         widget=forms.Select(attrs={'class': 'form-control select2'})
     )
 
     class Meta:
         model = QuoteRequest
-        fields = ['customer', 'photo']  # Removed 'voice_note'
+        fields = ['customer', 'description', 'notes']  # Keep your existing fields
         widgets = {
             'photo': forms.FileInput(attrs={'class': 'form-control'}),
         }

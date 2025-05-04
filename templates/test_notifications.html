@@ -1,0 +1,176 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %}Test PWA Notifications{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card">
+    <div class="card-header">
+      <h4>Test Push Notifications</h4>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">Notification Title</label>
+        <input type="text" id="notificationTitle" class="form-control" value="New Order Alert">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Notification Body</label>
+        <input type="text" id="notificationBody" class="form-control" value="You have a new order #ORD-2025-001">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Action URL</label>
+        <input type="text" id="notificationUrl" class="form-control" value="/orders/123">
+      </div>
+      
+      <div class="d-flex justify-content-between">
+        <button id="requestPermission" class="btn btn-info">
+          <i class="feather icon-bell"></i> Request Permission
+        </button>
+        
+        <button id="testLocalNotification" class="btn btn-primary">
+          <i class="feather icon-zap"></i> Test Local Notification
+        </button>
+        
+        <button id="testServerPush" class="btn btn-success">
+          <i class="feather icon-server"></i> Test Server Push
+        </button>
+      </div>
+      
+      <div class="alert alert-info mt-3">
+        <p><strong>Status:</strong> <span id="notificationStatus">Waiting for action</span></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const statusElement = document.getElementById('notificationStatus');
+  const permissionButton = document.getElementById('requestPermission');
+  const localButton = document.getElementById('testLocalNotification');
+  const serverButton = document.getElementById('testServerPush');
+  
+  // Update status based on current permission
+  function updatePermissionStatus() {
+    if (Notification.permission === 'granted') {
+      statusElement.textContent = 'Permission granted';
+      statusElement.className = 'text-success';
+      permissionButton.disabled = true;
+      localButton.disabled = false;
+      serverButton.disabled = false;
+    } else if (Notification.permission === 'denied') {
+      statusElement.textContent = 'Permission denied - check browser settings';
+      statusElement.className = 'text-danger';
+      permissionButton.disabled = true;
+      localButton.disabled = true;
+      serverButton.disabled = true;
+    } else {
+      statusElement.textContent = 'Permission not requested yet';
+      statusElement.className = 'text-warning';
+      permissionButton.disabled = false;
+      localButton.disabled = true;
+      serverButton.disabled = true;
+    }
+  }
+  
+  // Initial status update
+  updatePermissionStatus();
+  
+  // Request permission
+  permissionButton.addEventListener('click', function() {
+    statusElement.textContent = 'Requesting permission...';
+    
+    Notification.requestPermission().then(function(permission) {
+      updatePermissionStatus();
+    });
+  });
+  
+  // Test local notification (doesn't use push server)
+  localButton.addEventListener('click', function() {
+    const title = document.getElementById('notificationTitle').value;
+    const body = document.getElementById('notificationBody').value;
+    const url = document.getElementById('notificationUrl').value;
+    
+    statusElement.textContent = 'Sending local notification...';
+    
+    // Check if we have an active service worker
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      // Send message to service worker to show notification
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SHOW_TEST_NOTIFICATION',
+        notification: {
+          title: title,
+          body: body,
+          url: url
+        }
+      });
+      
+      statusElement.textContent = 'Notification request sent to service worker';
+    } else {
+      // Fallback to regular notification if no service worker
+      const notification = new Notification(title, {
+        body: body,
+        icon: '/static/images/pwa/icon-192x192.png'
+      });
+      
+      notification.onclick = function() {
+        window.location.href = url;
+      };
+      
+      statusElement.textContent = 'Local notification displayed (no service worker)';
+    }
+  });
+  
+  // Test server push notification
+  serverButton.addEventListener('click', async function() {
+    const title = document.getElementById('notificationTitle').value;
+    const body = document.getElementById('notificationBody').value;
+    const url = document.getElementById('notificationUrl').value;
+    
+    statusElement.textContent = 'Sending push request to server...';
+    
+    try {
+      const response = await fetch('/api/send-test-notification/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+          title: title,
+          body: body,
+          url: url
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        statusElement.textContent = 'Server push notification sent successfully';
+      } else {
+        statusElement.textContent = 'Error: ' + data.error;
+      }
+    } catch (error) {
+      statusElement.textContent = 'Error sending push notification: ' + error.message;
+    }
+  });
+  
+  // Helper function to get CSRF token
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+});
+</script>
+{% endblock %}

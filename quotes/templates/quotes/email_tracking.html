@@ -1,0 +1,131 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Email Tracking{% endblock title %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Email Tracking Dashboard</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0">Total Emails</h6>
+                                            <h3 class="mt-2 mb-0">{{ total_emails }}</h3>
+                                        </div>
+                                        <i class="feather icon-mail" style="font-size: 30px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0">Opened Emails</h6>
+                                            <h3 class="mt-2 mb-0">{{ opened_emails }}</h3>
+                                        </div>
+                                        <i class="feather icon-eye" style="font-size: 30px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0">Link Clicks</h6>
+                                            <h3 class="mt-2 mb-0">{{ total_clicks }}</h3>
+                                        </div>
+                                        <i class="feather icon-mouse-pointer" style="font-size: 30px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0">Open Rate</h6>
+                                            <h3 class="mt-2 mb-0">{{ open_rate }}%</h3>
+                                        </div>
+                                        <i class="feather icon-percent" style="font-size: 30px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Quote #</th>
+                                    <th>Customer</th>
+                                    <th>Sent Date</th>
+                                    <th>Status</th>
+                                    <th>Opened</th>
+                                    <th>Clicks</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quote in quotes %}
+                                <tr>
+                                    <td>{{ quote.quote_number }}</td>
+                                    <td>{{ quote.customer.company }}</td>
+                                    <td>{{ quote.email_sent_at|date:"d M Y H:i" }}</td>
+                                    <td>
+                                        {% if quote.email_opened %}
+                                            <span class="badge bg-success">Opened</span>
+                                        {% elif quote.email_delivered %}
+                                            <span class="badge bg-info">Delivered</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Sent</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if quote.email_opened %}
+                                            {{ quote.email_opened_at|date:"d M Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% with click_count=quote.email_clicks.count %}
+                                            {% if click_count > 0 %}
+                                                <span class="badge bg-primary">{{ click_count }}</span>
+                                            {% else %}
+                                                <span class="text-muted">0</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'quotes:quote_detail' quote.id %}" class="btn btn-sm btn-primary">
+                                            <i class="feather icon-eye"></i>
+                                        </a>
+                                        <a href="{% url 'quotes:email_tracking_detail' quote.id %}" class="btn btn-sm btn-info">
+                                            <i class="feather icon-bar-chart-2"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

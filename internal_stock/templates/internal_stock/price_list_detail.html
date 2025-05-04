@@ -1,0 +1,158 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{{ price_list.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5>{{ price_list.name }}</h5>
+                        <p class="text-muted mb-0">
+                            {{ price_list.supplier.suppliername }} | {{ price_list.year }} |
+                            Default Markup: {{ price_list.default_markup }}%
+                        </p>
+                    </div>
+                    <div>
+                        <a href="{% url 'internal_stock:price_list_index' %}" class="btn btn-outline-secondary me-2">
+                            <i class="feather icon-list"></i> All Price Lists
+                        </a>
+                        <a href="{% url 'internal_stock:bulk_upload_items' price_list_id=price_list.pk %}" class="btn btn-secondary me-2">
+                            <i class="feather icon-upload"></i> Bulk Upload
+                        </a>
+                        <a href="{% url 'internal_stock:add_price_list_item' price_list_id=price_list.pk %}" class="btn btn-primary">
+                            <i class="feather icon-plus"></i> Add Item
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h6>Validity</h6>
+                                    <p class="mb-1">From: <strong>{{ price_list.valid_from|date:"d F Y" }}</strong></p>
+                                    {% if price_list.valid_until %}
+                                        <p class="mb-1">Until: <strong>{{ price_list.valid_until|date:"d F Y" }}</strong></p>
+                                        <p class="mb-0">Duration: <strong>{{ price_list.duration }}</strong></p>
+                                    {% else %}
+                                        <p class="mb-0">Until: <strong>Ongoing</strong></p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h6>Notes</h6>
+                                    {% if price_list.notes %}
+                                        <p class="mb-0">{{ price_list.notes|linebreaks }}</p>
+                                    {% else %}
+                                        <p class="text-muted mb-0">No notes available for this price list.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body border-bottom pb-3">
+                    <form method="GET" class="row">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text">Sort by</span>
+                                <select name="sort" class="form-select" onchange="this.form.submit()">
+                                    <option value="description" {% if sort == 'description' %}selected{% endif %}>Description (A-Z)</option>
+                                    <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price (Low to High)</option>
+                                    <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price (High to Low)</option>
+                                    <option value="markup_high" {% if sort == 'markup_high' %}selected{% endif %}>Markup (Highest)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <span class="badge bg-info">{{ items.count }} items in this price list</span>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Part #</th>
+                                    <th>Description</th>
+                                    <th>Brand</th>
+                                    <th>Cost Price</th>
+                                    <th>Markup</th>
+                                    <th>Selling Price</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>{{ item.part_number|default:"-" }}</td>
+                                    <td>{{ item.description }}</td>
+                                    <td>{{ item.brand|default:"-" }}</td>
+                                    <td>R{{ item.cost_price }}</td>
+                                    <td>{{ item.markup }}%</td>
+                                    <td>R{{ item.selling_price }}</td>
+                                    <td>
+                                        {% if item.notes %}
+                                        <span class="d-inline-block text-truncate" style="max-width: 150px;" 
+                                              data-bs-toggle="tooltip" title="{{ item.notes }}">
+                                            {{ item.notes }}
+                                        </span>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'internal_stock:edit_price_list_item' item_id=item.pk %}" class="btn btn-outline-primary">
+                                                <i class="feather icon-edit-2"></i>
+                                            </a>
+                                            <a href="{% url 'internal_stock:delete_price_list_item' item_id=item.pk %}" class="btn btn-outline-danger">
+                                                <i class="feather icon-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <p class="text-muted mb-2">No items in this price list yet.</p>
+                                        <a href="{% url 'internal_stock:add_price_list_item' price_list_id=price_list.pk %}" class="btn btn-primary btn-sm">
+                                            <i class="feather icon-plus"></i> Add First Item
+                                        </a>
+                                        <span class="mx-2">or</span>
+                                        <a href="{% url 'internal_stock:bulk_upload_items' price_list_id=price_list.pk %}" class="btn btn-secondary btn-sm">
+                                            <i class="feather icon-upload"></i> Bulk Upload
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %}
+{% endblock content %}

@@ -1954,7 +1954,7 @@ table.dataTable > thead .sorting_desc_disabled:after {
 }
 
 .b-brand .b-bg {
-    background: linear-gradient(-135deg, #1de9b6 0%, #1dc4e9 100%);
+    background: linear-gradient(279deg, #ecb063 0%, #db5859 100%);
     border-radius: 10px;
     width: 35px;
     height: 35px;
@@ -12495,19 +12495,19 @@ table.dataTable.dtr-inline.collapsed > tbody > tr[role=row] > th:first-child:bef
     .fab-container {
         display: block;
     }
-    
+
     .table-responsive {
         margin-bottom: 80px; /* Space for FAB */
     }
-    
+
     .card-body {
         padding: 1rem;
     }
-    
+
     .btn-group {
         flex-wrap: wrap;
     }
-    
+
     .btn-group .btn {
         margin-bottom: 0.25rem;
     }

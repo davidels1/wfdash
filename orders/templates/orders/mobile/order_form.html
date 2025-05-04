@@ -1,0 +1,1183 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}New Order{% endblock %}
+
+{% block content %}
+<div class="mobile-order-form">
+    <!-- Success notification -->
+    <div id="lastOrderInfo" class="alert alert-success mb-3 d-none">
+        <div class="d-flex justify-content-between align-items-center">
+            <span>Order #<strong id="lastOrderNumber"></strong> created!</span>
+            <a href="#" id="viewLastOrder" class="btn btn-sm btn-outline-success">View</a>
+        </div>
+    </div>
+
+    <!-- Form progress indicator -->
+    <div class="progress-container mb-3">
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width: 33%" id="formProgress"></div>
+        </div>
+        <div class="progress-steps">
+            <div class="progress-step active" data-step="details">Details</div>
+            <div class="progress-step" data-step="items">Items</div>
+            <div class="progress-step" data-step="review">Review</div>
+        </div>
+    </div>
+    
+    <!-- Actual form -->
+    <form method="post" id="orderForm">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="alert alert-danger mb-3">
+            <h6 class="mb-1">Please correct the following:</h6>
+            <ul class="mb-0 ps-3">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Step 1: Order Details -->
+        <div class="form-step" id="detailsStep">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Order Number*</label>
+                        {{ form.order_number }}
+                        <div id="orderNumberFeedback" class="order-number-feedback"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Company*</label>
+                        {{ form.company }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Sales Representative*</label>
+                        {{ form.rep }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Notes</label>
+                        {{ form.notes }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid mt-4">
+                <button type="button" class="btn btn-lg btn-primary next-step">
+                    Continue to Items <i class="feather icon-arrow-right ms-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Order Items -->
+        <div class="form-step" id="itemsStep" style="display:none;">
+            <div class="mobile-section-header sticky-top bg-light p-2 d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Order Items</h5>
+                <button type="button" class="btn btn-primary btn-sm" onclick="addMobileItem()">
+                    <i class="feather icon-plus"></i> Add Item
+                </button>
+            </div>
+            
+            <div id="mobileItemsList" class="mb-3">
+                <div class="mobile-item-card mb-3">
+                    <div class="item-indicator">Item 1</div>
+                    <div class="p-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Description*</label>
+                            <input type="text" name="description[]" class="form-control form-control-lg" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Quantity</label>
+                            <input type="number" name="quantity[]" class="form-control form-control-lg" value="1" min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Price (R)</label>
+                            <input type="number" name="selling_price[]" class="form-control form-control-lg" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Notes</label>
+                            <textarea name="notes[]" class="form-control" rows="2"></textarea>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm d-flex align-items-center" onclick="removeMobileItem(this)">
+                            <i class="feather icon-trash-2 me-1"></i> Remove Item
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-row d-flex gap-2">
+                <button type="button" class="btn btn-lg btn-outline-secondary flex-grow-1 prev-step">
+                    <i class="feather icon-arrow-left me-1"></i> Back
+                </button>
+                <button type="button" class="btn btn-lg btn-primary flex-grow-1 next-step">
+                    Review <i class="feather icon-arrow-right ms-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Review and Submit -->
+        <div class="form-step" id="reviewStep" style="display:none;">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="summary-section mb-3">
+                        <h6 class="text-uppercase text-muted mb-2">Order Details</h6>
+                        <div class="summary-item d-flex justify-content-between">
+                            <span class="text-muted">Order Number:</span>
+                            <span class="fw-bold" id="summary-order-number"></span>
+                        </div>
+                        <div class="summary-item d-flex justify-content-between">
+                            <span class="text-muted">Company:</span>
+                            <span class="fw-bold" id="summary-company"></span>
+                        </div>
+                        <div class="summary-item d-flex justify-content-between">
+                            <span class="text-muted">Representative:</span>
+                            <span class="fw-bold" id="summary-rep"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-section mb-3">
+                        <h6 class="text-uppercase text-muted mb-2">Order Items</h6>
+                        <div id="summary-items-list"></div>
+                        <div class="summary-total mt-2 pt-2 border-top d-flex justify-content-between">
+                            <span class="fw-bold">Total Items:</span>
+                            <span class="fw-bold" id="summary-total-items">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-row d-flex gap-2 mb-5">
+                <button type="button" class="btn btn-lg btn-outline-secondary flex-grow-1 prev-step">
+                    <i class="feather icon-arrow-left me-1"></i> Edit Items
+                </button>
+                <button type="submit" class="btn btn-lg btn-success flex-grow-1" id="submitOrderBtn">
+                    <i class="feather icon-check me-1"></i> Create Order
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Mobile Order Form Styling */
+.mobile-order-form {
+    padding-bottom: 50px;
+}
+
+/* Progress bar styling */
+.progress-container {
+    position: relative;
+    margin-top: 10px;
+}
+
+.progress {
+    height: 4px;
+    margin-bottom: 10px;
+}
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+}
+
+.progress-step {
+    text-align: center;
+    font-size: 12px;
+    color: #6c757d;
+    position: relative;
+    width: 33%;
+}
+
+.progress-step.active {
+    color: #4e73df;
+    font-weight: 600;
+}
+
+.progress-step.completed {
+    color: #1cc88a;
+}
+
+.progress-step::before {
+    content: '';
+    height: 10px;
+    width: 10px;
+    background-color: #dee2e6;
+    border-radius: 50%;
+    position: absolute;
+    top: -18px;
+    left: calc(50% - 5px);
+}
+
+.progress-step.active::before {
+    background-color: #4e73df;
+    height: 14px;
+    width: 14px;
+    top: -20px;
+    left: calc(50% - 7px);
+}
+
+.progress-step.completed::before {
+    background-color: #1cc88a;
+}
+
+/* Form controls optimized for mobile */
+.form-control, .form-select, .select2-container--default .select2-selection--single {
+    padding: 12px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    height: auto;
+}
+
+.form-label {
+    margin-bottom: 0.3rem;
+    font-size: 14px;
+}
+
+/* Item cards styling */
+.mobile-item-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    position: relative;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.mobile-item-card .item-indicator {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #4e73df;
+    color: white;
+    padding: 2px 8px;
+    font-size: 12px;
+    border-radius: 0 8px 0 8px;
+}
+
+/* Force the Select2 dropdown to be above everything */
+.select2-container--open {
+    z-index: 9999;
+}
+
+/* Summary section */
+.summary-section {
+    margin-bottom: 1.5rem;
+}
+
+.summary-item {
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.summary-item-detail {
+    padding: 8px;
+    border-radius: 4px;
+    background: #f8f9fa;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* Mobile sticky header */
+.mobile-section-header {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    z-index: 10;
+}
+
+/* Order number feedback */
+.order-number-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #fff;
+    background: #dc3545;
+    padding: 0.7rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+/* Enhanced Select2 styling for better visibility */
+body .select2-container--default .select2-selection--single {
+    padding: 12px 15px !important;
+    height: auto !important;
+    border: 2px solid #4e73df !important;
+    border-radius: 8px !important;
+    background-color: #f8f9ff !important; /* Light blue tint */
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
+}
+
+/* Render the text properly */
+body .select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #333 !important;
+    line-height: 1.5 !important;
+    padding-left: 0 !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+}
+
+/* Position the dropdown arrow */
+body .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100% !important;
+    right: 10px !important;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+    body .select2-container--default .select2-selection--single {
+        padding: 15px !important;
+        background-color: #e3ebff !important;
+        border-width: 3px !important;
+    }
+    
+    body .select2-search--dropdown .select2-search__field {
+        padding: 15px !important;
+        font-size: 16px !important;
+    }
+    
+    /* Make dropdown fixed position on mobile for better usability */
+    body .select2-container--open .select2-dropdown {
+        position: fixed !important;
+        top: 20% !important;
+        left: 5% !important;
+        width: 90% !important;
+        z-index: 9999 !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+// Wait for jQuery to be fully available before proceeding
+function initializeWhenReady() {
+    if (typeof jQuery === 'undefined' || typeof $.fn.select2 === 'undefined') {
+        console.log("jQuery or Select2 not loaded yet, waiting...");
+        setTimeout(initializeWhenReady, 100);
+        return;
+    }
+    
+    console.log("jQuery and Select2 are ready!");
+    
+    // Now proceed with initialization
+    $(document).ready(function() {
+        // Fix for mobile specific Select2 display issues
+        $('body').append('<style>.select2-container{z-index:9999 !important;}</style>');
+        
+        // Initialize Select2 for company dropdown with debug info
+        console.log("Initializing Select2 for company search");
+        
+        $('#id_company').select2({
+            placeholder: "Search for a company...",
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 2,
+            dropdownParent: $('body'), // This helps with mobile z-index issues
+            ajax: {
+                url: '/wfdash/api/companies/search/',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    console.log("Search params:", params);
+                    return {
+                        q: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: function(data, params) {
+                    console.log("API response:", data);
+                    
+                    // Handle both response formats
+                    var results = [];
+                    if (data && Array.isArray(data)) {
+                        results = data.map(function(item) {
+                            return {
+                                id: item.id,
+                                text: item.text || item.company,
+                                address: item.address
+                            };
+                        });
+                    } else if (data && data.results && Array.isArray(data.results)) {
+                        results = data.results.map(function(item) {
+                            return {
+                                id: item.id,
+                                text: item.text || item.company,
+                                address: item.address
+                            };
+                        });
+                    }
+                    
+                    console.log("Processed results:", results);
+                    
+                    return {
+                        results: results,
+                        pagination: {
+                            more: false
+                        }
+                    };
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX error:", status, error);
+                    if (xhr.responseText) {
+                        try {
+                            console.error("Response:", JSON.parse(xhr.responseText));
+                        } catch (e) {
+                            console.error("Raw response:", xhr.responseText);
+                        }
+                    }
+                },
+                cache: true
+            },
+            templateResult: formatCompanyResult,
+            templateSelection: formatCompanySelection
+        });
+        
+        // Debugging events
+        $('#id_company').on('select2:open', function() {
+            console.log("Select2 opened");
+        });
+        
+        $('#id_company').on('select2:select', function(e) {
+            console.log("Company selected:", e.params.data);
+        });
+        
+        // ---------- FIX 1: MULTI-STEP FORM NAVIGATION ----------
+        // Define steps array and track current step
+        const steps = ['detailsStep', 'itemsStep', 'reviewStep'];
+        let currentStep = 0;
+        const progressBar = document.getElementById('formProgress');
+        const progressSteps = document.querySelectorAll('.progress-step');
+        
+        // Next button click handler
+        $('.next-step').on('click', function() {
+            console.log("Next step button clicked, current step:", currentStep);
+            
+            // Validate current step
+            if (currentStep === 0) {
+                // Validate details step
+                const orderNumber = document.querySelector('[name="order_number"]').value;
+                const company = $('#id_company').val();
+                const rep = document.querySelector('[name="rep"]').value;
+                
+                console.log("Validating step 1:", {orderNumber, company, rep});
+                
+                if (!orderNumber || !company || !rep) {
+                    toastr.error('Please fill in all required fields', 'Required Fields');
+                    return false;
+                }
+                
+                // Check for order number validation error
+                if (document.querySelector('[name="order_number"]').classList.contains('is-invalid-order')) {
+                    toastr.error('Please use a different order number', 'Invalid Order Number');
+                    return false;
+                }
+            }
+            else if (currentStep === 1) {
+                // Validate items step
+                const descriptions = document.querySelectorAll('[name="description[]"]');
+                let valid = true;
+                
+                for (let i = 0; i < descriptions.length; i++) {
+                    if (!descriptions[i].value) {
+                        valid = false;
+                        descriptions[i].classList.add('is-invalid');
+                        toastr.error('Description is required for all items', 'Required Fields');
+                    } else {
+                        descriptions[i].classList.remove('is-invalid');
+                    }
+                }
+                
+                if (!valid) return false;
+                
+                // Update order summary for review step
+                updateOrderSummary();
+            }
+            
+            // Proceed to next step
+            document.getElementById(steps[currentStep]).style.display = 'none';
+            currentStep++;
+            document.getElementById(steps[currentStep]).style.display = 'block';
+            
+            // Update progress bar
+            updateProgress();
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        });
+        
+        // Previous button click handler
+        $('.prev-step').on('click', function() {
+            document.getElementById(steps[currentStep]).style.display = 'none';
+            currentStep--;
+            document.getElementById(steps[currentStep]).style.display = 'block';
+            
+            // Update progress bar
+            updateProgress();
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        });
+        
+        // Update progress bar and step indicators
+        function updateProgress() {
+            const progressPercent = ((currentStep + 1) / steps.length) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+            
+            progressSteps.forEach((step, index) => {
+                if (index < currentStep) {
+                    step.classList.add('completed');
+                    step.classList.remove('active');
+                } else if (index === currentStep) {
+                    step.classList.add('active');
+                    step.classList.remove('completed');
+                } else {
+                    step.classList.remove('active', 'completed');
+                }
+            });
+        }
+        
+        // Order summary generation
+        function updateOrderSummary() {
+            // Order details
+            const orderNumber = document.querySelector('[name="order_number"]').value;
+            document.getElementById('summary-order-number').textContent = orderNumber;
+            
+            const companySelect = document.getElementById('id_company');
+            const companyText = $('#id_company').select2('data')[0]?.text || '';
+            document.getElementById('summary-company').textContent = companyText;
+            
+            const repSelect = document.getElementById('id_rep');
+            const repText = repSelect.options[repSelect.selectedIndex].text;
+            document.getElementById('summary-rep').textContent = repText;
+            
+            // Order items
+            const descriptions = document.querySelectorAll('[name="description[]"]');
+            const quantities = document.querySelectorAll('[name="quantity[]"]');
+            const prices = document.querySelectorAll('[name="selling_price[]"]');
+            
+            const summaryItemsList = document.getElementById('summary-items-list');
+            summaryItemsList.innerHTML = '';
+            
+            let totalItems = 0;
+            let totalAmount = 0;
+            
+            for (let i = 0; i < descriptions.length; i++) {
+                const description = descriptions[i].value;
+                const quantity = parseInt(quantities[i].value || 0);
+                const price = parseFloat(prices[i].value || 0);
+                const lineTotal = quantity * price;
+                
+                totalItems += quantity;
+                totalAmount += lineTotal;
+                
+                const itemHtml = `
+                    <div class="summary-item-detail">
+                        <div class="fw-bold">${description}</div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span>${quantity} × R${price.toFixed(2)}</span>
+                            <span class="fw-bold">R${lineTotal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+                
+                summaryItemsList.insertAdjacentHTML('beforeend', itemHtml);
+            }
+            
+            // Update totals
+            document.getElementById('summary-total-items').textContent = totalItems;
+        }
+        
+        // ---------- FIX 2: ORDER NUMBER VALIDATION ----------
+        // Order number validation
+        const orderNumberField = document.querySelector('[name="order_number"]');
+        const orderNumberFeedback = document.getElementById('orderNumberFeedback');
+        
+        if (orderNumberField && orderNumberFeedback) {
+            // Define debounce function
+            function debounce(func, wait) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            }
+            
+            // Add input handler with debounce
+            orderNumberField.addEventListener('input', debounce(function() {
+                const orderNumber = this.value.trim();
+                
+                if (!orderNumber) {
+                    orderNumberField.classList.remove('is-invalid-order');
+                    orderNumberFeedback.style.display = 'none';
+                    return;
+                }
+                
+                console.log("Checking order number:", orderNumber);
+                
+                // Make API request to check order number
+                fetch(`/orders/check-order-number/?order_number=${encodeURIComponent(orderNumber)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Server returned ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log("Order number check response:", data);
+                        
+                        if (data.exists) {
+                            orderNumberField.classList.add('is-invalid-order');
+                            orderNumberFeedback.style.display = 'block';
+                            orderNumberFeedback.textContent = "⚠️ This order number already exists";
+                            
+                            // Haptic feedback for mobile devices
+                            if ('vibrate' in navigator) {
+                                navigator.vibrate(200);
+                            }
+                        } else {
+                            orderNumberField.classList.remove('is-invalid-order');
+                            orderNumberFeedback.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Order number check failed:", error);
+                        // Don't show validation error if the check failed
+                        orderNumberField.classList.remove('is-invalid-order');
+                        orderNumberFeedback.style.display = 'none';
+                    });
+            }, 300));
+            
+            // Check on page load if there's already a value
+            if (orderNumberField.value) {
+                // Trigger the validation after a short delay
+                setTimeout(() => {
+                    const event = new Event('input', { bubbles: true });
+                    orderNumberField.dispatchEvent(event);
+                }, 500);
+            }
+        }
+    });
+}
+
+// Start initialization process
+initializeWhenReady();
+
+// Rest of your existing code for formatCompanyResult, formatCompanySelection, 
+// addMobileItem, removeMobileItem, updateItemNumbers, etc.
+</script>
+<script>
+// Define these functions in global scope first, before any initialization
+function formatCompanyResult(company) {
+    if (!company.id) return company.text;
+    
+    return $('<div class="company-result">' +
+            '<div class="company-name">' + company.text + '</div>' +
+            (company.address ? '<div class="company-address">' + company.address + '</div>' : '') +
+            '</div>');
+}
+
+function formatCompanySelection(company) {
+    return company.text || "Select a company";
+}
+
+function addMobileItem() {
+    console.log('Adding mobile item');
+    const itemsCount = document.querySelectorAll('.mobile-item-card').length;
+    
+    const template = `
+        <div class="mobile-item-card mb-3">
+            <div class="item-indicator">Item ${itemsCount + 1}</div>
+            <div class="p-3">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Description*</label>
+                    <input type="text" name="description[]" class="form-control form-control-lg" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Quantity</label>
+                    <input type="number" name="quantity[]" class="form-control form-control-lg" value="1" min="1">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Price (R)</label>
+                    <input type="number" name="selling_price[]" class="form-control form-control-lg" step="0.01" min="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Notes</label>
+                    <textarea name="notes[]" class="form-control" rows="2"></textarea>
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm d-flex align-items-center" onclick="removeMobileItem(this)">
+                    <i class="feather icon-trash-2 me-1"></i> Remove Item
+                </button>
+            </div>
+        </div>
+    `;
+    
+    const mobileItemsList = document.getElementById('mobileItemsList');
+    if (mobileItemsList) {
+        mobileItemsList.insertAdjacentHTML('beforeend', template);
+        
+        // Scroll to new item
+        const newItem = document.querySelector('.mobile-item-card:last-child');
+        if (newItem) {
+            newItem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Show notification
+        if (typeof toastr !== 'undefined') {
+            toastr.info('New item added', 'Item Added');
+        }
+        
+        // Update item numbers
+        updateItemNumbers();
+    } else {
+        console.error('Could not find mobileItemsList element');
+    }
+}
+
+function removeMobileItem(button) {
+    console.log('Removing mobile item');
+    const items = document.querySelectorAll('.mobile-item-card');
+    if (items.length <= 1) {
+        if (typeof toastr !== 'undefined') {
+            toastr.warning('At least one item is required', 'Cannot Remove');
+        }
+        return;
+    }
+    
+    const itemCard = button.closest('.mobile-item-card');
+    if (!itemCard) {
+        console.error('Could not find parent item card');
+        return;
+    }
+    
+    // Add remove animation
+    itemCard.style.transition = 'all 0.3s ease';
+    itemCard.style.opacity = '0';
+    itemCard.style.transform = 'scale(0.9)';
+    
+    setTimeout(() => {
+        itemCard.remove();
+        updateItemNumbers();
+        if (typeof toastr !== 'undefined') {
+            toastr.info('Item removed', 'Item Removed');
+        }
+    }, 300);
+}
+
+function updateItemNumbers() {
+    document.querySelectorAll('.mobile-item-card').forEach((card, index) => {
+        const indicator = card.querySelector('.item-indicator');
+        if (indicator) {
+            indicator.textContent = `Item ${index + 1}`;
+        }
+    });
+}
+
+// Utility function for debouncing
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+// jQuery onload replacement that works even if jQuery fails
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM content loaded, checking for jQuery');
+    
+    // Set an interval to check for jQuery
+    const jQueryCheckInterval = setInterval(function() {
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+            clearInterval(jQueryCheckInterval);
+            console.log('jQuery and Select2 detected, initializing form');
+            initializeForm();
+        }
+    }, 100);
+    
+    // Fallback if jQuery doesn't load after 5 seconds
+    setTimeout(function() {
+        if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) {
+            clearInterval(jQueryCheckInterval);
+            console.error('jQuery or Select2 failed to load, falling back to native implementation');
+            initializeFormWithoutJQuery();
+        }
+    }, 5000);
+});
+
+function initializeForm() {
+    // Fix for mobile specific Select2 display issues
+    $('body').append('<style>.select2-container{z-index:9999 !important;}</style>');
+    
+    // Initialize Select2 for company dropdown
+    console.log('Initializing Select2 for company search');
+    
+    try {
+        $('#id_company').select2({
+            placeholder: "Search for a company...",
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 2,
+            dropdownParent: $('body'),
+            ajax: {
+                url: '/wfdash/api/companies/search/',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    console.log("Search params:", params);
+                    return {
+                        q: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: function(data, params) {
+                    console.log("API response:", data);
+                    
+                    var results = [];
+                    if (data && Array.isArray(data)) {
+                        results = data.map(function(item) {
+                            return {
+                                id: item.id,
+                                text: item.text || item.company,
+                                address: item.address
+                            };
+                        });
+                    } else if (data && data.results && Array.isArray(data.results)) {
+                        results = data.results.map(function(item) {
+                            return {
+                                id: item.id,
+                                text: item.text || item.company,
+                                address: item.address
+                            };
+                        });
+                    }
+                    
+                    return {
+                        results: results,
+                        pagination: {
+                            more: false
+                        }
+                    };
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX error:", status, error);
+                }
+            },
+            templateResult: formatCompanyResult,
+            templateSelection: formatCompanySelection
+        });
+        
+        console.log('Select2 initialization complete');
+        
+        // Setup event listeners for multi-step form
+        setupMultiStepForm();
+        
+        // Setup order number validation
+        setupOrderNumberValidation();
+        
+    } catch (error) {
+        console.error('Error during initialization:', error);
+    }
+}
+
+function initializeFormWithoutJQuery() {
+    // Fall back implementation if jQuery fails
+    console.log('Using native JavaScript implementation');
+    
+    // Setup the multi-step navigation without jQuery
+    setupMultiStepFormNative();
+    
+    // Setup order validation without jQuery
+    setupOrderNumberValidation();
+}
+
+function setupMultiStepForm() {
+    const steps = ['detailsStep', 'itemsStep', 'reviewStep'];
+    let currentStep = 0;
+    const progressBar = document.getElementById('formProgress');
+    const progressSteps = document.querySelectorAll('.progress-step');
+    
+    console.log('Setting up multi-step form with jQuery, steps:', steps);
+    
+    // Next button click handler
+    $('.next-step').on('click', function() {
+        console.log('Next step clicked, current step:', currentStep);
+        
+        // Validate current step
+        if (currentStep === 0) {
+            // Validate details step
+            const orderNumber = document.querySelector('[name="order_number"]').value;
+            const company = $('#id_company').val();
+            const rep = document.querySelector('[name="rep"]').value;
+            
+            console.log('Validating step 1:', {orderNumber, company, rep});
+            
+            if (!orderNumber || !company || !rep) {
+                toastr.error('Please fill in all required fields', 'Required Fields');
+                return false;
+            }
+            
+            // Check for order number validation error
+            if (document.querySelector('[name="order_number"]').classList.contains('is-invalid-order')) {
+                toastr.error('Please use a different order number', 'Invalid Order Number');
+                return false;
+            }
+        }
+        else if (currentStep === 1) {
+            // Validate items step
+            const descriptions = document.querySelectorAll('[name="description[]"]');
+            let valid = true;
+            
+            for (let i = 0; i < descriptions.length; i++) {
+                if (!descriptions[i].value) {
+                    valid = false;
+                    descriptions[i].classList.add('is-invalid');
+                    toastr.error('Description is required for all items', 'Required Fields');
+                } else {
+                    descriptions[i].classList.remove('is-invalid');
+                }
+            }
+            
+            if (!valid) return false;
+            
+            // Update order summary for review step
+            updateOrderSummary();
+        }
+        
+        // Proceed to next step
+        document.getElementById(steps[currentStep]).style.display = 'none';
+        currentStep++;
+        document.getElementById(steps[currentStep]).style.display = 'block';
+        
+        // Update progress bar
+        updateProgress();
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+    });
+    
+    // Previous button click handler
+    $('.prev-step').on('click', function() {
+        document.getElementById(steps[currentStep]).style.display = 'none';
+        currentStep--;
+        document.getElementById(steps[currentStep]).style.display = 'block';
+        
+        // Update progress bar
+        updateProgress();
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+    });
+    
+    // Update progress bar and step indicators
+    function updateProgress() {
+        const progressPercent = ((currentStep + 1) / steps.length) * 100;
+        progressBar.style.width = `${progressPercent}%`;
+        
+        progressSteps.forEach((step, index) => {
+            if (index < currentStep) {
+                step.classList.add('completed');
+                step.classList.remove('active');
+            } else if (index === currentStep) {
+                step.classList.add('active');
+                step.classList.remove('completed');
+            } else {
+                step.classList.remove('active', 'completed');
+            }
+        });
+    }
+}
+
+function setupMultiStepFormNative() {
+    const steps = ['detailsStep', 'itemsStep', 'reviewStep'];
+    let currentStep = 0;
+    const progressBar = document.getElementById('formProgress');
+    const progressSteps = document.querySelectorAll('.progress-step');
+    
+    console.log('Setting up multi-step form with native JS');
+    
+    // Setup next buttons
+    document.querySelectorAll('.next-step').forEach(button => {
+        button.addEventListener('click', function() {
+            console.log('Next step clicked, current step:', currentStep);
+            
+            // Validation code here...
+            
+            // Proceed to next step
+            document.getElementById(steps[currentStep]).style.display = 'none';
+            currentStep++;
+            document.getElementById(steps[currentStep]).style.display = 'block';
+            
+            // Update progress
+            updateProgressNative();
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        });
+    });
+    
+    // Setup previous buttons
+    document.querySelectorAll('.prev-step').forEach(button => {
+        button.addEventListener('click', function() {
+            document.getElementById(steps[currentStep]).style.display = 'none';
+            currentStep--;
+            document.getElementById(steps[currentStep]).style.display = 'block';
+            
+            // Update progress
+            updateProgressNative();
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        });
+    });
+    
+    function updateProgressNative() {
+        const progressPercent = ((currentStep + 1) / steps.length) * 100;
+        progressBar.style.width = `${progressPercent}%`;
+        
+        progressSteps.forEach((step, index) => {
+            if (index < currentStep) {
+                step.classList.add('completed');
+                step.classList.remove('active');
+            } else if (index === currentStep) {
+                step.classList.add('active');
+                step.classList.remove('completed');
+            } else {
+                step.classList.remove('active', 'completed');
+            }
+        });
+    }
+}
+
+function setupOrderNumberValidation() {
+    const orderNumberField = document.querySelector('[name="order_number"]');
+    const orderNumberFeedback = document.getElementById('orderNumberFeedback');
+    
+    console.log('Setting up order number validation');
+    
+    if (orderNumberField && orderNumberFeedback) {
+        orderNumberField.addEventListener('input', debounce(function() {
+            const orderNumber = this.value.trim();
+            
+            if (!orderNumber) {
+                orderNumberField.classList.remove('is-invalid-order');
+                orderNumberFeedback.style.display = 'none';
+                return;
+            }
+            
+            console.log('Checking order number:', orderNumber);
+            
+            // Make API request to check order number
+            fetch(`/orders/check-order-number/?order_number=${encodeURIComponent(orderNumber)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Order number check response:', data);
+                    
+                    if (data.exists) {
+                        orderNumberField.classList.add('is-invalid-order');
+                        orderNumberFeedback.style.display = 'block';
+                        orderNumberFeedback.textContent = "⚠️ This order number already exists";
+                        
+                        // Haptic feedback for mobile devices
+                        if ('vibrate' in navigator) {
+                            navigator.vibrate(200);
+                        }
+                    } else {
+                        orderNumberField.classList.remove('is-invalid-order');
+                        orderNumberFeedback.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Order number check failed:', error);
+                    // Don't show validation error if the check failed
+                    orderNumberField.classList.remove('is-invalid-order');
+                    orderNumberFeedback.style.display = 'none';
+                });
+        }, 300));
+    } else {
+        console.error('Order number field or feedback element not found');
+    }
+}
+
+function updateOrderSummary() {
+    try {
+        // Order details
+        const orderNumber = document.querySelector('[name="order_number"]').value;
+        const summaryOrderNumber = document.getElementById('summary-order-number');
+        if (summaryOrderNumber) {
+            summaryOrderNumber.textContent = orderNumber;
+        }
+        
+        // Company 
+        const companyText = $('#id_company').select2('data')[0]?.text || '';
+        const summaryCompany = document.getElementById('summary-company');
+        if (summaryCompany) {
+            summaryCompany.textContent = companyText;
+        }
+        
+        // Rep
+        const repSelect = document.getElementById('id_rep');
+        const summaryRep = document.getElementById('summary-rep');
+        if (repSelect && summaryRep) {
+            const repText = repSelect.options[repSelect.selectedIndex].text;
+            summaryRep.textContent = repText;
+        }
+        
+        // Order items
+        const descriptions = document.querySelectorAll('[name="description[]"]');
+        const quantities = document.querySelectorAll('[name="quantity[]"]');
+        const prices = document.querySelectorAll('[name="selling_price[]"]');
+        
+        const summaryItemsList = document.getElementById('summary-items-list');
+        if (summaryItemsList) {
+            summaryItemsList.innerHTML = '';
+            
+            let totalItems = 0;
+            let totalAmount = 0;
+            
+            for (let i = 0; i < descriptions.length; i++) {
+                const description = descriptions[i].value;
+                const quantity = parseInt(quantities[i].value || 0);
+                const price = parseFloat(prices[i].value || 0);
+                const lineTotal = quantity * price;
+                
+                totalItems += quantity;
+                totalAmount += lineTotal;
+                
+                const itemHtml = `
+                    <div class="summary-item-detail">
+                        <div class="fw-bold">${description}</div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span>${quantity} × R${price.toFixed(2)}</span>
+                            <span class="fw-bold">R${lineTotal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+                
+                summaryItemsList.insertAdjacentHTML('beforeend', itemHtml);
+            }
+            
+            // Update totals
+            const summaryTotalItems = document.getElementById('summary-total-items');
+            if (summaryTotalItems) {
+                summaryTotalItems.textContent = totalItems;
+            }
+        }
+    } catch (error) {
+        console.error('Error updating order summary:', error);
+    }
+}
+</script>
+{% endblock %}

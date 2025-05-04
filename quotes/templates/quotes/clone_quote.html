@@ -1,0 +1,71 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %} Clone Quote {% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Clone Quote #{{ quote.quote_number }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-info">
+                            <i class="feather icon-info mr-2"></i>
+                            You are cloning Quote #{{ quote.quote_number }} - {{ quote.description }}
+                        </div>
+                        
+                        <!-- Customer Selection -->
+                        <div class="form-group mb-3">
+                            <label for="customer">Select Customer for New Quote</label>
+                            <select name="customer" id="customer" class="form-control select2" required>
+                                <option value="">-- Select Customer --</option>
+                                <option value="{{ quote.customer.id }}" selected>
+                                    {% if quote.customer.customer %}{{ quote.customer.customer }} - {% endif %}{{ quote.customer.company }} (Same as original)
+                                </option>
+                                {% for customer in customers %}
+                                    {% if customer.id != quote.customer.id %}
+                                        <option value="{{ customer.id }}">
+                                            {% if customer.customer %}{{ customer.customer }} - {% endif %}{{ customer.company }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                Select the customer for the cloned quote. By default, the same customer is selected.
+                            </small>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="feather icon-copy mr-1"></i> Clone Quote
+                            </button>
+                            <a href="{% url 'quotes:quote_detail' quote.id %}" class="btn btn-light">
+                                <i class="feather icon-x mr-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize Select2
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %}

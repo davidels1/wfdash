@@ -1,0 +1,26 @@
+{
+  "name": "WF Sales Rep Portal",
+  "short_name": "WFS - REP PORTAL",
+  "description": "Request quotes and place orders on behalf of customers",
+  "start_url": "/rep/",
+  "id": "/rep/",
+  "scope": "/rep/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e76240",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/rep_portal/img/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/rep_portal/img/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

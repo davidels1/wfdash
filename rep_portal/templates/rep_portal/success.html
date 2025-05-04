@@ -1,0 +1,195 @@
+{% extends "rep_portal/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="success-icon">
+        <i class="fas {{ icon }}"></i>
+    </div>
+    
+    <h1>{{ title }}</h1>
+    <p class="success-message">{{ message }}</p>
+    
+    {% if type == "delivery" and delivery_id %}
+    <div class="pdf-actions mt-4">
+        <div class="action-buttons">
+            <a href="{% url 'delivery_notes:view_pdf' delivery_id %}" class="btn btn-primary btn-action" target="_blank">
+                <i class="fas fa-eye me-2"></i> View Delivery Note
+            </a>
+            
+            <a href="{% url 'delivery_notes:download_pdf' delivery_id %}" class="btn btn-secondary btn-action">
+                <i class="fas fa-download me-2"></i> Download PDF
+            </a>
+            
+            <a href="{% url 'delivery_notes:view_pdf' delivery_id %}?print=1" class="btn btn-outline-secondary btn-action" target="_blank">
+                <i class="fas fa-print me-2"></i> Print
+            </a>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if type == "quote" %}
+    <div class="success-details">
+        <p>Your quote request has been successfully submitted with reference number <strong>{{ reference }}</strong>.</p>
+        <p>Our quoting team will process your request shortly. You can check the status of your quote in the main system.</p>
+        <p class="text-muted small">Note: The quote is now in the processing queue and will be claimed by a quoter for completion.</p>
+    </div>
+    {% endif %}
+    
+    <div class="action-buttons mt-4">
+        <a href="{% url 'rep_portal:home' %}" class="btn btn-primary">
+            <i class="fas fa-home me-2"></i> Return to Portal Home
+        </a>
+        
+        {% if type == "delivery" %}
+        <a href="{% url 'rep_portal:delivery_create' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-plus me-2"></i> Create Another Delivery Note
+        </a>
+        {% elif type == "quote" %}
+        <a href="{% url 'rep_portal:quote_request' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-plus me-2"></i> Create Another Quote
+        </a>
+        {% elif type == "order" %}
+        <a href="{% url 'rep_portal:order_submit' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-plus me-2"></i> Create Another Order
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .success-container {
+        text-align: center;
+        padding: 2rem 1rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .success-icon {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+        color: #28a745;
+        background-color: rgba(40, 167, 69, 0.1);
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+    
+    /* Specific colors for different types */
+    .success-icon .fa-file-invoice-dollar {
+        color: #17a2b8; /* Blue for quotes */
+    }
+    
+    .success-icon .fa-shopping-cart {
+        color: #28a745; /* Green for orders */
+    }
+    
+    .success-icon .fa-truck {
+        color: #d9534f; /* Red for delivery notes */
+    }
+    
+    /* Match background colors */
+    .success-icon:has(.fa-file-invoice-dollar) {
+        background-color: rgba(23, 162, 184, 0.1);
+    }
+    
+    .success-icon:has(.fa-shopping-cart) {
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+    
+    .success-icon:has(.fa-truck) {
+        background-color: rgba(217, 83, 79, 0.1);
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+        color: var(--secondary-color);
+    }
+    
+    .success-message {
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        color: #666;
+    }
+    
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-width: 320px;
+        margin: 0 auto;
+    }
+    
+    /* PDF action buttons */
+    .pdf-actions {
+        padding: 1.25rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
+    }
+    
+    .pdf-actions h4 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        color: var(--secondary-color);
+    }
+    
+    /* Delivery note specific color */
+    .btn-primary {
+        background-color: #d9534f !important; /* Red for delivery notes */
+        border-color: #d9534f !important;
+    }
+    
+    .btn-primary:hover {
+        background-color: #c9302c !important;
+        border-color: #c9302c !important;
+    }
+    
+    /* Media query for larger screens */
+    @media (min-width: 576px) {
+        .action-buttons {
+            flex-direction: row;
+            max-width: none;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const successType = '{{ type }}';
+        const primaryButtons = document.querySelectorAll('.btn-primary');
+        
+        if (successType === 'quote') {
+            primaryButtons.forEach(btn => {
+                btn.style.backgroundColor = '#17a2b8';
+                btn.style.borderColor = '#17a2b8';
+            });
+            document.querySelector('.success-icon').style.backgroundColor = 'rgba(23, 162, 184, 0.1)';
+            document.querySelector('.success-icon i').style.color = '#17a2b8';
+        } else if (successType === 'order') {
+            primaryButtons.forEach(btn => {
+                btn.style.backgroundColor = '#28a745';
+                btn.style.borderColor = '#28a745';
+            });
+            document.querySelector('.success-icon').style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+            document.querySelector('.success-icon i').style.color = '#28a745';
+        } else if (successType === 'delivery') {
+            document.querySelector('.success-icon').style.backgroundColor = 'rgba(217, 83, 79, 0.1)';
+            document.querySelector('.success-icon i').style.color = '#d9534f';
+        }
+    });
+</script>
+{% endblock %}

@@ -4,14 +4,39 @@ from .models import Order, OrderItem
 from wfdash.models import Company, Suppliers
 
 class OrderForm(forms.ModelForm):
+    rep = forms.ModelChoiceField(
+        queryset=None,  # We'll set this dynamically in the view
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=True
+    )
+    
+    # Change company field to use Select2 properly
+    company = forms.ModelChoiceField(
+        queryset=Company.objects.all(),
+        widget=forms.Select(attrs={
+            'class': 'form-select select2-company',
+            'data-placeholder': 'Search for a company...',
+            'data-ajax-url': '/wfdash/api/companies/search/',
+            'data-minimum-input-length': '2'
+        }),
+        required=True
+    )
+    
     class Meta:
         model = Order
-        fields = ['order_number', 'company', 'notes']
+        fields = ['order_number', 'company', 'rep', 'notes']
         widgets = {
             'order_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'company': forms.Select(attrs={'class': 'form-select'}),
+            # 'company' is handled above
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+        
+    def __init__(self, *args, **kwargs):
+        user_queryset = kwargs.pop('user_queryset', None)
+        super().__init__(*args, **kwargs)
+        
+        if user_queryset is not None:
+            self.fields['rep'].queryset = user_queryset
 
 class OrderItemForm(forms.ModelForm):
     supplier = forms.ModelChoiceField(

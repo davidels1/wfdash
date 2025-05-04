@@ -1,0 +1,1370 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load order_tags %}
+
+{% block head_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    /* Ensure Select2 dropdown appears above other elements */
+    .select2-container--open {
+        z-index: 9999;
+    }
+    
+    /* Add styling for the split button */
+    .split-item-btn {
+        margin-left: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col-md-12">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Process Order</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/">
+                            <i class="feather icon-home"></i>
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'orders:order_list' %}">Orders</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'orders:order_detail' order.id %}">Order #{{ order.order_number }}</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <span>Process Items</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>Process Order #{{ order.order_number }}</h5>
+                {% if has_items_with_suppliers %}
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#poModal">
+                    Generate PO
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>PO Description</th> <!-- Add this new column header -->
+                                <th>Quantity Required</th>
+                                <th>Order Qty</th>  <!-- New column -->
+                                <th>Selling Price</th>
+                                <th>Supplier</th>
+                                <th>Cost Price</th>
+                                <th>Markup %</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr id="item-row-{{ item.id }}" class="{% if item.item_status == 'processed' %}table-info{% elif item.item_status == 'po_generated' %}table-success{% endif %}">
+                                <td>{{ item.description }}</td>
+                                <td>
+                                    <textarea class="form-control po-description-input"
+                                            name="po_description_{{ item.id }}"
+                                            data-item-id="{{ item.id }}"
+                                            rows="2"
+                                            {% if item.item_status == 'po_generated' %}disabled{% endif %}>{{ item.po_description|default:item.description }}</textarea>
+                                </td>
+                                <td>{{ item.quantity }}</td>
+                                <td>
+                                    <input type="number"
+                                           class="form-control order-qty-input"
+                                           name="order_qty_{{ item.id }}"
+                                           data-item-id="{{ item.id }}"
+                                           value="{{ item.order_qty|default:item.quantity }}"
+                                           min="1"
+                                           {% if item.item_status == 'po_generated' %}disabled{% endif %}>
+                                </td>
+                                <td>R {{ item.selling_price }}</td>
+                                <td>
+                                    <select class="form-select supplier-select-searchable"
+                                            name="supplier_{{ item.id }}"
+                                            data-item-id="{{ item.id }}">
+                                        <option value="">Select Supplier</option>
+                                        {% for supplier in suppliers %}
+                                            <option value="{{ supplier.id }}" {% if supplier == item.supplier %}selected{% endif %}>
+                                                {{ supplier.suppliername }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number"
+                                           class="form-control cost-price-input"
+                                           name="cost_price_{{ item.id }}"
+                                           data-item-id="{{ item.id }}"
+                                           step="0.01"
+                                           value="{{ item.cost_price|default:'' }}"
+                                           {% if item.item_status == 'po_generated' %}disabled{% endif %}>
+                                </td>
+                                <td>
+                                    <span id="markup-{{ item.id }}">
+                                        {% if item.markup %}{{ item.markup|floatformat:2 }}%{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if item.item_status == 'pending' %}bg-warning
+                                                  {% elif item.item_status == 'processed' %}bg-info
+                                                  {% else %}bg-success{% endif %}">
+                                        {{ item.get_item_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if item.item_status != 'po_generated' %}
+                                        <button type="button" class="btn btn-sm btn-primary save-item-btn"
+                                                data-item-id="{{ item.id }}">
+                                            Save Item
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <!-- Add Modal for each item -->
+                            <div class="modal fade" id="splitModal{{ item.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Split Item: {{ item.description }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form id="splitForm{{ item.id }}">
+                                                {% csrf_token %}
+                                                <div class="form-group">
+                                                    <label>Current Quantity: {{ item.quantity }}</label>
+                                                    <input type="number" class="form-control"
+                                                           name="split_quantity"
+                                                           min="1" max="{{ item.quantity|add:'-1' }}"
+                                                           placeholder="Enter quantity to split">
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="button" class="btn btn-primary split-confirm"
+                                                    data-item-id="{{ item.id }}">
+                                                Split Item
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Split Modal -->
+                            <div class="modal fade" id="splitModal{{ item.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h6 class="modal-title">Split Item</h6>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Split Quantity</label>
+                                                <input type="number"
+                                                       class="form-control split-qty-input"
+                                                       min="1"
+                                                       max="{{ item.quantity|add:-1 }}"
+                                                       value="{{ item.quantity|divide_by:2 }}">
+                                            </div>
+                                            <button type="button"
+                                                    class="btn btn-primary split-confirm"
+                                                    data-item-id="{{ item.id }}">
+                                                Split Item
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        Process Order
+                    </button>
+                    <a href="{% url 'orders:order_detail' order.id %}"
+                       class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+            {% if order.status == 'order_ready' %}
+            <div class="mt-3">
+                <h6>Generate Purchase Orders</h6>
+                {% for supplier, items in suppliers_items.items %}
+                    <div class="mb-2">
+                        <a href="{% url 'orders:generate_po' order.id supplier.id %}"
+                           class="btn btn-success">
+                            Generate PO for {{ supplier.suppliername }}
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add this after the main order processing table but before the PO generation section -->
+{% if order.quote %}
+<div class="card mt-4 mb-4">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5>Linked Quote #{{ order.quote.quote_number }}</h5>
+            <a href="{% url 'quotes:quote_detail' order.quote.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                <i class="feather icon-external-link"></i> View Full Quote
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="feather icon-info mr-2"></i> Reference these quote prices when setting order cost prices.
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Cost Price</th>
+                        <th>Selling Price</th>
+                        <th>Supplier</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.quote.items.all %}
+                    <tr>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td class="text-nowrap">{% if item.cost_price %}R {{ item.cost_price }}{% else %}-{% endif %}</td>
+                        <td class="text-nowrap">R {{ item.selling_price }}</td>
+                        <td>{{ item.supplier.suppliername|default:"-" }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-success use-quote-price" 
+                                    data-description="{{ item.description }}"
+                                    data-cost-price="{{ item.cost_price|default:'' }}"
+                                    data-supplier-id="{{ item.supplier.id|default:'' }}">
+                                <i class="feather icon-copy"></i> Use Price
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- PO Generation Modal -->
+<div class="modal fade" id="poModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generate Purchase Orders</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="poModalBody">
+                <!-- Content will be dynamically updated -->
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading suppliers and items...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add a hidden section for PO generation options that will be shown when needed -->
+<div class="po-generation-section mt-4 card d-none">
+    <div class="card-header">
+        <h5>Generate Purchase Orders</h5>
+    </div>
+    <div class="card-body" id="poGenerationContent">
+        <!-- This will be populated dynamically -->
+    </div>
+</div>
+
+<!-- Add this new modal for splitting items -->
+<div class="modal fade" id="splitItemModal" tabindex="-1" aria-labelledby="splitItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="splitItemModalLabel">Split Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Split this item between multiple suppliers.</p>
+                
+                <div class="original-item-details mb-3 p-3 bg-light">
+                    <h6>Original Item</h6>
+                    <div id="originalItemDescription"></div>
+                    <div class="row mt-2">
+                        <div class="col-md-4">
+                            <strong>Original Quantity:</strong> <span id="originalItemQuantity"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Selling Price:</strong> <span id="originalItemPrice"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="splitItemForm">
+                    <input type="hidden" id="splitItemId" name="item_id">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <div id="splitItemsContainer">
+                        <!-- Split items will be added here dynamically -->
+                        <div class="split-item mb-3 p-3 border rounded">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Supplier</label>
+                                    <select class="form-select supplier-select-split" required>
+                                        <option value="">Select supplier</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Quantity</label>
+                                    <input type="number" class="form-control split-quantity" min="1" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Cost Price</label>
+                                    <input type="number" class="form-control split-cost-price" min="0.01" step="0.01" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning quantity-warning d-none">
+                        <i class="feather icon-alert-triangle"></i> 
+                        The total quantity must equal the original quantity.
+                    </div>
+                    
+                    <button type="button" class="btn btn-outline-primary add-split-item">
+                        <i class="feather icon-plus"></i> Add Another Supplier
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveSplitItemBtn">Save Split</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Load jQuery first -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Then Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- Your custom scripts -->
+<script src="{% static 'js/quote_process.js' %}"></script>
+<!-- Rest of your scripts -->
+<script>
+// Add this function at the top of your script
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+}
+
+// Wait for jQuery to be fully loaded before initializing Select2
+function initializeWhenReady() {
+    // Check if jQuery is loaded
+    if (typeof jQuery === 'undefined' || typeof $.fn.select2 === 'undefined') {
+        console.log("jQuery or Select2 not loaded yet, waiting...");
+        setTimeout(initializeWhenReady, 100);
+        return;
+    }
+
+    // jQuery and Select2 are loaded, initialize everything
+    $(document).ready(function() {
+        console.log("Document ready, jQuery version:", $.fn.jquery);
+
+        // Initialize Select2 for supplier dropdowns
+        $('.supplier-select-searchable').select2({
+            placeholder: "Search for a supplier...",
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 2,
+            ajax: {
+                url: '/wfdash/api/supplier-search/', // Correct URL with /api/ prefix
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        search: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: function(data) {
+                    // Debug the response
+                    console.log('Supplier search response:', data);
+
+                    // Transform supplier data to Select2 format
+                    return {
+                        results: data.map(function(supplier) {
+                            return {
+                                id: supplier.id,
+                                text: supplier.text || supplier.suppliername
+                            };
+                        })
+                    };
+                },
+                cache: true,
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error('Select2 AJAX error:', textStatus, errorThrown);
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('Error loading suppliers. Please try again.');
+                    }
+                }
+            }
+        });
+
+        // Add this after Select2 initialization
+        $.ajax({
+            url: '/wfdash/api/supplier-search/', // Correct URL with /api/ prefix
+            data: { search: 'a' },
+            success: function(data) {
+                console.log('Test supplier API response:', data);
+            },
+            error: function(err) {
+                console.error('Test supplier API error:', err);
+            }
+        });
+
+        // Pre-populate existing selections
+        document.querySelectorAll('.supplier-select-searchable').forEach(select => {
+            const selectedId = select.value;
+            const selectedText = select.options[select.selectedIndex]?.text || '';
+
+            if (selectedId && selectedText) {
+                // Create the option element
+                const option = new Option(selectedText, selectedId, true, true);
+
+                // Append it to the select
+                $(select).append(option).trigger('change');
+            }
+        });
+
+        // Real-time markup calculation
+        document.querySelectorAll('.cost-price-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const itemId = this.dataset.itemId;
+                const row = document.querySelector(`#item-row-${itemId}`);
+
+                if (!row) return;
+
+                // Update this line - the selling price is in the 5th column (index 4)
+                const sellingPriceText = row.querySelector('td:nth-child(5)').textContent.trim();
+                const sellingPrice = parseFloat(sellingPriceText.replace('R', '').trim());
+                const costPrice = parseFloat(this.value);
+
+                if (!isNaN(sellingPrice) && !isNaN(costPrice) && costPrice > 0) {
+                    // Calculate markup
+                    const markup = ((sellingPrice - costPrice) / costPrice) * 100;
+
+                    // Update markup display
+                    const markupSpan = row.querySelector(`#markup-${itemId}`);
+                    if (markupSpan) {
+                        if (markup < 0) {
+                            markupSpan.classList.add('text-danger');
+                            markupSpan.innerHTML = `<i class="feather icon-alert-triangle"></i> ${Math.abs(markup).toFixed(2)}%`;
+                        } else {
+                            markupSpan.classList.remove('text-danger');
+                            markupSpan.textContent = `${markup.toFixed(2)}%`;
+                        }
+                    }
+                }
+            });
+
+            // Also trigger calculation on initial load
+            input.dispatchEvent(new Event('input'));
+        });
+
+        // Save item button event handlers
+        document.querySelectorAll('.save-item-btn').forEach(button => {
+            button.addEventListener('click', async function(e) {
+                e.preventDefault();
+
+                const itemId = this.dataset.itemId;
+                const row = document.querySelector(`#item-row-${itemId}`);
+
+                // Save original button text
+                const originalText = this.innerHTML;
+
+                // Disable button while processing
+                this.disabled = true;
+                this.innerHTML = '<i class="feather icon-loader"></i> Saving...';
+
+                try {
+                    // Get form values
+                    const supplierSelect = row.querySelector('.supplier-select-searchable');
+                    const costPriceInput = row.querySelector('.cost-price-input');
+                    const orderQtyInput = row.querySelector('.order-qty-input');
+                    const poDescriptionInput = row.querySelector('.po-description-input'); // Add this line
+
+                    const data = {
+                        supplier_id: supplierSelect.value,
+                        cost_price: costPriceInput.value,
+                        quantity: orderQtyInput.value,
+                        po_description: poDescriptionInput.value // Add this line
+                    };
+
+                    // Validate required fields
+                    if (!data.supplier_id || !data.cost_price) {
+                        toastr.error('Please select a supplier and enter a cost price', 'Error');
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                        return;
+                    }
+
+                    // Send data to server
+                    const response = await fetch(`/orders/save-item/${itemId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            // Fix the header name - must be exact capitalization 
+                            'X-CSRFToken': getCsrfToken(),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify(data),
+                        credentials: 'same-origin'
+                    });
+
+                    // Check if response is OK before proceeding
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Server error:', errorText);
+                        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+                    }
+
+                    // Only try to parse JSON if response was successful
+                    const result = await response.json();
+
+                    if (response.ok && result.status === 'success') {
+                        // Update markup display
+                        const markupSpan = document.querySelector(`#markup-${itemId}`);
+                        if (markupSpan) {
+                            markupSpan.textContent = `${result.data.markup.toFixed(2)}%`;
+                        }
+
+                        // Update row status
+                        row.classList.add('table-info');
+
+                        // Update badge
+                        const badge = row.querySelector('.badge');
+                        if (badge) {
+                            badge.className = 'badge bg-info';
+                            badge.textContent = 'Processed';
+                        }
+
+                        // Update button
+                        this.innerHTML = '<i class="feather icon-check"></i> Processed';
+                        this.classList.remove('btn-primary');
+                        this.classList.add('btn-success');
+
+                        // Show success message
+                        toastr.success('Item saved successfully!', 'Success');
+
+                        // Refresh PO section
+                        setTimeout(refreshPOSection, 500);
+                    } else {
+                        // Show error message
+                        toastr.error(result.message || 'Error saving item', 'Error');
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    toastr.error('An error occurred while saving the item', 'Error');
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                }
+            });
+        });
+
+        // Process order form submission
+        const orderForm = document.querySelector('form');
+        if (orderForm) {
+            orderForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Count processed vs. unprocessed items
+                const totalItems = document.querySelectorAll('tbody tr[id^="item-row-"]').length;
+                const unprocessedRows = document.querySelectorAll('tr:not(.table-info):not(.table-success)').length;
+
+                // Notify user about unprocessed items
+                if (unprocessedRows > 0) {
+                    if (totalItems === 1) {
+                        toastr.info('Item not processed yet. You can process it later.', 'Processing Order');
+                    } else {
+                        toastr.info(`${unprocessedRows} of ${totalItems} items not processed. You can process them later.`, 'Processing Order');
+                    }
+                } else {
+                    toastr.success('All items have been processed', 'Processing Order');
+                }
+
+                // Enable disabled fields for form submission
+                const disabledFields = document.querySelectorAll('input:disabled, select:disabled');
+                disabledFields.forEach(field => {
+                    field.dataset.wasDisabled = 'true';
+                    field.disabled = false;
+                });
+
+                // Submit form via AJAX
+                const formData = new FormData(this);
+
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        toastr.success('Order processed successfully', 'Success');
+
+                        // Check for PO items
+                        if (data.has_po_items) {
+                            refreshPOSection();
+                        }
+                    } else {
+                        toastr.error(data.message || 'Error processing order', 'Error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    toastr.error('Error processing order', 'Error');
+                })
+                .finally(() => {
+                    // Re-disable fields that were disabled
+                    disabledFields.forEach(field => {
+                        if (field.dataset.wasDisabled === 'true') {
+                            field.disabled = true;
+                        }
+                    });
+                });
+            });
+        }
+
+        // Function to refresh PO generation section
+        function refreshPOSection() {
+            fetch(`/orders/api/check-po-items/${order.id}/`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('PO section data:', data);
+
+                if (data.has_po_items) {
+                    // Show PO generation section
+                    let poSection = document.querySelector('.po-generation-section');
+
+                    if (!poSection) {
+                        // Create the section if it doesn't exist
+                        poSection = document.createElement('div');
+                        poSection.className = 'po-generation-section mt-4';
+
+                        const card = document.createElement('div');
+                        card.className = 'card';
+
+                        const cardHeader = document.createElement('div');
+                        cardHeader.className = 'card-header';
+                        cardHeader.innerHTML = '<h5>Generate Purchase Orders</h5>';
+
+                        const cardBody = document.createElement('div');
+                        cardBody.className = 'card-body';
+                        cardBody.id = 'poGenerationContent';
+
+                        card.appendChild(cardHeader);
+                        card.appendChild(cardBody);
+                        poSection.appendChild(card);
+
+                        // Add after the order form
+                        const orderForm = document.querySelector('form');
+                        if (orderForm && orderForm.parentNode) {
+                            orderForm.parentNode.insertBefore(poSection, orderForm.nextSibling);
+                        }
+                    } else {
+                        poSection.classList.remove('d-none');
+                        poSection.style.display = '';
+                    }
+
+                    // Update content
+                    const poContent = document.getElementById('poGenerationContent');
+                    if (poContent) {
+                        poContent.innerHTML = '';
+
+                        data.suppliers_items.forEach(supplierData => {
+                            const supplier = supplierData.supplier;
+                            const items = supplierData.items;
+
+                            const supplierDiv = document.createElement('div');
+                            supplierDiv.className = 'mb-3 pb-3 border-bottom';
+
+                            // Add supplier heading
+                            const heading = document.createElement('h6');
+                            heading.textContent = supplier.suppliername;
+                            supplierDiv.appendChild(heading);
+
+                            // Add item list
+                            const itemList = document.createElement('ul');
+                            itemList.className = 'list-unstyled ps-3 mb-2';
+
+                            items.forEach(item => {
+                                const listItem = document.createElement('li');
+                                listItem.textContent = `${item.description} (Qty: ${item.order_qty})`;
+                                itemList.appendChild(listItem);
+                            });
+
+                            supplierDiv.appendChild(itemList);
+
+                            // Add PO generation button
+                            const poButton = document.createElement('a');
+                            poButton.href = `/orders/generate-po/${order.id}/${supplier.id}/`;
+                            poButton.className = 'btn btn-success btn-sm';
+                            poButton.innerHTML = '<i class="feather icon-file-text me-1"></i> Generate PO';
+                            supplierDiv.appendChild(poButton);
+
+                            poContent.appendChild(supplierDiv);
+                        });
+                    }
+
+                    // Update header button
+                    const headerButton = document.querySelector('.card-header button[data-bs-target="#poModal"]');
+                    if (!headerButton) {
+                        const headerDiv = document.querySelector('.card-header .d-flex');
+                        if (headerDiv) {
+                            const button = document.createElement('button');
+                            button.type = 'button';
+                            button.className = 'btn btn-success';
+                            button.dataset.bsToggle = 'modal';
+                            button.dataset.bsTarget = '#poModal';
+                            button.innerHTML = '<i class="feather icon-file-text me-1"></i> Generate PO';
+                            headerDiv.appendChild(button);
+                        }
+                    }
+                } else {
+                    // Hide PO section
+                    const poSection = document.querySelector('.po-generation-section');
+                    if (poSection) {
+                        poSection.style.display = 'none';
+                    }
+
+                    // Hide header button
+                    const headerButton = document.querySelector('.card-header button[data-bs-target="#poModal"]');
+                    if (headerButton) {
+                        headerButton.style.display = 'none';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error checking for PO items:', error);
+            });
+        }
+
+        // Handle PO modal opening
+        const poModal = document.getElementById('poModal');
+        if (poModal) {
+            poModal.addEventListener('show.bs.modal', function() {
+                const modalBody = document.getElementById('poModalBody');
+
+                if (modalBody) {
+                    // Show loading spinner
+                    modalBody.innerHTML = `
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading suppliers and items...</p>
+                        </div>
+                    `;
+
+                    // Fetch PO data
+                    fetch(`/orders/api/check-po-items/${order.id}/`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.has_po_items && data.suppliers_items.length > 0) {
+                            let content = '';
+
+                            data.suppliers_items.forEach(supplierData => {
+                                const supplier = supplierData.supplier;
+                                const items = supplierData.items;
+
+                                content += `
+                                    <div class="mb-3">
+                                        <h6>${supplier.suppliername}</h6>
+                                        <ul class="list-unstyled">
+                                `;
+
+                                items.forEach(item => {
+                                    content += `<li>${item.description} (Order Qty: ${item.order_qty})</li>`;
+                                });
+
+                                content += `
+                                        </ul>
+                                        <a href="/orders/generate-po/${order.id}/${supplier.id}/"
+                                           class="btn btn-primary btn-sm">
+                                            Generate PO
+                                        </a>
+                                    </div>
+                                `;
+                            });
+
+                            modalBody.innerHTML = content;
+                        } else {
+                            modalBody.innerHTML = `
+                                <div class="alert alert-info">
+                                    No items are ready for PO generation. Process items first.
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading PO data:', error);
+                        modalBody.innerHTML = `
+                            <div class="alert alert-danger">
+                                Error loading data. Please try again.
+                            </div>
+                        `;
+                    });
+                }
+            });
+        }
+
+        // Run refresh on page load
+        refreshPOSection();
+    });
+}
+
+// Move this outside DOMContentLoaded
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+const order = {
+    id: {{ order.id }}
+};
+
+// Start initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Start the initialization process
+    initializeWhenReady();
+
+    // Trigger initial markup calculations for all items
+    document.querySelectorAll('.cost-price-input').forEach(input => {
+        if (input.value) {
+            input.dispatchEvent(new Event('input'));
+        }
+    });
+});
+
+// Add this to your existing JavaScript in the extra_js block
+// After the document.ready function
+
+// Handle "Use Price" button clicks
+document.querySelectorAll('.use-quote-price').forEach(button => {
+    button.addEventListener('click', function() {
+        const description = this.dataset.description;
+        const costPrice = this.dataset.costPrice;
+        const supplierId = this.dataset.supplierId;
+        
+        // Find matching item in the order items table
+        let matchingItem = null;
+        document.querySelectorAll('tr[id^="item-row-"]').forEach(row => {
+            const rowDescription = row.querySelector('td:first-child').textContent.trim();
+            if (rowDescription === description) {
+                matchingItem = row;
+            }
+        });
+        
+        if (matchingItem) {
+            // Update supplier dropdown
+            if (supplierId) {
+                const supplierSelect = matchingItem.querySelector('.supplier-select-searchable');
+                if (supplierSelect) {
+                    // For Select2 dropdowns
+                    $(supplierSelect).val(supplierId).trigger('change');
+                }
+            }
+            
+            // Update cost price
+            if (costPrice) {
+                const costPriceInput = matchingItem.querySelector('.cost-price-input');
+                if (costPriceInput) {
+                    costPriceInput.value = costPrice;
+                    costPriceInput.dispatchEvent(new Event('input'));
+                }
+            }
+            
+            // Highlight the row briefly
+            matchingItem.classList.add('bg-light');
+            setTimeout(() => {
+                matchingItem.classList.remove('bg-light');
+            }, 1500);
+            
+            toastr.success('Quote price applied', 'Success');
+        } else {
+            toastr.warning('Could not find matching item', 'Warning');
+        }
+    });
+});
+
+// Replace the existing supplier selection event handlers with this code
+
+// Variable to store the last selected supplier
+let lastSelectedSupplier = {
+    id: null,
+    name: null
+};
+
+// Add "Apply to All" button next to first supplier dropdown
+$(document).ready(function() {
+    const firstSupplierSelect = document.querySelector('.supplier-select-searchable');
+    if (firstSupplierSelect) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'mt-2';
+        buttonContainer.innerHTML = `
+            <button type="button" class="btn btn-sm btn-outline-primary apply-supplier-to-all" 
+                    style="display: none;">
+                <i class="feather icon-copy"></i> Apply to all empty fields
+            </button>
+        `;
+        firstSupplierSelect.parentNode.appendChild(buttonContainer);
+    }
+
+    // Use Select2's proper event instead of standard DOM events
+    $('.supplier-select-searchable').on('select2:select', function(e) {
+        const supplierId = e.params.data.id;
+        const supplierName = e.params.data.text;
+        
+        console.log(`Supplier selected: ${supplierName} (ID: ${supplierId})`);
+        
+        lastSelectedSupplier = { 
+            id: supplierId, 
+            name: supplierName 
+        };
+        
+        // Show the "Apply to All" button
+        const applyButton = document.querySelector('.apply-supplier-to-all');
+        if (applyButton) {
+            applyButton.style.display = 'inline-block';
+            applyButton.textContent = `Apply "${supplierName}" to all empty fields`;
+        }
+        
+        // Automatically apply to next empty field (uncomment to enable)
+        // applySupplierToNextEmptyField();
+    });
+    
+    // Function to apply supplier to the next empty field
+    window.applySupplierToNextEmptyField = function() {
+        if (!lastSelectedSupplier.id) return false;
+        
+        console.log("Looking for empty supplier fields...");
+        
+        const emptySelects = Array.from(document.querySelectorAll('.supplier-select-searchable'))
+            .filter(select => !select.value);
+        
+        console.log(`Found ${emptySelects.length} empty supplier fields`);
+        
+        if (emptySelects.length > 0) {
+            const nextEmptySelect = emptySelects[0];
+            
+            console.log(`Applying supplier ${lastSelectedSupplier.name} to next empty field`);
+            
+            // Create new option
+            const newOption = new Option(lastSelectedSupplier.name, lastSelectedSupplier.id, true, true);
+            
+            // Use Select2's proper method to update
+            $(nextEmptySelect).append(newOption).val(lastSelectedSupplier.id).trigger('change');
+            
+            // Highlight the row briefly
+            const row = nextEmptySelect.closest('tr');
+            if (row) {
+                row.classList.add('bg-light');
+                setTimeout(() => {
+                    row.classList.remove('bg-light');
+                }, 500);
+            }
+            
+            return true;
+        }
+        
+        return false;
+    };
+});
+
+// Add key shortcut (Alt+S) to apply supplier to next empty field
+document.addEventListener('keydown', function(e) {
+    // Alt+S shortcut
+    if (e.altKey && e.key === 's') {
+        if (window.applySupplierToNextEmptyField()) {
+            e.preventDefault();
+        }
+    }
+});
+
+// Add handler for "Apply to All" button
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.apply-supplier-to-all')) {
+        e.preventDefault();
+        
+        if (!lastSelectedSupplier.id) return;
+        
+        console.log("Applying supplier to all empty fields");
+        
+        // Get all empty supplier selects
+        const emptySelects = Array.from(document.querySelectorAll('.supplier-select-searchable'))
+            .filter(select => !select.value);
+        
+        // Apply to all empty fields
+        emptySelects.forEach(select => {
+            const newOption = new Option(lastSelectedSupplier.name, lastSelectedSupplier.id, true, true);
+            $(select).append(newOption).val(lastSelectedSupplier.id).trigger('change');
+        });
+        
+        // Show success message
+        toastr.success(`Applied supplier to ${emptySelects.length} items`);
+    }
+});
+
+// Add the split item functionality
+
+// Initialize split item modal when shown
+document.addEventListener('DOMContentLoaded', function() {
+    const splitModal = document.getElementById('splitItemModal');
+    if (splitModal) {
+        splitModal.addEventListener('show.bs.modal', function(event) {
+            // Get the button that triggered the modal
+            const button = event.relatedTarget;
+            const itemId = button.getAttribute('data-item-id');
+            const description = button.getAttribute('data-description');
+            const quantity = button.getAttribute('data-quantity');
+            const price = button.getAttribute('data-price');
+            
+            // Update the modal content
+            document.getElementById('splitItemId').value = itemId;
+            document.getElementById('originalItemDescription').textContent = description;
+            document.getElementById('originalItemQuantity').textContent = quantity;
+            document.getElementById('originalItemPrice').textContent = price;
+            
+            // Set default quantity in the first split
+            const firstQuantityInput = document.querySelector('.split-quantity');
+            if (firstQuantityInput) {
+                firstQuantityInput.value = quantity;
+                firstQuantityInput.setAttribute('max', quantity);
+            }
+            
+            // Clear any additional splits
+            const splitContainer = document.getElementById('splitItemsContainer');
+            while (splitContainer.children.length > 1) {
+                splitContainer.removeChild(splitContainer.lastChild);
+            }
+            
+            // Initialize Select2 for the supplier dropdown
+            initializeSplitSupplierSelect();
+        });
+    }
+    
+    // Add button for adding more splits
+    const addSplitBtn = document.querySelector('.add-split-item');
+    if (addSplitBtn) {
+        addSplitBtn.addEventListener('click', function() {
+            addSplitItemRow();
+        });
+    }
+    
+    // Save split item button
+    const saveSplitBtn = document.getElementById('saveSplitItemBtn');
+    if (saveSplitBtn) {
+        saveSplitBtn.addEventListener('click', function() {
+            saveSplitItem();
+        });
+    }
+    
+    // Add split buttons to each item row
+    addSplitButtonsToRows();
+});
+
+// Function to add split buttons to item rows
+function addSplitButtonsToRows() {
+    document.querySelectorAll('.save-item-btn').forEach(button => {
+        // Skip if we've already added a split button next to this one
+        if (button.nextElementSibling && button.nextElementSibling.classList.contains('split-item-btn')) {
+            return;
+        }
+        
+        const itemId = button.getAttribute('data-item-id');
+        const row = document.querySelector(`#item-row-${itemId}`);
+        
+        if (!row) return;
+        
+        // Get the item data
+        const description = row.querySelector('td:first-child').textContent.trim();
+        const quantity = row.querySelector('.order-qty-input').value;
+        const priceElement = row.querySelector('td:nth-child(5)');
+        const price = priceElement ? priceElement.textContent.trim() : '';
+        
+        // Create split button
+        const splitButton = document.createElement('button');
+        splitButton.type = 'button';
+        splitButton.className = 'btn btn-sm btn-outline-info split-item-btn';
+        splitButton.setAttribute('data-bs-toggle', 'modal');
+        splitButton.setAttribute('data-bs-target', '#splitItemModal');
+        splitButton.setAttribute('data-item-id', itemId);
+        splitButton.setAttribute('data-description', description);
+        splitButton.setAttribute('data-quantity', quantity);
+        splitButton.setAttribute('data-price', price);
+        splitButton.innerHTML = '<i class="feather icon-scissors"></i> Split';
+        
+        // Insert after the save button
+        button.parentNode.insertBefore(splitButton, button.nextSibling);
+    });
+}
+
+// Function to initialize Select2 for supplier dropdowns in split modal
+function initializeSplitSupplierSelect() {
+    if (typeof jQuery === 'undefined' || typeof $.fn.select2 === 'undefined') {
+        console.log("jQuery or Select2 not loaded yet for split modal");
+        setTimeout(initializeSplitSupplierSelect, 100);
+        return;
+    }
+    
+    $('.supplier-select-split').select2({
+        placeholder: "Search for a supplier...",
+        allowClear: true,
+        dropdownParent: $('#splitItemModal'),
+        width: '100%',
+        minimumInputLength: 2,
+        ajax: {
+            url: '/wfdash/api/supplier-search/',
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    search: params.term,
+                    page: params.page || 1
+                };
+            },
+            processResults: function(data) {
+                return {
+                    results: data.map(function(supplier) {
+                        return {
+                            id: supplier.id,
+                            text: supplier.text || supplier.suppliername
+                        };
+                    })
+                };
+            },
+            cache: true
+        }
+    });
+    
+    // Add quantity validation
+    document.querySelectorAll('.split-quantity').forEach(input => {
+        input.addEventListener('input', validateTotalQuantity);
+    });
+}
+
+// Add a new split item row
+function addSplitItemRow() {
+    const container = document.getElementById('splitItemsContainer');
+    const originalQuantity = parseInt(document.getElementById('originalItemQuantity').textContent);
+    
+    // Create new row
+    const newRow = document.createElement('div');
+    newRow.className = 'split-item mb-3 p-3 border rounded';
+    newRow.innerHTML = `
+        <div class="d-flex justify-content-end mb-2">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-split">
+                <i class="feather icon-x"></i>
+            </button>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <label class="form-label">Supplier</label>
+                <select class="form-select supplier-select-split" required>
+                    <option value="">Select supplier</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Quantity</label>
+                <input type="number" class="form-control split-quantity" min="1" max="${originalQuantity}" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Cost Price</label>
+                <input type="number" class="form-control split-cost-price" min="0.01" step="0.01" required>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(newRow);
+    
+    // Initialize Select2 on the new row
+    initializeSplitSupplierSelect();
+    
+    // Add remove button handler
+    newRow.querySelector('.remove-split').addEventListener('click', function() {
+        container.removeChild(newRow);
+        validateTotalQuantity();
+    });
+    
+    // Update quantities
+    validateTotalQuantity();
+    
+    return newRow;
+}
+
+// Validate that split quantities sum to the original quantity
+function validateTotalQuantity() {
+    const originalQuantity = parseInt(document.getElementById('originalItemQuantity').textContent);
+    let totalSplitQuantity = 0;
+    
+    document.querySelectorAll('.split-quantity').forEach(input => {
+        const qty = parseInt(input.value) || 0;
+        totalSplitQuantity += qty;
+    });
+    
+    const warning = document.querySelector('.quantity-warning');
+    const saveButton = document.getElementById('saveSplitItemBtn');
+    
+    if (totalSplitQuantity !== originalQuantity) {
+        warning.classList.remove('d-none');
+        warning.textContent = `Total quantity (${totalSplitQuantity}) must equal the original quantity (${originalQuantity}).`;
+        saveButton.disabled = true;
+    } else {
+        warning.classList.add('d-none');
+        saveButton.disabled = false;
+    }
+}
+
+// Save the split item
+function saveSplitItem() {
+    const form = document.getElementById('splitItemForm');
+    const itemId = document.getElementById('splitItemId').value;
+    const splits = [];
+    
+    // Validate again
+    validateTotalQuantity();
+    if (document.getElementById('saveSplitItemBtn').disabled) {
+        return;
+    }
+    
+    // Collect split data
+    document.querySelectorAll('.split-item').forEach(splitRow => {
+        const supplierSelect = splitRow.querySelector('.supplier-select-split');
+        const quantityInput = splitRow.querySelector('.split-quantity');
+        const costPriceInput = splitRow.querySelector('.split-cost-price');
+        
+        // Get the selected supplier text and id
+        let supplierId = null;
+        let supplierText = "";
+        
+        if ($(supplierSelect).data('select2')) {
+            const data = $(supplierSelect).select2('data');
+            if (data && data.length > 0) {
+                supplierId = data[0].id;
+                supplierText = data[0].text;
+            }
+        } else {
+            supplierId = supplierSelect.value;
+            supplierText = supplierSelect.options[supplierSelect.selectedIndex]?.text || '';
+        }
+        
+        if (supplierId && quantityInput.value && costPriceInput.value) {
+            splits.push({
+                supplier_id: supplierId,
+                supplier_name: supplierText,
+                quantity: parseInt(quantityInput.value),
+                cost_price: parseFloat(costPriceInput.value)
+            });
+        }
+    });
+    
+    if (splits.length === 0) {
+        toastr.error('Please provide supplier, quantity, and cost price for at least one split');
+        return;
+    }
+    
+    // Show saving indicator
+    const saveButton = document.getElementById('saveSplitItemBtn');
+    const originalButtonText = saveButton.innerHTML;
+    saveButton.disabled = true;
+    saveButton.innerHTML = '<i class="feather icon-loader"></i> Saving...';
+    
+    // Send to server
+    fetch(`/orders/split-item/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ splits: splits })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('splitItemModal'));
+            modal.hide();
+            
+            // Show success message
+            toastr.success('Item split successfully');
+            
+            // Reload the page to show the split items
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            toastr.error(data.message || 'Error splitting item');
+            saveButton.disabled = false;
+            saveButton.innerHTML = originalButtonText;
+        }
+    })
+    .catch(error => {
+        console.error('Error splitting item:', error);
+        toastr.error('Failed to split item');
+        saveButton.disabled = false;
+        saveButton.innerHTML = originalButtonText;
+    });
+}
+</script>
+{% endblock %}

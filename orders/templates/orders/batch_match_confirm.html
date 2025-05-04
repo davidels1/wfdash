@@ -1,0 +1,26 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Batch Match Quotes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5>Batch Match Quotes to Orders</h5>
+        </div>
+        <div class="card-body">
+            <h6>Found {{ unmatched_count }} unmatched orders</h6>
+            <p>This will attempt to match quotes to all unmatched orders in the system. This could take some time. Do you want to continue?</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" name="confirm" value="1" class="btn btn-primary">
+                    <i class="fas fa-play"></i> Run Batch Matching
+                </button>
+                <a href="{% url 'orders:order_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

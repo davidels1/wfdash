@@ -3,60 +3,169 @@
 
 {% block title %} Quote Details {% endblock %}
 
+{% block breadcrumbs %}
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col-md-12">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Quote Details</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'index' %}"><i class="feather icon-home"></i></a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'quotes:quote_list' %}">Quotes</a></li>
+                    <li class="breadcrumb-item"><span>Quote #{{ quote.quote_number }}</span></li>
+                </ul>
+                
+                <!-- Add the Back button at the top level for better visibility -->
+                <div class="mt-2">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock breadcrumbs %}
+
 {% block content %}
 <div class="container-fluid">
+    <!-- Add this right after your search section, before the table
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header py-2">
+                    <h6 class="mb-0"><i class="feather icon-info"></i> Markup Legend</h6>
+                </div>
+                <div class="card-body py-2">
+                    <div class="d-flex gap-3">
+                        <div class="d-flex align-items-center">
+                            <span class="badge markup-low me-1"><15%</span>
+                            <small>Low</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge markup-medium me-1">15-25%</span>
+                            <small>Medium</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge markup-high me-1">25-30%</span>
+                            <small>High</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge markup-veryhigh me-1">>30%</span>
+                            <small>Very High</small>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>    - Add this right after your search section, before the table -->
+    </div>
+
+    <!-- Quote Details Card -->
     <div class="row">
-        <div class="col-sm-12">
+        <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
                     <h5>Quote #{{ quote.quote_number }}</h5>
-                    <div class="card-header-right">
-                        {% if not quote.is_complete %}
-                        <a href="{% url 'quotes:quote_edit' quote.pk %}" class="btn btn-primary">
-                            <i class="feather icon-edit"></i> Edit Quote
-                        </a>
-                        {% endif %}
-                    </div>
-                    <div class="card-header-right">
-                        {% if quote.status == 'processed' or quote.all_items_complete %}
-                            <a href="{% url 'quotes:quote_process' quote.pk %}" class="btn btn-primary">
-                                <i class="feather icon-edit"></i> Process Items
-                            </a>
-                            {% if not quote.pdf_file %}
-                                <a href="{% url 'quotes:generate_quote_pdf' quote.pk %}" class="btn btn-success">
-                                    <i class="feather icon-file-text"></i> Generate Quote
-                                </a>
-                            {% endif %}
-                        {% endif %}
-                    </div>
                 </div>
                 <div class="card-body">
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <h6>Customer Information</h6>
-                            <p><strong>Name:</strong> {{ quote.customer.customer }}</p>
-                            <p><strong>Company:</strong> {{ quote.customer.company }}</p>
-                            <p><strong>Email:</strong> {{ quote.customer.email }}</p>
-                            <p><strong>Phone:</strong> {{ quote.customer.number }}</p>
+                            <p><strong>Name:</strong> {{ quote.customer.customer|default:"Not provided" }}</p>
+                            <p><strong>Company:</strong> {{ quote.customer.company|default:"Not provided" }}</p>
+                            <p><strong>Email:</strong> {{ quote.customer.email|default:"Not provided" }}</p>
+                            <p><strong>Phone:</strong> {{ quote.customer.number|default:"Not provided" }}</p>
+                            
+                            <!-- Add edit button -->
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#editCustomerModal">
+                                <i class="feather icon-edit"></i> Update Customer Info
+                            </button>
                         </div>
                         <div class="col-md-6">
                             <h6>Quote Information</h6>
                             <p><strong>Rep:</strong> {{ quote.rep.username }}</p>
                             <p><strong>Created:</strong> {{ quote.created_at|date:"d/m/Y H:i" }}</p>
-                            <p><strong>Status:</strong> 
+                            <p><strong>Status:</strong>
                                 {% if quote.status == 'new' %}
                                     <span class="badge bg-warning">New</span>
                                 {% elif quote.status == 'claimed' %}
                                     <span class="badge bg-info">Claimed by {{ quote.assigned_to.username }}</span>
                                 {% elif quote.status == 'processed' %}
                                     <span class="badge bg-primary">Processed</span>
+                                {% elif quote.status == 'submitted_for_approval' %}
+                                    <span class="badge bg-secondary">Pending Approval</span>
+                                {% elif quote.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif quote.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
                                 {% elif quote.status == 'complete' %}
                                     <span class="badge bg-success">Complete</span>
+                                {% elif quote.status == 'emailed' %}
+                                    <span class="badge bg-info">Emailed</span>
+                                {% elif quote.status == 'cancelled' %}
+                                    <span class="badge bg-dark">Cancelled</span>
+                                {% elif quote.status == 'problem' %}
+                                    <span class="badge bg-danger">Problematic</span>
+                                {% endif %}
+                            </p>
+                            <p>
+                                <strong>PDF:</strong>
+                                {% if quote.pdf_file %}
+                                    <a href="{{ quote.pdf_file.url }}" class="btn btn-sm btn-success" download>
+                                        <i class="feather icon-download"></i> Download Quote PDF
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">No PDF generated</span>
                                 {% endif %}
                             </p>
                             {% if quote.notes %}
-                                <p><strong>Notes:</strong><br>{{ quote.notes }}</p>
+                                <div class="mt-2">
+                                    <strong>Notes:</strong>
+                                    <div class="notes-container mt-2">
+                                        {% for note_line in quote.notes|split_notes %}
+                                            {% if "PROBLEM REPORTED" in note_line %}
+                                                <div class="problem-note mb-3">
+                                                    <div class="problem-header">
+                                                        <i class="feather icon-alert-triangle me-1"></i>
+                                                        Problem Reported
+                                                    </div>
+                                                    {% with timestamp=note_line|extract_timestamp %}
+                                                        <div class="timestamp">{{ timestamp }}</div>
+                                                    {% endwith %}
+                                                    <div class="problem-content">
+                                                        {{ note_line|problem_content }}
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <p>{{ note_line }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
                             {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Replace the existing QR code section with this more compact version -->
+                    <div class="card mt-3">
+                        <div class="card-header py-2">
+                            <h6 class="m-0"><i class="feather icon-smartphone"></i> Quick Access</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-3 text-center">
+                                    <img src="{{ qr_code }}" alt="Quote QR Code" class="img-fluid qr-code" style="max-width: 120px;">
+                                </div>
+                                <div class="col-md-9">
+                                    <div class="alert alert-info py-2 mb-0">
+                                        <small>
+                                            <strong><i class="feather icon-info"></i> Scan this code</strong> to quickly access this quote 
+                                            for adding attachments or checking details.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -64,25 +173,61 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Description</th>
-                                    <th>Quantity</th>
-                                    <th>Unit Price</th>
-                                    <th>Cost Price</th>
-                                    <th>Selling Price</th>
-                                    <th>Total</th>
-                                    <th>Notes</th>
+                                    <th style="width: 25%">Description</th>
+                                    <th style="width: 8%">Quantity</th>
+                                    <th style="width: 12%">Supplier</th>
+                                    <th style="width: 10%">Cost Price</th>
+                                    <th style="width: 10%">Markup %</th>
+                                    <th style="width: 10%">Selling Price</th>
+                                    <th style="width: 10%">Total</th>
+                                    <th style="width: 15%">Notes</th>
+                                    {% if request.user.is_staff %}<th style="width: 5%">Actions</th>{% endif %}
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for item in quote.items.all %}
-                                <tr>
-                                    <td>{{ item.description }}</td>
+                                <tr class="{% if item.markup < 15 %}table-markup-low
+                                {% elif item.markup < 25 %}table-markup-medium
+                                {% elif item.markup < 30 %}table-markup-high
+                                {% else %}table-markup-veryhigh{% endif %}">
+                                    <td class="description-cell">{{ item.description }}</td>
                                     <td>{{ item.quantity }}</td>
-                                    <td>R{{ item.unit_price }}</td>
-                                    <td>R{{ item.cost_price }}</td>
+                                    <td class="supplier-cell">
+                                        {% if item.supplier.suppliername|length > 15 %}
+                                            <span class="d-inline-block" data-bs-toggle="tooltip" title="{{ item.supplier.suppliername }}">
+                                                {{ item.supplier.suppliername|truncatechars:15 }}
+                                            </span>
+                                        {% else %}
+                                            {{ item.supplier.suppliername|default:"-" }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="cost-price-cell">R{{ item.cost_price }}</td>
+                                    <td>
+                                        <span class="badge markup-badge
+                                            {% if item.markup < 15 %}markup-low
+                                            {% elif item.markup < 25 %}markup-medium
+                                            {% elif item.markup < 30 %}markup-high
+                                            {% else %}markup-veryhigh{% endif %}">
+                                            {{ item.markup|default:"0" }}%
+                                        </span>
+                                    </td>
                                     <td>R{{ item.selling_price }}</td>
                                     <td>R{{ item.selling_price|multiply:item.quantity }}</td>
-                                    <td>{{ item.notes }}</td>
+                                    <td class="notes-cell">{{ item.notes }}</td>
+                                    {% if request.user.is_staff %}
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary edit-item-btn" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editPricingModal"
+                                                data-item-id="{{ item.id }}"
+                                                data-item-description="{{ item.description }}"
+                                                data-item-cost="{{ item.cost_price }}"
+                                                data-item-markup="{{ item.markup }}"
+                                                data-item-selling="{{ item.selling_price }}">
+                                            <i class="feather icon-edit-2"></i>
+                                        </button>
+                                    </td>
+                                    {% endif %}
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -93,33 +238,51 @@
                     <div class="mt-4">
                         <form method="post" class="d-inline">
                             {% csrf_token %}
-                            {% if quote.status == 'new' and not quote.is_assigned %}
-                            <button type="submit" name="assign" class="btn btn-success">
-                                <i class="feather icon-check"></i> Claim Quote
-                            </button>
+                            
+                            <!-- Process Quote button - only show when claimed -->
+                            {% if quote.status == 'claimed' or quote.status == 'rejected'%}
+                                {% if quote.assigned_to == request.user or request.user.is_staff %}
+                                    <a href="{% url 'quotes:quote_process' quote.pk %}" class="btn btn-primary">
+                                        <i class="feather icon-edit"></i> Process Quote
+                                    </a>
+                                {% endif %}
                             {% endif %}
                             
-                            {% if quote.status == 'claimed' and quote.assigned_to == request.user %}
-                            {% if not quote.all_items_complete %}
-                                <a href="{% url 'quotes:quote_process' quote.pk %}" class="btn btn-primary">
-                                    <i class="feather icon-edit"></i> Process Quote
+                            <!-- Approve Quote button - only show when pending approval 
+                            {% if quote.status == 'approval_pending' %}
+                                <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success">
+                                    <i class="feather icon-check"></i> Approve Quote
                                 </a>
+                            {% endif %}-->
+                            
+                            <!-- Original buttons for other statuses -->
+                            {% if quote.status == 'new' and not quote.is_assigned %}
+                                <button type="submit" name="assign" class="btn btn-success">
+                                    <i class="feather icon-check"></i> Claim Quote
+                                </button>
                             {% endif %}
-                        {% endif %}
 
-                            {% if quote.is_assigned and not quote.has_problems %}
-                            <button type="submit" name="complete" class="btn btn-success">
-                                <i class="feather icon-check"></i> Mark Complete
-                            </button>
+                            {% if quote.is_assigned and not quote.has_problems and quote.status != 'approval_pending' %}
+                                <button type="submit" name="complete" class="btn btn-success">
+                                    <i class="feather icon-check"></i> Mark Complete
+                                </button>
                             {% endif %}
                             
-                            <button type="submit" name="problem" class="btn btn-danger">
+                            <!-- Problem reporting for all statuses -->
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#reportProblemModal">
                                 <i class="feather icon-alert-triangle"></i> Report Problem
                             </button>
+
+                            <a href="{% url 'quotes:clone_quote' quote.id %}" class="btn btn-secondary">
+                                <i class="feather icon-copy"></i> Clone Quote
+                            </a>
+                            <a href="{% url 'quotes:split_quote' quote.id %}" class="btn btn-warning">
+                                <i class="feather icon-scissors"></i> Split Quote
+                            </a>
                         </form>
                     </div>
                     {% endif %}
-                    
+
                     {% if not quote.is_complete and quote.status == 'new' %}
                     <div class="mt-4">
                         <!-- <form method="post" class="d-inline" action="{% url 'quotes:quote_claim' quote.pk %}">
@@ -132,79 +295,802 @@
                     {% endif %}
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Admin Approval Section - Only visible to staff when quote is pending approval -->
+    {% if request.user.is_staff and quote.status == 'approval_pending' %}
+    <div class="row mt-3">
+        <div class="col-md-12">
             <div class="card">
-                <div class="card-header">
-                    <h5>Quote Details</h5>
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5><i class="feather icon-shield"></i> Admin Approval Required</h5>
+                    <span class="badge 
+                        {% if overall_markup > 50 %}bg-danger
+                        {% elif overall_markup > 30 %}bg-warning
+                        {% elif overall_markup > 15 %}bg-info
+                        {% else %}bg-success{% endif %}
+                        fs-6 px-3 py-2">
+                        Overall Markup: {{ overall_markup|default:"0" }}%
+                    </span>
                 </div>
                 <div class="card-body">
+                    <p class="mb-3">This quote requires admin approval before processing. Please review the pricing information.</p>
+                    
+                    
+                    <!-- Add this after your <p> element in the admin approval card: -->
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Description</h6>
-                            <p>{{ quote.description }}</p>
+                            <div class="alert alert-dark p-2 mb-0">
+                                <table class="table table-sm mb-0 text-dark">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-dark">Markup Range</th>
+                                            <th class="text-center text-dark">Items Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="badge markup-low"><15%</span></td>
+                                            <td class="text-center text-dark">{{ quote.items.all|filter_markup:15|length }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge markup-medium">15-25%</span></td>
+                                            <td class="text-center text-dark">{{ quote.items.all|filter_markup_range:'15,25'|length }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge markup-high">25-30%</span></td>
+                                            <td class="text-center text-dark">{{ quote.items.all|filter_markup_range:'25,30'|length }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge markup-veryhigh">>30%</span></td>
+                                            <td class="text-center text-dark">{{ quote.items.all|filter_markup_above:30|length }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <h6>Status</h6>
-                            <p>{{ quote.get_status_display }}</p>
-                        </div>
                     </div>
 
-                    {% if quote.email_sender %}
-                    <div class="mt-4">
-                        <h6>Email Information</h6>
-                        <p><strong>From:</strong> {{ quote.email_sender }}</p>
-                        <p><strong>Subject:</strong> {{ quote.email_subject }}</p>
+                    <div class="d-flex justify-content-end mt-3">
+                        <form method="post" class="d-inline me-2">
+                            {% csrf_token %}
+
+
+
+
+                            {% if quote.status == 'approval_pending' %}
+                            <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success">
+                                <i class="feather icon-check"></i> Approve Quote
+                            </a>
+                        {% endif %}
+
+
+                        </form>
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" name="reject" class="btn btn-danger">
+                                <i class="feather icon-x"></i> Reject Quote
+                            </button>
+                        </form>
                     </div>
-                    {% endif %}
-
-                    {% if quote.notes %}
-                    <div class="mt-4">
-                        <h6>Notes</h6>
-                        <pre class="border rounded p-3 bg-light">{{ quote.notes }}</pre>
-                    </div>
-                    {% endif %}
-
-                    {% if quote.attachments.exists %}
-                    <div class="mt-4">
-                        <h6>Attachments:</h6>
-                        <ul class="list-group">
-                            {% for attachment in quote.attachments.all %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <a href="{{ attachment.file.url }}" target="_blank">
-                                    <i class="feather icon-paperclip"></i> {{ attachment.filename }}
-                                </a>
-                                <span class="text-muted">{{ attachment.uploaded_at|date:"Y-m-d H:i" }}</span>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-
-                    {% if quote.photo %}
-                        <img src="{{ quote.photo.url }}" alt="Quote Photo" style="max-width: 300px; height: auto;">
-                    {% endif %}
-
-                    {% if quote.voice_note %}
-                        <audio controls>
-                            <source src="{{ quote.voice_note.url }}" type="audio/mpeg">
-                            Your browser does not support the audio element.
-                        </audio>
-                    {% endif %}
-
-                    {% if quote.voice_notes.exists %}
-                        <div class="mt-4">
-                            <h6>Voice Notes:</h6>
-                            {% for voice_note in quote.voice_notes.all %}
-                                <audio controls>
-                                    <source src="{{ voice_note.audio_file.url }}" type="audio/wav">
-                                    Your browser does not support the audio element.
-                                </audio>
-                                <p class="text-muted">Uploaded: {{ voice_note.created_at|date:"Y-m-d H:i" }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
+    {% endif %}
+    
+    <!-- Attachments, Photos, Voice Notes Section -->
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="feather icon-paperclip"></i> Attachments & Media</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Quote Photo -->
+                        {% if quote.photo %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="m-0">Quote Photo</h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <a href="{{ quote.photo.url }}" target="_blank" data-lightbox="quote-photo">
+                                        <img src="{{ quote.photo.url }}" alt="Quote Photo" class="img-fluid rounded shadow" 
+                                             style="max-height: 250px;">
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Voice Notes -->
+                        {% if quote.voice_notes.exists %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="m-0">Voice Notes ({{ quote.voice_notes.count }})</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% for voice_note in quote.voice_notes.all %}
+                                    <div class="voice-note-item mb-3 p-2 border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span><i class="feather icon-mic text-primary"></i> Voice Note #{{ forloop.counter }}</span>
+                                            <small class="text-muted">{{ voice_note.created_at|date:"M d, Y H:i" }}</small>
+                                        </div>
+                                        <audio controls style="width: 100%;">
+                                            <source src="{{ voice_note.audio_file.url }}" type="audio/mpeg">
+                                            <source src="{{ voice_note.audio_file.url }}" type="audio/webm">
+                                            <source src="{{ voice_note.audio_file.url }}" type="audio/ogg">
+                                            <a href="{{ voice_note.audio_file.url }}" class="btn btn-sm btn-primary">
+                                                <i class="feather icon-download"></i> Download Audio
+                                            </a>
+                                        </audio>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- File Attachments -->
+                    {% if quote.attachments.exists %}
+                    <div class="mt-4">
+                        <h6 class="mb-3">File Attachments ({{ quote.attachments.count }})</h6>
+                        <div class="row">
+                            {% for attachment in quote.attachments.all %}
+                            <div class="col-md-3 col-sm-4 mb-4">
+                                <div class="card h-100 hover-shadow">
+                                    <div class="card-body p-3 text-center">
+                                        <a href="{{ attachment.file.url }}" target="_blank" class="d-block mb-3">
+                                            {% if attachment.file.name|lower|endswith:'.jpg,.jpeg,.png,.gif' %}
+                                                <img src="{{ attachment.file.url }}" class="img-thumbnail" style="max-height: 120px;">
+                                            {% elif attachment.file.name|lower|endswith:'.pdf' %}
+                                                <i class="feather icon-file-text text-danger" style="font-size: 3rem;"></i>
+                                            {% elif attachment.file.name|lower|endswith:'.doc,.docx' %}
+                                                <i class="feather icon-file-text text-primary" style="font-size: 3rem;"></i>
+                                            {% elif attachment.file.name|lower|endswith:'.xls,.xlsx' %}
+                                                <i class="feather icon-grid text-success" style="font-size: 3rem;"></i>
+                                            {% else %}
+                                                <i class="feather icon-file" style="font-size: 3rem;"></i>
+                                            {% endif %}
+                                        </a>
+                                        <h6 class="mb-1 text-truncate">{{ attachment.filename }}</h6>
+                                        <p class="small text-muted">{{ attachment.uploaded_at|date:"M d, Y" }}</p>
+                                        <a href="{{ attachment.file.url }}" download class="btn btn-sm btn-outline-primary mt-2">
+                                            <i class="feather icon-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not quote.photo and not quote.voice_notes.exists and not quote.attachments.exists %}
+                    <div class="alert alert-light text-center">
+                        <i class="feather icon-inbox mr-2"></i> No attachments or media found for this quote.
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Add this right after the file attachments section in quote_detail.html around line 265 -->
+                    <div class="mt-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="m-0"><i class="feather icon-upload"></i> Upload Additional Attachments</h6>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" enctype="multipart/form-data" action="{% url 'quotes:upload_attachments' quote.id %}">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label class="form-label">Select Files</label>
+                                        <input type="file" name="attachments[]" class="form-control" multiple>
+                                        <small class="text-muted">Hold Ctrl/Cmd while selecting to choose multiple files</small>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="feather icon-upload-cloud"></i> Upload Files
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Problem Reporting Modal -->
+    <div class="modal fade" id="reportProblemModal" tabindex="-1" aria-labelledby="problemModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="problemModalLabel">Report Problem with Quote #{{ quote.quote_number }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="problemReason" class="form-label">Describe the problem:</label>
+                            <textarea name="problem_reason" id="problemReason" class="form-control" rows="4" 
+                                      placeholder="Please describe what's wrong with this quote..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" name="problem" class="btn btn-danger">
+                            <i class="feather icon-alert-triangle"></i> Submit Problem Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Tracking Section -->
+    {% if quote.status == 'emailed' %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="feather icon-mail mr-2"></i> Email Tracking</h5>
+            <span class="badge bg-light text-dark">{{ quote.email_sent_at|date:"d M Y H:i" }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2 mb-3">Delivery Status</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="feather icon-send text-primary mr-2"></i> Sent to Server</span>
+                            <span class="badge bg-success">Success</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="feather icon-check text-primary mr-2"></i> Delivered</span>
+                            {% if quote.email_delivered %}
+                                <span class="badge bg-success">{{ quote.email_delivered_at|date:"d M Y H:i" }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Pending</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="feather icon-eye text-primary mr-2"></i> Email Opened</span>
+                            {% if quote.email_opened %}
+                                <span class="badge bg-success">{{ quote.email_opened_at|date:"d M Y H:i" }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Not opened yet</span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2 mb-3">Email Details</h6>
+                    <dl class="row">
+                        <dt class="col-sm-4">Recipient</dt>
+                        <dd class="col-sm-8">{{ quote.email_sender }}</dd>
+                        
+                        <dt class="col-sm-4">Subject</dt>
+                        <dd class="col-sm-8">{{ quote.email_subject }}</dd>
+                        
+                        <dt class="col-sm-4">Tracking ID</dt>
+                        <dd class="col-sm-8">
+                            <small class="text-muted">{{ quote.email_tracking_id|truncatechars:16 }}</small>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            {% if quote.email_clicks.exists %}
+            <div class="mt-4">
+                <h6 class="border-bottom pb-2 mb-3">
+                    <i class="feather icon-mouse-pointer mr-2"></i> Link Clicks 
+                    <span class="badge bg-primary">{{ quote.email_clicks.count }}</span>
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Link</th>
+                                <th>Clicked At</th>
+                                <th>Browser/Device</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for click in quote.email_clicks.all %}
+                            <tr>
+                                <td>
+                                    <a href="{{ click.clicked_url }}" target="_blank" class="text-truncate d-inline-block" style="max-width: 250px;">
+                                        {{ click.clicked_url }}
+                                    </a>
+                                </td>
+                                <td>{{ click.clicked_at|date:"d M Y H:i:s" }}</td>
+                                <td>
+                                    <small class="text-muted">{{ click.user_agent|truncatechars:40 }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-3">
+                <i class="feather icon-info mr-2"></i> No link clicks recorded yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Customer Edit Modal -->
+    <div class="modal fade" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editCustomerModalLabel">Update Customer Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'quotes:update_customer' quote.id %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <!-- Add customer dropdown -->
+                        <div class="mb-3">
+                            <label for="customer_id" class="form-label">Select Existing Customer</label>
+                            <select class="form-select" id="customer_id" name="customer_id">
+                                <option value="">Select an existing customer...</option>
+                                {% for customer in customers %}
+                                    <option value="{{ customer.id }}" 
+                                        data-name="{{ customer.customer }}"
+                                        data-company="{{ customer.company }}"
+                                        data-email="{{ customer.email }}"
+                                        data-phone="{{ customer.number }}"
+                                        {% if customer.id == quote.customer.id %}selected{% endif %}>
+                                        {{ customer.company }} ({{ customer.customer|default:"No name" }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Select a customer to update, or edit fields below</small>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Manual input fields -->
+                        <div class="mb-3">
+                            <label for="customer_name" class="form-label">Customer Name</label>
+                            <input type="text" class="form-control" id="customer_name" name="customer_name" 
+                                   value="{{ quote.customer.customer|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="company_name" class="form-label">Company</label>
+                            <input type="text" class="form-control" id="company_name" name="company_name" 
+                                   value="{{ quote.customer.company|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ quote.customer.email|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="phone" name="phone" 
+                                   value="{{ quote.customer.number|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Edit Modal -->
+    {% if request.user.is_staff %}
+    <div class="modal fade" id="editPricingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="feather icon-dollar-sign"></i> Edit Item Pricing</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="pricingForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="itemId">
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <p id="itemDescription" class="form-control-plaintext bg-light p-2 border rounded"></p>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="costPrice" class="form-label">Cost Price</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R</span>
+                                        <input type="number" step="0.01" min="0" id="costPrice" class="form-control" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="markup" class="form-label">Markup %</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.01" min="0" id="markup" class="form-control" required>
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="sellingPrice" class="form-label">Selling Price</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R</span>
+                                        <input type="number" step="0.01" min="0" id="sellingPrice" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="modalError" class="alert alert-danger d-none"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="savePricing">
+                            <i class="feather icon-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div> <!-- This is the closing div for container-fluid -->
+
+<!-- Add JavaScript for the customer dropdown -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize modal manually
+    var editCustomerModalElement = document.getElementById('editCustomerModal');
+    if (editCustomerModalElement) {
+        var editCustomerModal = new bootstrap.Modal(editCustomerModalElement);
+    }
+    
+    // Customer dropdown change handler
+    const customerSelect = document.getElementById('customer_id');
+    if (customerSelect) {
+        customerSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            
+            if (selectedOption.value) {
+                // Update form fields with selected customer data
+                document.getElementById('customer_name').value = selectedOption.dataset.name || '';
+                document.getElementById('company_name').value = selectedOption.dataset.company || '';
+                document.getElementById('email').value = selectedOption.dataset.email || '';
+                document.getElementById('phone').value = selectedOption.dataset.phone || '';
+            }
+        });
+    }
+    
+    // Additional safety check for edit button
+    const editBtn = document.querySelector('[data-bs-target="#editCustomerModal"]');
+    if (editBtn) {
+        editBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            if (editCustomerModal) {
+                editCustomerModal.show();
+            }
+        });
+    }
+});
+</script>
+
+<!-- Add this script block for admin pricing functionality -->
+{% if request.user.is_staff %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all edit buttons
+    const editButtons = document.querySelectorAll('.edit-item-btn');
+    
+    // Get modal elements
+    const itemIdInput = document.getElementById('itemId');
+    const itemDescriptionField = document.getElementById('itemDescription');
+    const costPriceInput = document.getElementById('costPrice');
+    const markupInput = document.getElementById('markup');
+    const sellingPriceInput = document.getElementById('sellingPrice');
+    const modalError = document.getElementById('modalError');
+    const pricingForm = document.getElementById('pricingForm');
+    
+    // Add event listeners to edit buttons
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Get data from button attributes
+            const itemId = this.getAttribute('data-item-id');
+            const description = this.getAttribute('data-item-description');
+            const cost = this.getAttribute('data-item-cost') || '';
+            const markup = this.getAttribute('data-item-markup') || '';
+            const selling = this.getAttribute('data-item-selling') || '';
+            
+            // Populate modal fields
+            itemIdInput.value = itemId;
+            itemDescriptionField.textContent = description;
+            costPriceInput.value = cost;
+            markupInput.value = markup;
+            sellingPriceInput.value = selling;
+            
+            // Clear any previous errors
+            modalError.classList.add('d-none');
+        });
+    });
+    
+    // Calculate selling price when cost or markup changes
+    costPriceInput.addEventListener('input', calculateSellingPrice);
+    markupInput.addEventListener('input', calculateSellingPrice);
+    
+    function calculateSellingPrice() {
+        const cost = parseFloat(costPriceInput.value);
+        const markup = parseFloat(markupInput.value);
+        
+        if (!isNaN(cost) && !isNaN(markup) && cost > 0) {
+            const selling = cost * (1 + markup/100);
+            sellingPriceInput.value = selling.toFixed(2);
+        }
+    }
+    
+    // Handle form submission
+    pricingForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const itemId = itemIdInput.value;
+        const cost = costPriceInput.value;
+        const markup = markupInput.value;
+        const selling = sellingPriceInput.value;
+        
+        // Basic validation
+        if (!cost || !markup) {
+            showModalError('Cost price and markup are required');
+            return;
+        }
+        
+        // Prepare the data for submission
+        const formData = new FormData();
+        formData.append('cost_price', cost);
+        formData.append('markup', markup);
+        formData.append('selling_price', selling);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        // Simple AJAX request using fetch
+        fetch(`/quotes/update-item-pricing/${itemId}/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Close the modal
+                bootstrap.Modal.getInstance(document.getElementById('editPricingModal')).hide();
+                
+                // Reload the page to show updated values
+                window.location.reload();
+            } else {
+                showModalError(data.message || 'An error occurred');
+            }
+        })
+        .catch(error => {
+            showModalError('Could not save changes. Please try again.');
+            console.error('Error:', error);
+        });
+    });
+    
+    function showModalError(message) {
+        modalError.textContent = message;
+        modalError.classList.remove('d-none');
+    }
+});
+</script>
+{% endif %}
+
+<!-- Add this before the end of the content block -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Make notes expandable when clicked
+    const notesCells = document.querySelectorAll('.notes-cell');
+    notesCells.forEach(cell => {
+        if (cell.textContent.length > 50) {
+            const originalText = cell.textContent;
+            const shortText = originalText.substring(0, 50) + '...';
+            
+            cell.innerHTML = shortText + '<span class="text-primary d-block mt-1 small">Click to expand</span>';
+            cell.style.cursor = 'pointer';
+            
+            // Toggle between short and full text
+            let expanded = false;
+            cell.addEventListener('click', function() {
+                if (expanded) {
+                    cell.innerHTML = shortText + '<span class="text-primary d-block mt-1 small">Click to expand</span>';
+                } else {
+                    cell.innerHTML = originalText + '<span class="text-primary d-block mt-1 small">Click to collapse</span>';
+                }
+                expanded = !expanded;
+            });
+        }
+    });
+});
+</script>
+
+<!-- filepath: c:\###PYTHONANY_WORKING\WFDASH\quotes\templates\quotes\quote_detail.html -->
+<style>
+    /* Markup badge styling */
+    .markup-badge {
+        font-size: 14px;
+        font-weight: bold;
+        padding: 6px 10px;
+        width: 80px;
+        text-align: center;
+        display: inline-block;
+        border-radius: 20px;
+    }
+    
+    /* New color scheme as requested */
+    .markup-low {
+        background-color: #f8d7da;  /* red background */
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .markup-medium {
+        background-color: #fff3cd;  /* orange/yellow background */
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+    
+    .markup-high {
+        background-color: #d4edda;  /* green background */
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .markup-veryhigh {
+        background-color: #0c5a31;  /* dark green background */
+        color: #ffffff;
+        border: 1px solid #064023;
+    }
+    
+    @keyframes highlight-pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    /* Add pulse animation only to the low markup (it's concerning) */
+    .markup-low {
+        animation: highlight-pulse 2s infinite;
+    }
+    
+    /* Table row highlighting */
+    .table-markup-low td {
+        background-color: rgba(248, 215, 218, 0.4);
+    }
+    .table-markup-medium td {
+        background-color: rgba(255, 243, 205, 0.4);
+    }
+    .table-markup-high td {
+        background-color: rgba(212, 237, 218, 0.4);
+    }
+    .table-markup-veryhigh td {
+        background-color: rgba(12, 90, 49, 0.2);
+    }
+    
+    /* Optional - make table rows have subtle highlighting */
+    .table-markup-low td, .table-markup-medium td, .table-markup-high td, .table-markup-veryhigh td {
+        opacity: 0.9;
+    }
+    
+    .table-markup-low:hover td, .table-markup-medium:hover td, .table-markup-high:hover td, .table-markup-veryhigh:hover td {
+        opacity: 1;
+    }
+    
+    /* Keep your existing styles */
+    .hover-shadow {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    /* Rest of your existing styles... */
+    
+    /* Description cell styling for better readability */
+    .description-cell {
+        font-size: 0.85rem;
+        max-width: 250px;
+        white-space: normal;
+        word-wrap: break-word;
+        line-height: 1.4;
+    }
+
+    /* Make the description column take less space on larger screens */
+    @media (min-width: 992px) {
+        .description-cell {
+            max-width: 300px;
+        }
+    }
+
+    /* Improve table responsiveness */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    /* Supplier cell styling */
+    .supplier-cell {
+        font-size: 0.85rem;
+        max-width: 120px;
+        width: 120px; /* Force fixed width */
+        white-space: normal;
+        word-wrap: break-word;
+        word-break: break-all; /* Break very long words without spaces */
+        overflow-wrap: break-word;
+        hyphens: auto; /* Add hyphens for better readability when breaking words */
+        padding-right: 5px; /* Add a little padding on right */
+    }
+
+    /* Ensure cost price column also has fixed width */
+    .cost-price-cell {
+        width: 100px;
+        min-width: 80px;
+    }
+
+    /* For very long supplier names without spaces, add ellipsis */
+    .supplier-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        max-width: 100%;
+    }
+
+    /* Notes cell styling */
+    .notes-cell {
+        font-size: 0.85rem;
+        max-width: 180px;
+        white-space: normal;
+        word-wrap: break-word;
+        line-height: 1.4;
+        max-height: 80px;
+        overflow-y: auto;
+    }
+
+    /* Responsive adjustments for table cells */
+    @media (max-width: 768px) {
+        .description-cell,
+        .supplier-cell,
+        .notes-cell {
+            max-width: 100px;
+        }
+    }
+
+    /* Make the important cells visible in very small screens */
+    @media (max-width: 576px) {
+        .table th:nth-child(3), /* Supplier */
+        .table td:nth-child(3),
+        .table th:nth-child(8), /* Notes */
+        .table td:nth-child(8) {
+            display: none;
+        }
+        
+        /* Adjust description cell for better visibility on very small screens */
+        .description-cell {
+            font-size: 0.8rem;
+            max-width: 120px;
+        }
+    }
+</style>
+{% endblock content %}

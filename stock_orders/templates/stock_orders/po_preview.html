@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Preview Stock PO - {{ stock_order.po_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Purchase Order Preview</h5>
+                    <div class="float-end">
+                        <a href="{% url 'stock_orders:download_po' po_id=stock_order.id %}" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Download PDF
+                        </a>
+                        <a href="{% url 'stock_orders:email_po' po_id=stock_order.id %}" class="btn btn-success">
+                            <i class="fas fa-envelope"></i> Email to Supplier
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if stock_order.pdf_file %}
+                    <div class="embed-responsive" style="height: 800px;">
+                        <iframe class="embed-responsive-item" src="{{ stock_order.pdf_file.url }}" 
+                                style="width: 100%; height: 100%; border: 1px solid #ddd;"></iframe>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        PDF file not found
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="{% url 'stock_orders:detail' pk=stock_order.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Stock Order
+                    </a>
+                    <div>
+                        <a href="{% url 'stock_orders:download_po' po_id=stock_order.id %}" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Download PDF
+                        </a>
+                        <a href="{% url 'stock_orders:email_po' po_id=stock_order.id %}" class="btn btn-success">
+                            <i class="fas fa-envelope"></i> Email to Supplier
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

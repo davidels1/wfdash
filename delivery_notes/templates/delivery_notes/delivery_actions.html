@@ -1,0 +1,25 @@
+<!-- delivery_actions.html -->
+<div class="container">
+    <h1>Delivery Note #ddddddddddddddddddddddd{{ delivery.delivery_number }}</h1>
+    
+    <div class="action-buttons">
+        {% if not delivery.is_signed %}
+        <a href="{% url 'delivery_notes:sign' delivery.id %}" class="btn btn-primary btn-lg">
+            <i class="feather icon-edit-2"></i> Sign Delivery
+        </a>
+        
+        <a href="{% url 'delivery_notes:upload_signed' delivery.id %}" class="btn btn-info btn-lg">
+            <i class="feather icon-upload"></i> Upload Signed Copy
+        </a>
+        {% else %}
+        <div class="alert alert-success">
+            This delivery has been signed by {{ delivery.signed_by }} on 
+            {{ delivery.signature_date|date:"d M Y" }}.
+        </div>
+        {% endif %}
+        
+        <a href="{% url 'delivery_notes:view_pdf' delivery.id %}" class="btn btn-secondary btn-lg">
+            <i class="feather icon-file-text"></i> View PDF
+        </a>
+    </div>
+</div>

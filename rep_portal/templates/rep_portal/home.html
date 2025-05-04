@@ -1,0 +1,269 @@
+{% extends "rep_portal/base.html" %}
+{% load static %}
+
+{% block title %}Rep Portal - Home{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Core styling for the home page */
+    :root {
+        --primary-color: #edae41;
+        --primary-light: #f9e9c5;
+        --primary-dark: #c7901e;
+        --secondary-color: #2c3e50;
+        --light-color: #f8f9fa;
+        --dark-color: #343a40;
+        --success-color: #28a745;
+        --error-color: #dc3545;
+        --body-bg: #f8f9fa;
+        --card-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        --transition: all 0.3s ease;
+    }
+    
+    /* Welcome section */
+    .portal-welcome {
+        text-align: center;
+        padding: 2rem 0 3rem;
+    }
+    
+    .welcome-heading {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--secondary-color);
+    }
+    
+    .brand-highlight {
+        color: var(--primary-color);
+    }
+    
+    .welcome-subtext {
+        font-size: 1.25rem;
+        color: #6c757d;
+        font-weight: 300;
+    }
+    
+    /* Action cards */
+    .action-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .action-card {
+        display: flex;
+        align-items: center;
+        background-color: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: var(--card-shadow);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .action-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 8px;
+        height: 100%;
+        transition: var(--transition);
+    }
+    
+    .quote-card::before {
+        background-color: var(--primary-color);
+    }
+    
+    .order-card::before {
+        background-color: var(--secondary-color);
+    }
+    
+    .action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+    
+    .card-icon {
+        font-size: 2.5rem;
+        margin-right: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    
+    .quote-card .card-icon {
+        color: var(--primary-color);
+        background-color: var(--primary-light);
+    }
+    
+    .order-card .card-icon {
+        color: var(--secondary-color);
+        background-color: rgba(44, 62, 80, 0.1);
+    }
+    
+    .card-text {
+        flex: 1;
+    }
+    
+    .card-text h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .card-text p {
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    .card-arrow {
+        margin-left: 1rem;
+        color: #ced4da;
+        transition: var(--transition);
+    }
+    
+    .action-card:hover .card-arrow {
+        transform: translateX(5px);
+        color: var(--primary-color);
+    }
+    
+    /* Media queries */
+    @media (min-width: 768px) {
+        .action-card {
+            padding: 2rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .welcome-heading {
+            font-size: 2rem;
+        }
+        
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 2rem;
+        }
+    }
+    
+    /* Delivery specific styling */
+    .delivery-icon {
+        background-color: rgba(217, 83, 79, 0.2); /* Lighter red background */
+        border: 2px solid #d9534f; /* Red border */
+        color: #d9534f; /* Red icon color */
+    }
+    
+    /* Add a red accent bar to the delivery card */
+    .action-card:nth-child(3) {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .action-card:nth-child(3)::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background-color: #d9534f; /* Red accent color */
+    }
+
+    /* Tasks Dashboard specific styling */
+    .tasks-icon {
+        background-color: rgba(40, 167, 69, 0.2); /* Light green background */
+        border: 2px solid #28a745; /* Green border */
+        color: #28a745; /* Green icon color */
+    }
+
+    /* Add a green accent bar to the tasks card */
+    .tasks-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background-color: #28a745; /* Green accent color */
+    }
+
+    /* Hover effect for tasks card */
+    .tasks-card:hover .card-arrow {
+        color: #28a745; /* Green arrow on hover */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-welcome">
+    <h1 class="welcome-heading"><span class="brand-highlight">WF</span> Sales Rep Portal</h1>
+    <p class="welcome-subtext">Manage quotes and orders for your customers</p>
+</div>
+
+<div class="action-cards">
+    <a href="{% url 'rep_portal:quote_request' %}" class="action-card quote-card">
+        <div class="card-icon">
+            <i class="fas fa-file-invoice-dollar"></i>
+        </div>
+        <div class="card-text">
+            <h2>Request a Quote</h2>
+            <p>Create quotes for new or existing customers</p>
+        </div>
+        <div class="card-arrow">
+            <i class="fas fa-chevron-right"></i>
+        </div>
+    </a>
+    
+    <a href="{% url 'rep_portal:order_submit' %}" class="action-card order-card">
+        <div class="card-icon">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <div class="card-text">
+            <h2>Submit an Order</h2>
+            <p>Create orders on behalf of your customers</p>
+        </div>
+        <div class="card-arrow">
+            <i class="fas fa-chevron-right"></i>
+        </div>
+    </a>
+    
+    <a href="{% url 'rep_portal:delivery_create' %}" class="action-card">
+        <div class="card-icon delivery-icon">
+            <i class="fas fa-truck"></i>
+        </div>
+        <div class="card-text">
+            <h2>Create Delivery Note</h2>
+            <p>Generate delivery notes for customer orders</p>
+        </div>
+        <div class="card-arrow">
+            <i class="fas fa-chevron-right"></i>
+        </div>
+    </a>
+    
+    <!-- Updated Tasks Card -->
+    <a href="{% url 'rep_portal:tasks' %}" class="action-card tasks-card">
+        <div class="card-icon tasks-icon">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="card-text">
+            <h2>Tasks Dashboard</h2>
+            <p>Approve quotes and update pricing on delivery notes</p>
+        </div>
+        <div class="card-arrow">
+            <i class="fas fa-chevron-right"></i>
+        </div>
+    </a>
+</div>
+{% endblock %}

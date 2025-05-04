@@ -1,0 +1,328 @@
+<!-- delivery_notes/templates/delivery_notes/extract_signature.html -->
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Extract Signature - Delivery Note {{ delivery.delivery_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .selection-box {
+        position: absolute;
+        border: 2px dashed #ff4444;
+        background-color: rgba(255, 0, 0, 0.1);
+        cursor: move;
+    }
+    
+    #document-container {
+        position: relative;
+        margin: 20px auto;
+        border: 1px solid #ddd;
+        max-width: 100%;
+        overflow: auto;
+    }
+    
+    #document-image {
+        max-width: 100%;
+        display: block;
+    }
+    
+    .preview-box {
+        margin-top: 20px;
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+    }
+    
+    .preview-box img {
+        max-width: 300px;
+        max-height: 100px;
+        border: 1px solid #eee;
+    }
+
+    .instructions {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+    /* Force consistent primary button colors across all devices */
+    .btn-primary, 
+    button[type="submit"],
+    .next-step {
+        background-color: #e76240 !important; /* Orange color - adjust to match your brand */
+        border-color: #e76240 !important;
+        color: white !important;
+    }
+
+    .btn-primary:hover, 
+    button[type="submit"]:hover,
+    .next-step:hover {
+        background-color: #d45535 !important; /* Darker orange for hover */
+        border-color: #d45535 !important;
+    }
+
+    /* Fix for any continue/next buttons */
+    .next-step, button.next-step {
+        background-color: #e76240 !important;
+        border-color: #e76240 !important;
+        color: white !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5>Extract Signature from Document</h5>
+        </div>
+        <div class="card-body">
+            <div class="instructions">
+                <h5><i class="feather icon-info me-2"></i>Instructions</h5>
+                <ol>
+                    <li>Click and drag to create a box around the signature area</li>
+                    <li>Adjust the box by dragging the corners or edges</li>
+                    <li>Preview how the extracted signature will look</li>
+                    <li>When satisfied, click "Extract Signature"</li>
+                </ol>
+            </div>
+            
+            <div id="document-container">
+                {% if delivery.signed_document.url %}
+                    {% if delivery.signed_document.name|lower|slice:'-4:' == '.pdf' %}
+                        <div class="alert alert-info">
+                            <p><i class="feather icon-file me-2"></i> PDF file detected. Please specify coordinates manually:</p>
+                            <div class="row g-3 mt-2">
+                                <div class="col-md-3">
+                                    <label class="form-label">X1 (left):</label>
+                                    <input type="number" id="manual-x1" class="form-control" value="100" min="0">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Y1 (top):</label>
+                                    <input type="number" id="manual-y1" class="form-control" value="100" min="0">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Width:</label>
+                                    <input type="number" id="manual-width" class="form-control" value="300" min="10">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Height:</label>
+                                    <input type="number" id="manual-height" class="form-control" value="100" min="10">
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <button id="pdf-preview" class="btn btn-primary">Preview Extraction</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <img src="{{ delivery.signed_document.url }}" id="document-image" alt="Uploaded document">
+                        <div id="selection" class="selection-box" style="display: none;"></div>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-warning">
+                        No document uploaded. Please upload a signed document first.
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="preview-box" id="preview-container" style="display: none;">
+                <h6>Signature Preview</h6>
+                <img id="signature-preview" src="" alt="Signature preview">
+            </div>
+            
+            <form method="post" id="extraction-form" class="mt-4" action="{% url 'delivery_notes:extract_signature' delivery.pk %}">
+                {% csrf_token %}
+                <input type="hidden" id="x1" name="x1" value="0">
+                <input type="hidden" id="y1" name="y1" value="0">
+                <input type="hidden" id="x2" name="x2" value="0">
+                <input type="hidden" id="y2" name="y2" value="0">
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'delivery_notes:detail' delivery.pk %}" class="btn btn-secondary">
+                        <i class="feather icon-x me-1"></i> Cancel
+                    </a>
+                    <button type="submit" id="extract-button" class="btn btn-success" disabled>
+                        <i class="feather icon-crop me-1"></i> Extract Signature
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const img = document.getElementById('document-image');
+    const selection = document.getElementById('selection');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImg = document.getElementById('signature-preview');
+    const extractButton = document.getElementById('extract-button');
+    
+    // Form values
+    const x1Input = document.getElementById('x1');
+    const y1Input = document.getElementById('y1');
+    const x2Input = document.getElementById('x2');
+    const y2Input = document.getElementById('y2');
+    
+    // PDF manual values
+    const pdfPreviewBtn = document.getElementById('pdf-preview');
+    
+    if (pdfPreviewBtn) {
+        pdfPreviewBtn.addEventListener('click', function() {
+            // Get values from inputs
+            const x1 = parseInt(document.getElementById('manual-x1').value) || 0;
+            const y1 = parseInt(document.getElementById('manual-y1').value) || 0;
+            const width = parseInt(document.getElementById('manual-width').value) || 300;
+            const height = parseInt(document.getElementById('manual-height').value) || 100;
+            
+            // Set form values
+            x1Input.value = x1;
+            y1Input.value = y1;
+            x2Input.value = x1 + width;
+            y2Input.value = y1 + height;
+            
+            // For PDF, we can't show a preview, so we'll just enable the button
+            previewContainer.style.display = 'block';
+            previewImg.src = "{% static 'assets/images/signature_placeholder.png' %}";
+            previewImg.alt = "PDF Signature (Position Only)";
+            
+            extractButton.disabled = false;
+        });
+    }
+    
+    if (!img) return; // Exit if no image
+    
+    let isSelecting = false;
+    let isDragging = false;
+    let startX, startY;
+    let offsetX = 0, offsetY = 0;
+    
+    // Initialize selection area
+    function initializeSelection() {
+        selection.style.display = 'none';
+        selection.style.left = '0px';
+        selection.style.top = '0px';
+        selection.style.width = '0px';
+        selection.style.height = '0px';
+    }
+    
+    // Start new selection
+    img.addEventListener('mousedown', function(e) {
+        if (e.target === img) {
+            isSelecting = true;
+            startX = e.offsetX;
+            startY = e.offsetY;
+            
+            selection.style.left = startX + 'px';
+            selection.style.top = startY + 'px';
+            selection.style.width = '0px';
+            selection.style.height = '0px';
+            selection.style.display = 'block';
+            
+            e.preventDefault();
+        }
+    });
+    
+    // Allow dragging the selection
+    selection.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        offsetX = e.clientX - selection.getBoundingClientRect().left;
+        offsetY = e.clientY - selection.getBoundingClientRect().top;
+        e.preventDefault();
+    });
+    
+    // Handle mouse movement
+    document.addEventListener('mousemove', function(e) {
+        if (isSelecting) {
+            const rect = img.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const width = x - startX;
+            const height = y - startY;
+            
+            if (width > 0) {
+                selection.style.width = width + 'px';
+            } else {
+                selection.style.left = x + 'px';
+                selection.style.width = Math.abs(width) + 'px';
+            }
+            
+            if (height > 0) {
+                selection.style.height = height + 'px';
+            } else {
+                selection.style.top = y + 'px';
+                selection.style.height = Math.abs(height) + 'px';
+            }
+            
+            updateFormValues();
+        } else if (isDragging) {
+            const rect = img.getBoundingClientRect();
+            let x = e.clientX - rect.left - offsetX;
+            let y = e.clientY - rect.top - offsetY;
+            
+            // Keep within image bounds
+            const maxX = img.width - parseInt(selection.style.width);
+            const maxY = img.height - parseInt(selection.style.height);
+            
+            x = Math.max(0, Math.min(x, maxX));
+            y = Math.max(0, Math.min(y, maxY));
+            
+            selection.style.left = x + 'px';
+            selection.style.top = y + 'px';
+            
+            updateFormValues();
+        }
+    });
+    
+    // End selection/dragging
+    document.addEventListener('mouseup', function() {
+        if (isSelecting || isDragging) {
+            // Only update preview if we have a valid selection
+            if (parseInt(selection.style.width) > 10 && parseInt(selection.style.height) > 5) {
+                updatePreview();
+                extractButton.disabled = false;
+            }
+        }
+        
+        isSelecting = false;
+        isDragging = false;
+    });
+    
+    // Update form values based on selection
+    function updateFormValues() {
+        x1Input.value = parseInt(selection.style.left) || 0;
+        y1Input.value = parseInt(selection.style.top) || 0;
+        x2Input.value = x1Input.value + (parseInt(selection.style.width) || 0);
+        y2Input.value = y1Input.value + (parseInt(selection.style.height) || 0);
+    }
+    
+    // Create a preview of the signature
+    function updatePreview() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const x = parseInt(selection.style.left) || 0;
+        const y = parseInt(selection.style.top) || 0;
+        const width = parseInt(selection.style.width) || 0;
+        const height = parseInt(selection.style.height) || 0;
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw the selected portion of the image to the canvas
+        ctx.drawImage(img, x, y, width, height, 0, 0, width, height);
+        
+        // Show the preview
+        previewImg.src = canvas.toDataURL();
+        previewContainer.style.display = 'block';
+    }
+    
+    // Initialize selection
+    initializeSelection();
+});
+</script>
+{% endblock %}

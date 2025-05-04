@@ -1,0 +1,49 @@
+{% extends "customer_portal/base.html" %}
+
+{% block title %}WF Sales - Customer Portal{% endblock %}
+
+{% block content %}
+<div class="portal-welcome">
+    <h1 class="welcome-heading">Welcome to <span class="brand-highlight">WF Sales</span></h1>
+    <p class="welcome-subtext">How can we help you today?</p>
+</div>
+
+<div class="action-cards">
+    <a href="{% url 'customer_portal:quote_request' %}" class="action-card quote-card">
+        <div class="card-icon">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <div class="card-text">
+            <h2>Request a Quote</h2>
+            <p>Get pricing for your projects or items</p>
+        </div>
+        <div class="card-arrow">
+            <i class="fas fa-chevron-right"></i>
+        </div>
+    </a>
+    
+    <a href="{% url 'customer_portal:order_submit' %}" class="action-card order-card">
+        <div class="card-icon">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <div class="card-text">
+            <h2>Place an Order</h2>
+            <p>Submit your purchase directly</p>
+        </div>
+        <div class="card-arrow">
+            <i class="fas fa-chevron-right"></i>
+        </div>
+    </a>
+</div>
+
+<div class="contact-info">
+    <div class="contact-item">
+        <i class="fas fa-phone-alt"></i>
+        <span>(123) 456-7890</span>
+    </div>
+    <div class="contact-item">
+        <i class="fas fa-envelope"></i>
+        <span>sales@wfsales.com</span>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,828 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Delivery Note Actions{% endblock %}
+
+{% block content %}
+<div class="delivery-actions-container">
+    <div class="delivery-header">
+        <div class="header-icon">
+            <i class="fas fa-truck-loading"></i>
+        </div>
+        <div class="header-text">
+            <h1>Delivery Note</h1>
+            <p class="delivery-number">#{{ delivery.delivery_number }}</p>
+        </div>
+    </div>
+
+    <div class="delivery-card">
+        <div class="delivery-info">
+            <div class="info-item">
+                <i class="fas fa-building"></i>
+                <span>{{ delivery.company.company }}</span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-user"></i>
+                <span>{{ delivery.contact_person }}</span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>{{ delivery.delivery_date|date:"d M Y" }}</span>
+            </div>
+        </div>
+
+        {% if not delivery.is_signed %}
+        <div class="action-buttons">
+            <a href="{% url 'delivery_notes:sign' delivery.id %}" class="action-btn sign-btn">
+                <div class="btn-icon">
+                    <i class="fas fa-edit-3"></i>
+                </div>
+                <div class="btn-text">
+                    <span class="btn-title">Sign Delivery</span>
+                    <span class="btn-desc">Capture signature on device</span>
+                </div>
+            </a>
+
+            <button type="button" class="action-btn upload-btn"
+                    data-delivery-id="{{ delivery.id }}"
+                    data-upload-url="{% url 'delivery_notes:ajax_upload_signed' delivery.id %}"
+                    data-bs-toggle="modal" data-bs-target="#uploadSignedModal">
+                <div class="btn-icon">
+                    <i class="fas fa-file-item"></i>
+                </div>
+                <div class="btn-text">
+                    <span class="btn-title">Upload Signed Copy</span>
+                    <span class="btn-desc">Use modal upload</span>
+                </div>
+            </button>
+        </div>
+        {% else %}
+        <div class="signature-status">
+            <div class="status-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="status-text">
+                <h3>Delivery Signed</h3>
+                <p>Signed by <strong>{{ delivery.signed_by }}</strong> on <strong>{{ delivery.signature_date|date:"d M Y" }}</strong></p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not delivery.has_all_items_priced %}
+        <div class="action-buttons mt-3">
+             <button type="button" class="action-btn set-pricing-btn"
+                     style="background-color: #17a2b8; color: white;"
+                     data-delivery-id="{{ delivery.id }}"
+                     data-bs-toggle="modal"
+                     data-bs-target="#listPricingModal">
+                 <div class="btn-icon">
+                     <i class="fas fa-dollar-sign"></i>
+                 </div>
+                 <div class="btn-text">
+                     <span class="btn-title">Set Item Pricing</span>
+                     <span class="btn-desc">Enter cost, markup, or selling price</span>
+                 </div>
+             </button>
+        </div>
+        {% endif %}
+
+        <div class="pdf-action">
+            <a href="{% url 'delivery_notes:view_pdf' delivery.id %}" class="pdf-btn">
+                <i class="fas fa-file-pdf"></i>
+                <span>View PDF Document</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="back-link">
+        <a href="{% url 'delivery_notes:list' %}" class="text-muted">
+            <i class="fas fa-arrow-left"></i> Back to Delivery Notes
+        </a>
+    </div>
+
+    <div class="modal fade" id="uploadSignedModal" tabindex="-1" aria-labelledby="uploadSignedModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadSignedModalLabel">Upload Signed Document</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadSignedForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="signed_document" class="form-label">Select Signed PDF/Image:</label>
+                            <input class="form-control" type="file" id="signed_document" name="signed_document" accept=".pdf,.jpg,.jpeg,.png" required>
+                        </div>
+                        <div id="uploadStatus" class="alert" style="display: none;"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="uploadSignedBtn">Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="listPricingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Set Item Pricing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center loading-spinner" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading items...</p>
+                    </div>
+                    <div id="itemsContainer"></div>
+                    <div class="alert alert-success mt-3" id="pricingSuccess" style="display: none;">
+                        Pricing updated successfully!
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    {# Save All button is added dynamically by JS #}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }} {# Include CSS from base template if needed #}
+
+{# --- ADD JQUERY UI CSS --- #}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+<style>
+    /* Container styling */
+    .delivery-actions-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    /* Header styling */
+    .delivery-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .header-icon {
+        background-color: #edae41;
+        color: white;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 1rem;
+        font-size: 1.8rem;
+        box-shadow: 0 4px 10px rgba(237, 174, 65, 0.3);
+    }
+
+    .header-text h1 {
+        margin: 0;
+        font-size: 1.75rem;
+        color: #2c3e50;
+    }
+
+    .delivery-number {
+        color: #7f8c8d;
+        font-size: 1.2rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Card styling */
+    .delivery-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Delivery info styling */
+    .delivery-info {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .info-item i {
+        color: #edae41;
+        margin-right: 0.75rem;
+        font-size: 1.1rem;
+        width: 25px;
+        text-align: center;
+    }
+
+    .info-item span {
+        color: #34495e;
+        font-size: 1rem;
+    }
+
+    /* Action buttons styling */
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .sign-btn {
+        background-color: #27ae60;
+        color: white;
+    }
+
+    .upload-btn {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .btn-icon {
+        width: 50px;
+        height: 50px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .btn-text {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .btn-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .btn-desc {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+
+    /* Signature status styling */
+    .signature-status {
+        display: flex;
+        align-items: center;
+        padding: 1.25rem;
+        background-color: #d4edda;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+
+    .status-icon {
+        color: #28a745;
+        font-size: 2rem;
+        margin-right: 1rem;
+    }
+
+    .status-text h3 {
+        margin: 0 0 0.5rem 0;
+        color: #246b38;
+        font-size: 1.2rem;
+    }
+
+    .status-text p {
+        margin: 0;
+        color: #2c7347;
+    }
+
+    /* PDF button styling */
+    .pdf-action {
+        text-align: center;
+    }
+
+    .pdf-btn {
+        display: inline-flex;
+        align-items: center;
+        background-color: #e74c3c;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+
+    .pdf-btn:hover {
+        background-color: #c0392b;
+        color: white;
+    }
+
+    .pdf-btn i {
+        margin-right: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    /* Back link styling */
+    .back-link {
+        text-align: center;
+        margin-top: 1.5rem;
+    }
+
+    .back-link a {
+        color: #7f8c8d;
+        text-decoration: none;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .back-link a:hover {
+        color: #2c3e50;
+    }
+
+    .back-link i {
+        margin-right: 0.5rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+        .delivery-header {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .header-icon {
+            margin-right: 0;
+            margin-bottom: 1rem;
+        }
+
+        .action-btn {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .btn-icon {
+            margin-right: 0;
+            margin-bottom: 0.75rem;
+        }
+    }
+
+    /* Add styles for autocomplete if needed */
+    .ui-autocomplete {
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 1056; /* Ensure it's above the modal */
+        background-color: #fff;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .ui-menu-item {
+        padding: 0;
+    }
+    .ui-menu-item .ui-menu-item-wrapper {
+        padding: 5px 10px;
+        display: block;
+        text-decoration: none;
+        color: #333;
+    }
+    .ui-menu-item .ui-menu-item-wrapper.ui-state-active {
+        background-color: #eee;
+        color: #333;
+        border: none;
+        margin: 0;
+    }
+    /* Style for price search results */
+    .price-result-item { padding: 8px; border-bottom: 1px solid #eee; }
+    .price-result-item:last-child { border-bottom: none; }
+    .price-result-item .item-description { font-weight: bold; }
+    .price-result-item .price { font-weight: bold; color: #28a745; }
+    .price-result-item .markup { font-size: 0.9em; color: #6c757d; }
+    .price-result-item .cost { font-size: 0.9em; color: #dc3545; }
+    .price-result-item .company, .price-result-item .time { font-size: 0.85em; color: #6c757d; }
+    .price-result-item .source { font-size: 0.8em; }
+    .result-card { border: 1px solid #eee; padding: 10px; margin-bottom: 5px; cursor: pointer; border-radius: 4px; }
+    .result-card:hover { background-color: #f8f9fa; }
+
+</style>
+{% endblock %}
+
+
+{% block extra_js %}
+{{ block.super }} {# This should now include jQuery 3.6.0 from base.html #}
+
+{# --- Load jQuery UI AFTER base scripts --- #}
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+{# --- Inline script --- #}
+<script>
+    $(function() {
+        console.log("jQuery ready. Mobile actions page JS starting.");
+
+        // --- Get CSRF Token ---
+        const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+        if (!csrfToken) {
+            console.error("CSRF token not found! Pricing form submissions will fail.");
+        } else {
+            console.log("CSRF token found.");
+        }
+
+        // --- Define Helper Functions FIRST ---
+        function setupPriceCalculations(container) {
+            console.log('[setupPriceCalculations] Setting up calculations...');
+            $(container).find('.cost-price, .markup, .selling-price').on('input', function() {
+                const row = $(this).closest('.row');
+                const costInput = row.find('.cost-price');
+                const markupInput = row.find('.markup');
+                const priceInput = row.find('.selling-price');
+                const cost = parseFloat(costInput.val()) || 0;
+                const markup = parseFloat(markupInput.val()) || 0;
+                let price = parseFloat(priceInput.val()) || 0;
+
+                if ($(this).hasClass('cost-price') || $(this).hasClass('markup')) {
+                    if (cost > 0 && markup >= 0) {
+                        price = cost * (1 + markup / 100);
+                        priceInput.val(price.toFixed(2));
+                    } else if ($(this).hasClass('cost-price') && cost <= 0) {
+                        if (markup !== 0) priceInput.val('');
+                    } else if ($(this).hasClass('markup') && markup < 0) {
+                        priceInput.val('');
+                    }
+                } else if ($(this).hasClass('selling-price')) {
+                    if (cost > 0 && price >= cost) {
+                        const newMarkup = ((price / cost) - 1) * 100;
+                        markupInput.val(newMarkup.toFixed(2));
+                    } else if (cost > 0 && price < cost) {
+                        const newMarkup = ((price / cost) - 1) * 100;
+                        markupInput.val(newMarkup.toFixed(2));
+                    } else if (cost <= 0 && price > 0) {
+                        markupInput.val('');
+                    }
+                }
+            });
+        }
+
+        function setupSaveButtons(container) {
+            console.log('[setupSaveButtons] Setting up save buttons...');
+            $(container).find('.save-item-btn').on('click', function() {
+                const itemId = $(this).data('item-id');
+                saveItemPricing(itemId);
+            });
+            $(container).find('#saveAllPrices').on('click', function() {
+                saveAllPricing();
+            });
+        }
+
+        function setupPriceSearch(container) {
+            console.log('[setupPriceSearch] Setting up price search...');
+            if (typeof jQuery.ui?.autocomplete === 'undefined') {
+                console.error('jQuery UI autocomplete is required for price search but not loaded when setupPriceSearch was called.');
+                return;
+            }
+            console.log('[setupPriceSearch] Autocomplete IS available.');
+
+            $(container).find('.price-search').each(function() {
+                const searchInput = $(this);
+                const itemId = searchInput.data('item-id');
+                const resultsContainer = searchInput.closest('.col-12').find('.search-results-container');
+
+                searchInput.autocomplete({
+                    source: function(request, response) {
+                        console.log(`[Autocomplete] Searching for term: ${request.term}`);
+                        $.ajax({
+                            url: "{% url 'delivery_notes:ajax_price_search' %}",
+                            dataType: "json",
+                            data: { term: request.term },
+                            success: function(data) {
+                                console.log('[Autocomplete] Search results received:', data);
+                                if (Array.isArray(data) && data.length > 0) { // Check if data is an array and has items
+                                    resultsContainer.empty(); // Clear previous messages if any
+                                    response(data); // Pass the data array directly
+                                } else {
+                                    // Now this only runs if the backend truly returned an empty array or invalid data
+                                    resultsContainer.html('<div class="text-muted p-2">No matches found.</div>');
+                                    response([]);
+                                }
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                console.error('[Autocomplete] Search AJAX error:', textStatus, errorThrown);
+                                resultsContainer.html('<div class="text-danger p-2">Error during search.</div>');
+                                response([]);
+                            }
+                        });
+                    },
+                    minLength: 2,
+                    select: function(event, ui) {
+                        event.preventDefault();
+                        console.log('[Autocomplete] Item selected:', ui.item);
+                        const row = searchInput.closest('.row');
+                        row.find('.cost-price').val(ui.item.cost_price || '').trigger('input');
+                        row.find('.markup').val(ui.item.markup || '').trigger('input');
+                        row.find('.selling-price').val(ui.item.price || '').trigger('input');
+                        searchInput.val('');
+                        resultsContainer.empty();
+                    },
+                    focus: function(event, ui) {
+                        event.preventDefault();
+                    },
+                    open: function() {
+                        console.log('[Autocomplete] List opened.');
+                    }
+                }).autocomplete("instance")._renderItem = function(ul, item) {
+                    const timeAgo = item.time_ago ? `<span class="time float-end">${item.time_ago}</span>` : '';
+                    const company = item.company ? `<span class="company">${item.company}</span>` : '';
+                    const source = item.source ? `<span class="source text-muted">(${item.source})</span>` : '';
+
+                    const descriptionText = item.full_description || item.label || item.value || 'No description'; // Fallback if full_description is missing
+
+                    return $("<li>")
+                        .append(`<div class="result-card">
+                                    <div class="item-description">${descriptionText} ${source}</div>
+                                    <div>
+                                        <span class="price">R ${parseFloat(item.price || 0).toFixed(2)}</span> |
+                                        <span class="markup">${parseFloat(item.markup || 0).toFixed(1)}%</span> |
+                                        <span class="cost">Cost: R ${parseFloat(item.cost_price || 0).toFixed(2)}</span>
+                                        ${company} ${timeAgo}
+                                    </div>
+                                 </div>`)
+                        .appendTo(ul);
+                };
+            });
+        }
+
+        function loadDeliveryItems(deliveryId) {
+            console.log(`[loadDeliveryItems] Starting for delivery ID: ${deliveryId}`);
+            const modalElement = document.getElementById('listPricingModal');
+            if (!modalElement) { return; }
+            console.log('[loadDeliveryItems] Found modal element:', modalElement);
+
+            const spinner = modalElement.querySelector('.loading-spinner');
+            const itemsContainer = modalElement.querySelector('#itemsContainer');
+            const successAlert = modalElement.querySelector('#pricingSuccess');
+
+            if (!spinner || !itemsContainer || !successAlert) { return; }
+            console.log('[loadDeliveryItems] Found spinner, itemsContainer, and successAlert.');
+
+            itemsContainer.innerHTML = '';
+            successAlert.style.display = 'none';
+            spinner.style.display = 'block';
+
+            const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            modalInstance.show();
+            console.log('[loadDeliveryItems] Modal shown, preparing to fetch...');
+
+            const fetchUrl = `/delivery/${deliveryId}/items/json/`;
+            console.log(`[loadDeliveryItems] Fetching from URL: ${fetchUrl}`);
+            console.log('[loadDeliveryItems] *** ABOUT TO EXECUTE FETCH ***');
+
+            fetch(fetchUrl)
+                .then(response => { return response.json(); })
+                .then(data => {
+                    console.log('[loadDeliveryItems] JSON parsed successfully:', data);
+                    spinner.style.display = 'none';
+                    if (data.items && data.items.length > 0) {
+                        console.log(`[loadDeliveryItems] Found ${data.items.length} items. Generating HTML...`);
+                        try {
+                            let html = `<form id="bulkPricingForm"><input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}"><input type="hidden" name="delivery_id" value="${deliveryId}">`;
+                            data.items.forEach(item => {
+                                const costPrice = item.cost_price ? parseFloat(item.cost_price).toFixed(2) : '';
+                                const markup = item.markup ? parseFloat(item.markup).toFixed(2) : '';
+                                const price = item.price ? parseFloat(item.price).toFixed(2) : '';
+                                const notes = item.notes || '';
+                                html += `<div class="card mb-3"> <div class="card-header bg-light"> <strong>${item.description}</strong> <span class="badge bg-info float-end">Qty: ${item.quantity}</span> </div> <div class="card-body"> <div class="row g-3"> <input type="hidden" name="item_ids[]" value="${item.id}"> <div class="col-md-4"> <label class="form-label">Cost Price (R)</label> <input type="number" class="form-control cost-price" name="cost_price_${item.id}" value="${costPrice}" step="0.01" min="0" data-item-id="${item.id}"> </div> <div class="col-md-4"> <label class="form-label">Markup (%)</label> <input type="number" class="form-control markup" name="markup_${item.id}" value="${markup}" step="0.1" min="0" data-item-id="${item.id}"> </div> <div class="col-md-4"> <label class="form-label">Selling Price (R)</label> <input type="number" class="form-control selling-price" name="price_${item.id}" value="${price}" step="0.01" min="0" data-item-id="${item.id}"> </div> <div class="col-12" style="display: none;"> <label class="form-label">Notes</label> <input type="text" class="form-control" name="notes_${item.id}" value="${notes}"> </div> <div class="col-12 mt-2"> <div class="input-group"> <span class="input-group-text bg-light"><i class="fas fa-search"></i></span> <input type="text" class="form-control price-search price-search-highlight" placeholder="Search quotes, orders, stock & deliveries..." data-item-id="${item.id}"> </div> <div class="search-results-container small text-muted mt-1"></div> </div> <div class="col-12 text-end"> <button type="button" class="btn btn-sm btn-primary save-item-btn" data-item-id="${item.id}">Save Item</button> </div> </div> </div> </div>`;
+                            });
+                            html += `<div class="d-grid gap-2 mt-3"><button type="button" id="saveAllPrices" class="btn btn-success">Save All Items</button></div></form>`;
+                            itemsContainer.innerHTML = html;
+                            console.log('[loadDeliveryItems] HTML generated and inserted.');
+
+                            setupPriceCalculations(itemsContainer);
+                            setupSaveButtons(itemsContainer);
+                            setupPriceSearch(itemsContainer);
+
+                        } catch (htmlError) {
+                            console.error('[loadDeliveryItems] Error during HTML generation:', htmlError);
+                            itemsContainer.innerHTML = `<div class="alert alert-danger">Error generating item list: ${htmlError.message}</div>`;
+                        }
+                    } else {
+                        console.log('[loadDeliveryItems] No items found in response data.');
+                        itemsContainer.innerHTML = '<div class="alert alert-info">No items found for this delivery note.</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('[loadDeliveryItems] Fetch or initial processing error:', error);
+                    spinner.style.display = 'none';
+                    if (!itemsContainer.innerHTML.includes('alert-danger')) {
+                        itemsContainer.innerHTML = `<div class="alert alert-danger">Error loading items: ${error.message}</div>`;
+                    }
+                });
+        }
+
+        if (typeof jQuery.ui?.autocomplete !== 'undefined') {
+            console.log('jQuery UI autocomplete IS available via $(document).ready().');
+            const pricingTriggerButton = document.querySelector('.set-pricing-btn');
+            if (pricingTriggerButton) {
+                console.log('Found pricing trigger button:', pricingTriggerButton);
+                pricingTriggerButton.addEventListener('click', function() {
+                    const deliveryId = this.getAttribute('data-delivery-id');
+                    console.log('>>> Set pricing button CLICKED for delivery:', deliveryId);
+                    if (deliveryId) {
+                        loadDeliveryItems(deliveryId);
+                    } else {
+                        console.error('Delivery ID not found on pricing button.');
+                    }
+                });
+            } else {
+                console.error('Pricing trigger button (.set-pricing-btn) not found.');
+            }
+        } else {
+            console.error('jQuery UI autocomplete is STILL not available even after $(document).ready().');
+            $('.set-pricing-btn')
+                .prop('disabled', true)
+                .css({'opacity': 0.6, 'cursor': 'not-allowed'})
+                .find('.btn-desc').text('Pricing unavailable (JS Error)');
+        }
+
+        function saveItemPricing(itemId) {
+            console.log(`[saveItemPricing] Saving item ${itemId}...`);
+            const form = $('#bulkPricingForm'); // Still get data relative to the form
+            const costPrice = form.find(`input[name="cost_price_${itemId}"]`).val();
+            const markup = form.find(`input[name="markup_${itemId}"]`).val();
+            const price = form.find(`input[name="price_${itemId}"]`).val();
+            const notes = form.find(`input[name="notes_${itemId}"]`).val();
+
+            if (!csrfToken) {
+                console.error("CSRF token missing, cannot save.");
+                // Use toastr if available, otherwise alert
+                if (typeof toastr !== 'undefined') {
+                    toastr.error("Error: CSRF token missing. Cannot save.");
+                } else {
+                    alert("Error: CSRF token missing. Cannot save.");
+                }
+                return;
+            }
+
+            // --- CHANGE: Construct the correct URL ---
+            // Assuming your urls.py has name='update_item_pricing' for the path 'item/<int:item_id>/update-price/'
+            const saveUrl = `/delivery/item/${itemId}/update-price/`; // Construct URL manually or use a JS reverse function if you have one
+
+            $.ajax({
+                url: saveUrl, // Use the constructed URL
+                method: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': csrfToken,
+                    // item_id is now in the URL, not needed in data
+                    'cost_price': costPrice,
+                    'markup': markup,
+                    'price': price,
+                    'notes': notes
+                },
+                dataType: 'json',
+                success: function(response) {
+                    console.log('[saveItemPricing] Save response:', response);
+                    if (response.status === 'success') { // Check the status key from the backend view
+                         if (typeof toastr !== 'undefined') {
+                            toastr.success(`Item ${itemId} pricing saved.`);
+                         } else {
+                            console.log(`Item ${itemId} pricing saved.`); // Fallback log
+                         }
+                    } else {
+                         const errorMsg = response.message || 'Unknown error'; // Use message key from backend
+                         if (typeof toastr !== 'undefined') {
+                            toastr.error(`Error saving item ${itemId}: ${errorMsg}`);
+                         } else {
+                            alert(`Error saving item ${itemId}: ${errorMsg}`);
+                         }
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error('[saveItemPricing] AJAX error:', textStatus, errorThrown, jqXHR.responseText);
+                    const errorMsg = errorThrown || textStatus;
+                     if (typeof toastr !== 'undefined') {
+                        toastr.error(`AJAX error saving item ${itemId}: ${errorMsg}`);
+                     } else {
+                        alert(`AJAX error saving item ${itemId}: ${errorMsg}`);
+                     }
+                }
+            });
+        }
+
+        function saveAllPricing() {
+            console.log('[saveAllPricing] Saving all items...');
+            const form = $('#bulkPricingForm');
+            const formData = form.serialize();
+
+            if (!csrfToken) {
+                console.error("CSRF token missing, cannot save all.");
+                toastr.error("Error: CSRF token missing. Cannot save all.");
+                return;
+            }
+
+            $.ajax({
+                url: "{% url 'delivery_notes:ajax_save_bulk_pricing' %}",
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    console.log('[saveAllPricing] Save response:', response);
+                    if (response.success) {
+                        toastr.success('All item prices saved successfully!');
+                        $('#pricingSuccess').text(response.message || 'All item prices saved successfully!').show().delay(3000).fadeOut();
+                    } else {
+                        toastr.error(`Error saving all items: ${response.error || 'Unknown error'}`);
+                        $('#pricingSuccess').removeClass('alert-success').addClass('alert-danger')
+                                           .text(response.error || 'Error saving prices.').show();
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error('[saveAllPricing] AJAX error:', textStatus, errorThrown);
+                    toastr.error(`AJAX error saving all items: ${errorThrown}`);
+                     $('#pricingSuccess').removeClass('alert-success').addClass('alert-danger')
+                                       .text(`AJAX Error: ${errorThrown}`).show();
+                }
+            });
+        }
+
+        // Upload signed document functionality
+        $("#uploadSignedBtn").on("click", function() {
+            console.log("[uploadSignedBtn] Upload button clicked");
+            const uploadForm = $("#uploadSignedForm");
+            const formData = new FormData(uploadForm[0]);
+            const uploadUrl = $(".upload-btn").data("upload-url");
+            const statusDiv = $("#uploadStatus");
+            
+            // Validate file selection
+            const fileInput = $("#signed_document")[0];
+            if (!fileInput.files.length) {
+                statusDiv.removeClass("alert-success").addClass("alert-danger")
+                    .text("Please select a file to upload").show();
+                return;
+            }
+            
+            // Show loading status
+            statusDiv.removeClass("alert-danger alert-success").addClass("alert-info")
+                .text("Uploading file...").show();
+            
+            $.ajax({
+                url: uploadUrl,
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    console.log("[uploadSignedBtn] Upload success:", response);
+                    if (response.success) {
+                        statusDiv.removeClass("alert-info alert-danger").addClass("alert-success")
+                            .text(response.message || "File uploaded successfully");
+                        
+                        // Reload page after short delay to show new status
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        statusDiv.removeClass("alert-info alert-success").addClass("alert-danger")
+                            .text(response.error || "Upload failed");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("[uploadSignedBtn] Upload error:", status, error);
+                    statusDiv.removeClass("alert-info alert-success").addClass("alert-danger")
+                        .text("Upload error: " + (error || status));
+                }
+            });
+        });
+
+        // Make sure modal is properly reset when closed
+        $("#uploadSignedModal").on("hidden.bs.modal", function() {
+            $("#signed_document").val("");
+            $("#uploadStatus").hide().text("");
+        });
+    });
+</script>
+{% endblock %}

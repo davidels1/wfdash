@@ -8,8 +8,8 @@
 
   <div class="m-header">
     <a class="mobile-menu" id="mobile-collapse1" href="#!"><span></span></a>
-    <a href="{% url 'dashboard:index' %}" class="b-brand">
-      <div class="b-bg">
+    <a href="javascript:void(0);" id="homeIconLink" class="b-brand">
+      <div class="b-bg" style="color: red;">
         <i class="feather icon-gitlab"></i>
       </div>
       <span class="b-title">WF SALES DASHBOARD</span>
@@ -41,6 +41,11 @@
               <i class="feather icon-search input-group-text"></i>
             </span>
           </div>
+          <!-- Add this container for results -->
+          <div id="universal-search-results" class="universal-search-results-container" style="display: none; position: absolute; background-color: white; border: 1px solid #ccc; z-index: 1050; width: 300px; max-height: 400px; overflow-y: auto; margin-top: 1px;">
+            <!-- Results will be populated here by JavaScript -->
+          </div>
+          <!-- End results container -->
         </div>
       </li>
     </ul>
@@ -182,8 +187,279 @@
           </div>
         </div>
       </li>
+      <li class="zoom-controls d-lg-none">
+        <div class="btn-group">
+          <button id="browser-zoom-out" class="btn btn-outline-secondary btn-sm" type="button" title="Zoom Out">
+            <i class="feather icon-minus"></i>
+          </button>
+          <button id="browser-zoom-reset" class="btn btn-outline-secondary btn-sm" type="button" title="Reset Zoom">
+            <i class="feather icon-refresh-cw"></i>
+          </button>
+          <button id="browser-zoom-in" class="btn btn-outline-secondary btn-sm" type="button" title="Zoom In">
+            <i class="feather icon-plus"></i>
+          </button>
+        </div>
+      </li>
     </ul>
   </div>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Get the home icon link
+    const homeIconLink = document.getElementById('homeIconLink');
+    
+    if (homeIconLink) {
+      homeIconLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Show subtle loading indicator
+        const iconElement = this.querySelector('i.feather');
+        if (iconElement) {
+          iconElement.classList.add('icon-spin');
+        }
+        
+        // If we're in a PWA context (standalone mode)
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+          console.log('PWA navigation to home');
+          // Use this approach for PWA
+          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            // Try to use service worker for navigation
+            navigator.serviceWorker.controller.postMessage({
+              type: 'NAVIGATE_HOME',
+              url: '{% url 'dashboard:index' %}'
+            });
+          }
+        }
+        
+        // Always do this as fallback
+        window.location.href = '{% url 'dashboard:index' %}';
+      });
+    }
+  });
+  </script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add browser zoom controls
+    const zoomInBtn = document.getElementById('browser-zoom-in');
+    const zoomOutBtn = document.getElementById('browser-zoom-out');
+    const zoomResetBtn = document.getElementById('browser-zoom-reset');
+    
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', function() {
+            // Simulate Ctrl+Plus keyboard shortcut
+            const zoomInEvent = new KeyboardEvent('keydown', {
+                key: '+',
+                code: 'Equal',
+                keyCode: 187,
+                which: 187,
+                ctrlKey: true,
+                metaKey: true, // For Mac
+                bubbles: true
+            });
+            document.dispatchEvent(zoomInEvent);
+            
+            // For browsers that don't respond to the keyboard event simulation
+            try {
+                // Chrome-specific zoom API (works only in extensions)
+                if (window.chrome && chrome.tabs) {
+                    chrome.tabs.getZoom(function(zoomFactor) {
+                        chrome.tabs.setZoom(zoomFactor + 0.1);
+                    });
+                } else {
+                    // Alternative: Use browser zoom detection
+                    showZoomMessage('Zoom In: Use Ctrl/Cmd + Plus');
+                }
+            } catch(e) {
+                showZoomMessage('Zoom In: Use Ctrl/Cmd + Plus');
+            }
+        });
+    }
+    
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', function() {
+            // Simulate Ctrl+Minus keyboard shortcut
+            const zoomOutEvent = new KeyboardEvent('keydown', {
+                key: '-',
+                code: 'Minus',
+                keyCode: 189,
+                which: 189,
+                ctrlKey: true,
+                metaKey: true, // For Mac
+                bubbles: true
+            });
+            document.dispatchEvent(zoomOutEvent);
+            
+            // Fallback message
+            try {
+                if (window.chrome && chrome.tabs) {
+                    chrome.tabs.getZoom(function(zoomFactor) {
+                        chrome.tabs.setZoom(zoomFactor - 0.1);
+                    });
+                } else {
+                    showZoomMessage('Zoom Out: Use Ctrl/Cmd + Minus');
+                }
+            } catch(e) {
+                showZoomMessage('Zoom Out: Use Ctrl/Cmd + Minus');
+            }
+        });
+    }
+    
+    if (zoomResetBtn) {
+        zoomResetBtn.addEventListener('click', function() {
+            // Simulate Ctrl+0 keyboard shortcut
+            const zoomResetEvent = new KeyboardEvent('keydown', {
+                key: '0',
+                code: 'Digit0',
+                keyCode: 48,
+                which: 48,
+                ctrlKey: true,
+                metaKey: true, // For Mac
+                bubbles: true
+            });
+            document.dispatchEvent(zoomResetEvent);
+            
+            // Fallback message
+            try {
+                if (window.chrome && chrome.tabs) {
+                    chrome.tabs.setZoom(1.0);
+                } else {
+                    showZoomMessage('Reset Zoom: Use Ctrl/Cmd + 0');
+                }
+            } catch(e) {
+                showZoomMessage('Reset Zoom: Use Ctrl/Cmd + 0');
+            }
+        });
+    }
+    
+    function showZoomMessage(message) {
+        // Create or use toast notification
+        if (window.toastr) {
+            toastr.info(message);
+        } else {
+            // Create a simple notification if toastr isn't available
+            const notification = document.createElement('div');
+            notification.className = 'zoom-notification';
+            notification.innerHTML = message;
+            notification.style.position = 'fixed';
+            notification.style.bottom = '20px';
+            notification.style.right = '20px';
+            notification.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            notification.style.color = 'white';
+            notification.style.padding = '10px';
+            notification.style.borderRadius = '5px';
+            notification.style.zIndex = '9999';
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
+        }
+    }
+    
+    // Check if in standalone PWA mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        // Make zoom controls always visible in PWA mode
+        const zoomControls = document.querySelector('.zoom-controls');
+        if (zoomControls) {
+            zoomControls.classList.remove('d-lg-none');
+            zoomControls.style.display = 'block';
+        }
+    }
+  });
+  </script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('m-search');
+    const resultsContainer = document.getElementById('universal-search-results'); // Now this should be found
+    let debounceTimer;
+
+    if (searchInput && resultsContainer) { // This check should now pass
+        console.log("Search input and results container found. Initializing search."); // Add console log
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = searchInput.value.trim();
+
+            if (query.length >= 2) {
+                resultsContainer.innerHTML = '<div style="padding: 10px; text-align: center;"><i>Searching...</i></div>';
+                resultsContainer.style.display = 'block';
+
+                debounceTimer = setTimeout(() => {
+                    console.log(`Fetching search results for: ${query}`); // Add console log
+                    fetch(`{% url 'search:ajax_universal_search' %}?q=${encodeURIComponent(query)}`, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(`HTTP error! status: ${response.status}, response: ${text}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log("Search results received:", data); // Add console log
+                        resultsContainer.innerHTML = '';
+                        if (data.results && data.results.length > 0) {
+                            data.results.forEach(item => {
+                                const link = document.createElement('a');
+                                link.href = item.url;
+                                link.className = 'list-group-item list-group-item-action';
+                                link.innerHTML = `<small><strong>${item.type}:</strong></small> ${item.display}`;
+                                resultsContainer.appendChild(link);
+                            });
+                        } else {
+                            resultsContainer.innerHTML = '<div style="padding: 10px; text-align: center;">No results found.</div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching search results:', error);
+                        resultsContainer.innerHTML = `<div style="padding: 10px; color: red; text-align: center;">Error loading results.</div>`;
+                    });
+                }, 300);
+            } else {
+                resultsContainer.innerHTML = '';
+                resultsContainer.style.display = 'none';
+            }
+        });
+
+        // Hide results when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!searchInput.contains(event.target) && !resultsContainer.contains(event.target)) {
+                resultsContainer.style.display = 'none';
+            }
+        });
+
+         // Optional: Keep results open if search input is focused
+        searchInput.addEventListener('focus', function() {
+            if (resultsContainer.innerHTML.trim() !== '' && searchInput.value.trim().length >= 2) {
+                 resultsContainer.style.display = 'block';
+            }
+        });
+
+    } else {
+        // This message indicates the problem if the div is still missing
+        console.error("Search input OR results container NOT found. Cannot initialize search.");
+    }
+  });
+  </script>
+  <style>
+    /* Basic styling for the results dropdown */
+    .universal-search-results-container {
+        border-top: none;
+    }
+    .universal-search-results-container a {
+        display: block; padding: 8px 12px; text-decoration: none;
+        color: #333; border-bottom: 1px solid #eee; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis; background-color: white;
+    }
+    .universal-search-results-container a:last-child { border-bottom: none; }
+    .universal-search-results-container a:hover { background-color: #f0f0f0; }
+  </style>
 </header>
 <!-- [ Header ] end -->
 
@@ -198,47 +474,6 @@
     <a href="#!" class="h-close-text"><i class="feather icon-chevrons-right"></i></a>
     <div class="main-friend-cont scroll-div">
       <div class="main-friend-list">
-        <div class="media userlist-box" data-id="1" data-status="online" data-username="Josephin Doe">
-          <a class="media-left" href="#!"><img class="media-object img-radius"
-              src="{% static 'assets/images/user/avatar-1.jpg' %}" alt="Generic placeholder image ">
-            <div class="live-status">3</div>
-          </a>
-          <div class="media-body">
-            <h6 class="chat-header">Josephin Doe<small class="d-block text-c-green">Typing . . </small></h6>
-          </div>
-        </div>
-        <div class="media userlist-box" data-id="2" data-status="online" data-username="Lary Doe">
-          <a class="media-left" href="#!"><img class="media-object img-radius"
-              src="{% static 'assets/images/user/avatar-2.jpg' %}" alt="Generic placeholder image">
-            <div class="live-status">1</div>
-          </a>
-          <div class="media-body">
-            <h6 class="chat-header">Lary Doe<small class="d-block text-c-green">online</small></h6>
-          </div>
-        </div>
-        <div class="media userlist-box" data-id="3" data-status="online" data-username="Alice">
-          <a class="media-left" href="#!"><img class="media-object img-radius"
-              src="{% static 'assets/images/user/avatar-3.jpg' %}" alt="Generic placeholder image"></a>
-          <div class="media-body">
-            <h6 class="chat-header">Alice<small class="d-block text-c-green">online</small></h6>
-          </div>
-        </div>
-        <div class="media userlist-box" data-id="4" data-status="offline" data-username="Alia">
-          <a class="media-left" href="#!"><img class="media-object img-radius"
-              src="{% static 'assets/images/user/avatar-1.jpg' %}" alt="Generic placeholder image">
-            <div class="live-status">1</div>
-          </a>
-          <div class="media-body">
-            <h6 class="chat-header">Alia<small class="d-block text-muted">10 min ago</small></h6>
-          </div>
-        </div>
-        <div class="media userlist-box" data-id="5" data-status="offline" data-username="Suzen">
-          <a class="media-left" href="#!"><img class="media-object img-radius"
-              src="{% static 'assets/images/user/avatar-4.jpg' %}" alt="Generic placeholder image"></a>
-          <div class="media-body">
-            <h6 class="chat-header">Suzen<small class="d-block text-muted">15 min ago</small></h6>
-          </div>
-        </div>
         <div class="media userlist-box" data-id="1" data-status="online" data-username="Josephin Doe">
           <a class="media-left" href="#!"><img class="media-object img-radius"
               src="{% static 'assets/images/user/avatar-1.jpg' %}" alt="Generic placeholder image ">
@@ -423,3 +658,191 @@
   </div>
 </section>
 <!-- [ chat message ] end -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Find the dark/light mode toggle button
+    const modeToggle = document.querySelector('.layout-type a');
+    
+    if (modeToggle) {
+        // Remove the href attribute so it doesn't navigate away
+        const toggleUrl = modeToggle.getAttribute('href');
+        modeToggle.removeAttribute('href');
+        modeToggle.style.cursor = 'pointer';
+        
+        // Add click event listener
+        modeToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Toggle the mode using fetch API
+            fetch(toggleUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Reload the page to apply the new theme
+                    window.location.reload();
+                } else {
+                    console.error('Failed to toggle mode');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    }
+    
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add browser zoom controls
+    const zoomInBtn = document.getElementById('browser-zoom-in');
+    const zoomOutBtn = document.getElementById('browser-zoom-out');
+    const zoomResetBtn = document.getElementById('browser-zoom-reset');
+    
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', function() {
+            // Simulate Ctrl+Plus keyboard shortcut
+            const zoomInEvent = new KeyboardEvent('keydown', {
+                key: '+',
+                code: 'Equal',
+                keyCode: 187,
+                which: 187,
+                ctrlKey: true,
+                metaKey: true, // For Mac
+                bubbles: true
+            });
+            document.dispatchEvent(zoomInEvent);
+            
+            // For browsers that don't respond to the keyboard event simulation
+            try {
+                // Chrome-specific zoom API (works only in extensions)
+                if (window.chrome && chrome.tabs) {
+                    chrome.tabs.getZoom(function(zoomFactor) {
+                        chrome.tabs.setZoom(zoomFactor + 0.1);
+                    });
+                } else {
+                    // Alternative: Use browser zoom detection
+                    showZoomMessage('Zoom In: Use Ctrl/Cmd + Plus');
+                }
+            } catch(e) {
+                showZoomMessage('Zoom In: Use Ctrl/Cmd + Plus');
+            }
+        });
+    }
+    
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', function() {
+            // Simulate Ctrl+Minus keyboard shortcut
+            const zoomOutEvent = new KeyboardEvent('keydown', {
+                key: '-',
+                code: 'Minus',
+                keyCode: 189,
+                which: 189,
+                ctrlKey: true,
+                metaKey: true, // For Mac
+                bubbles: true
+            });
+            document.dispatchEvent(zoomOutEvent);
+            
+            // Fallback message
+            try {
+                if (window.chrome && chrome.tabs) {
+                    chrome.tabs.getZoom(function(zoomFactor) {
+                        chrome.tabs.setZoom(zoomFactor - 0.1);
+                    });
+                } else {
+                    showZoomMessage('Zoom Out: Use Ctrl/Cmd + Minus');
+                }
+            } catch(e) {
+                showZoomMessage('Zoom Out: Use Ctrl/Cmd + Minus');
+            }
+        });
+    }
+    
+    if (zoomResetBtn) {
+        zoomResetBtn.addEventListener('click', function() {
+            // Simulate Ctrl+0 keyboard shortcut
+            const zoomResetEvent = new KeyboardEvent('keydown', {
+                key: '0',
+                code: 'Digit0',
+                keyCode: 48,
+                which: 48,
+                ctrlKey: true,
+                metaKey: true, // For Mac
+                bubbles: true
+            });
+            document.dispatchEvent(zoomResetEvent);
+            
+            // Fallback message
+            try {
+                if (window.chrome && chrome.tabs) {
+                    chrome.tabs.setZoom(1.0);
+                } else {
+                    showZoomMessage('Reset Zoom: Use Ctrl/Cmd + 0');
+                }
+            } catch(e) {
+                showZoomMessage('Reset Zoom: Use Ctrl/Cmd + 0');
+            }
+        });
+    }
+    
+    function showZoomMessage(message) {
+        // Create or use toast notification
+        if (window.toastr) {
+            toastr.info(message);
+        } else {
+            // Create a simple notification if toastr isn't available
+            const notification = document.createElement('div');
+            notification.className = 'zoom-notification';
+            notification.innerHTML = message;
+            notification.style.position = 'fixed';
+            notification.style.bottom = '20px';
+            notification.style.right = '20px';
+            notification.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            notification.style.color = 'white';
+            notification.style.padding = '10px';
+            notification.style.borderRadius = '5px';
+            notification.style.zIndex = '9999';
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
+        }
+    }
+    
+    // Check if in standalone PWA mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        // Make zoom controls always visible in PWA mode
+        const zoomControls = document.querySelector('.zoom-controls');
+        if (zoomControls) {
+            zoomControls.classList.remove('d-lg-none');
+            zoomControls.style.display = 'block';
+        }
+    }
+});
+</script>

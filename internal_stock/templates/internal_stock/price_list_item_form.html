@@ -1,0 +1,161 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>{{ title }}</h5>
+                    <span class="badge bg-info">{{ price_list.supplier.suppliername }}</span>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.part_number.id_for_label }}" class="form-label">Part Number</label>
+                                {{ form.part_number }}
+                                {% if form.part_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.part_number.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.brand.id_for_label }}" class="form-label">Brand</label>
+                                {{ form.brand }}
+                                {% if form.brand.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.brand.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.cost_price.id_for_label }}" class="form-label">Cost Price *</label>
+                                {{ form.cost_price }}
+                                {% if form.cost_price.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.cost_price.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description *</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.description.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.markup.id_for_label }}" class="form-label">Markup %</label>
+                                {{ form.markup }}
+                                <small class="form-text text-muted">Default: {{ price_list.default_markup }}%</small>
+                                {% if form.markup.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.markup.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.selling_price.id_for_label }}" class="form-label">Selling Price</label>
+                                {{ form.selling_price }}
+                                <small class="form-text text-muted">Auto-calculated if blank</small>
+                                {% if form.selling_price.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.selling_price.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.notes.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'internal_stock:price_list_detail' pk=price_list.pk %}" class="btn btn-secondary">
+                                <i class="feather icon-x"></i> Cancel
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="feather icon-save"></i> Save Item
+                                </button>
+                                {% if not item %}
+                                <button type="submit" name="add_another" value="true" class="btn btn-outline-primary ms-2">
+                                    Save & Add Another
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-calculate selling price when cost price and markup change
+        const costInput = document.querySelector('#{{ form.cost_price.id_for_label }}');
+        const markupInput = document.querySelector('#{{ form.markup.id_for_label }}');
+        const sellingInput = document.querySelector('#{{ form.selling_price.id_for_label }}');
+        
+        function calculateSelling() {
+            const cost = parseFloat(costInput.value);
+            const markup = parseFloat(markupInput.value);
+            
+            if (!isNaN(cost) && !isNaN(markup)) {
+                const selling = cost * (1 + (markup / 100));
+                sellingInput.value = selling.toFixed(2);
+            }
+        }
+        
+        function calculateMarkup() {
+            const cost = parseFloat(costInput.value);
+            const selling = parseFloat(sellingInput.value);
+            
+            if (!isNaN(cost) && !isNaN(selling) && cost > 0) {
+                const markup = ((selling - cost) / cost) * 100;
+                markupInput.value = markup.toFixed(2);
+            }
+        }
+        
+        // Add event listeners
+        costInput.addEventListener('input', function() {
+            if (markupInput.value) {
+                calculateSelling();
+            } else if (sellingInput.value) {
+                calculateMarkup();
+            }
+        });
+        
+        markupInput.addEventListener('input', calculateSelling);
+        
+        sellingInput.addEventListener('input', function() {
+            if (!markupInput.value) {
+                calculateMarkup();
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock content %}

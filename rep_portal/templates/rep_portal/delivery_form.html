@@ -1,0 +1,1061 @@
+{% extends "rep_portal/base.html" %}
+{% load static %}
+
+{% block title %}Create Delivery Note{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Fixed header with back button */
+    .form-header {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        z-index: 100;
+        margin-bottom: 1rem;
+    }
+    
+    .form-header .back-button {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--secondary-color);
+        margin-right: 1rem;
+        padding: 0;
+        line-height: 1;
+    }
+    
+    .form-header h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        flex: 1;
+        text-align: center;
+    }
+    
+    .form-header .spacer {
+        width: 24px; /* Same width as back button for balance */
+    }
+    
+    /* Adjust content for fixed header */
+    .mobile-form-container {
+        padding-top: 0.5rem;
+    }
+    
+    /* Form container styling */
+    .mobile-form-container {
+        max-width: 100%;
+        padding: 0.5rem;
+    }
+    
+    .form-heading {
+        text-align: center;
+        margin-bottom: 1rem;
+        color: var(--secondary-color);
+        font-size: 1.75rem;
+    }
+    
+    /* Updated form section with border and enhanced styling */
+    .form-section {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 1rem;
+        border: 2px solid #e0e0e0; /* Add outline */
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Updated section colors with different colors for each section */
+    .form-section:nth-of-type(1)::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background-color: #d9534f; /* Red for customer info */
+    }
+    
+    .form-section:nth-of-type(2)::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background-color: #5bc0de; /* Blue for delivery details */
+    }
+    
+    .form-section:nth-of-type(3)::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background-color: #5cb85c; /* Green for notes */
+    }
+    
+    .form-section:nth-of-type(4)::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background-color: #6f42c1; /* Purple for signature */
+    }
+    
+    .form-section:nth-of-type(5)::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background-color: #f0ad4e; /* Orange for submit */
+    }
+    
+    /* Make section titles match section color */
+    .form-section:nth-of-type(1) .section-title {
+        color: #d9534f; /* Red for customer info */
+    }
+    
+    .form-section:nth-of-type(2) .section-title,
+    .form-section:nth-of-type(2) .items-title {
+        color: #5bc0de; /* Blue for delivery details */
+    }
+    
+    .form-section:nth-of-type(3) .section-title {
+        color: #5cb85c; /* Green for notes */
+    }
+    
+    .form-section:nth-of-type(4) .section-title {
+        color: #6f42c1; /* Purple for signature */
+    }
+    
+    /* Make section titles more prominent */
+    .section-title {
+        font-size: 1.25rem;
+        margin-bottom: 1.25rem;
+        font-weight: 600;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .items-title {
+        font-size: 1.1rem;
+        margin: 1rem 0;
+        font-weight: 500;
+    }
+    
+    /* Form elements styling with matching colors based on section */
+    .form-floating > label {
+        opacity: 0.75;
+    }
+    
+    /* Customer section - Red */
+    .form-section:nth-of-type(1) .form-floating:focus-within > label,
+    .form-section:nth-of-type(1) .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 1;
+        color: #d9534f;
+    }
+    
+    .form-section:nth-of-type(1) .form-control:focus {
+        border-color: #d9534f;
+        box-shadow: 0 0 0 0.25rem rgba(217, 83, 79, 0.25);
+    }
+    
+    /* Delivery section - Blue */
+    .form-section:nth-of-type(2) .form-floating:focus-within > label,
+    .form-section:nth-of-type(2) .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 1;
+        color: #5bc0de;
+    }
+    
+    .form-section:nth-of-type(2) .form-control:focus {
+        border-color: #5bc0de;
+        box-shadow: 0 0 0 0.25rem rgba(91, 192, 222, 0.25);
+    }
+    
+    /* Notes section - Green */
+    .form-section:nth-of-type(3) .form-floating:focus-within > label,
+    .form-section:nth-of-type(3) .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 1;
+        color: #5cb85c;
+    }
+    
+    .form-section:nth-of-type(3) .form-control:focus {
+        border-color: #5cb85c;
+        box-shadow: 0 0 0 0.25rem rgba(92, 184, 92, 0.25);
+    }
+    
+    /* Signature section - Purple */
+    .form-section:nth-of-type(4) .form-floating:focus-within > label,
+    .form-section:nth-of-type(4) .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 1;
+        color: #6f42c1;
+    }
+    
+    .form-section:nth-of-type(4) .form-control:focus {
+        border-color: #6f42c1;
+        box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+    }
+    
+    /* Select2 Styling */
+    .select2-container--default .select2-selection--single {
+        height: 38px;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 38px;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+    
+    /* Button styling */
+    .btn-primary {
+        background-color: #d9534f !important; /* Red for main submit button */
+        border-color: #d9534f !important;
+        font-weight: 500;
+    }
+    
+    .btn-primary:hover {
+        background-color: #c9302c !important; /* Darker red for hover */
+        border-color: #c9302c !important;
+    }
+    
+    /* Add item button styled based on delivery section */
+    #add-item-btn {
+        color: #5bc0de; /* Blue for add item button */
+        border-color: #5bc0de;
+    }
+    
+    #add-item-btn:hover {
+        background-color: rgba(91, 192, 222, 0.1);
+    }
+    
+    /* Item rows */
+    .item-row {
+        position: relative;
+        padding-right: 30px;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1rem;
+    }
+    
+    .item-row:last-child {
+        border-bottom: none;
+    }
+    
+    .remove-item {
+        position: absolute;
+        top: 5px;
+        right: 0;
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+        z-index: 5;
+    }
+    
+    /* Make labels bolder */
+    label {
+        font-weight: 500;
+    }
+    
+    /* Required field indicator */
+    label[for$="*"] {
+        position: relative;
+    }
+    
+    label[for$="*"]::after {
+        content: '*';
+        color: #d9534f;
+        margin-left: 3px;
+    }
+    
+    /* Color indicators for each section at the top */
+    .form-section-legend {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.8rem;
+    }
+    
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    
+    .legend-color.red {
+        background-color: #d9534f;
+    }
+    
+    .legend-color.blue {
+        background-color: #5bc0de;
+    }
+    
+    .legend-color.green {
+        background-color: #5cb85c;
+    }
+    
+    .legend-color.purple {
+        background-color: #6f42c1;
+    }
+
+    /* --- ADD AUTOCOMPLETE CSS --- */
+    .ui-autocomplete {
+        max-height: 350px; /* Adjust as needed */
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 10000 !important; /* Very high z-index */
+        position: absolute !important; /* Ensure absolute positioning */
+        width: auto !important;
+        min-width: 300px; /* Adjust minimum width */
+        padding: 0;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        background-color: white; /* Ensure background is white */
+    }
+
+    .ui-front { /* Helper class for z-index */
+        z-index: 10000 !important;
+    }
+
+    .ui-menu-item {
+        padding: 0 !important;
+        border-bottom: 1px solid #eee;
+    }
+
+    .ui-menu-item:last-child {
+        border-bottom: none;
+    }
+
+    .autocomplete-item {
+        padding: 8px 10px; /* Adjust padding */
+        cursor: pointer;
+        display: block; /* Ensure it takes full width */
+        color: #333; /* Default text color */
+    }
+
+    .item-desc {
+        font-weight: 500;
+        margin-bottom: 3px;
+        color: #333;
+    }
+
+    .item-details { /* Simplified for rep portal */
+        font-size: 0.85em;
+        color: #666;
+    }
+
+    .item-footer {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8em;
+        color: #777;
+        margin-top: 4px;
+    }
+
+    .item-source {
+        font-style: italic;
+    }
+
+    .item-time {
+        font-style: italic;
+    }
+
+    /* Hover/Active state - IMPORTANT for visibility */
+    .ui-menu-item > .ui-menu-item-wrapper.ui-state-active,
+    .ui-menu-item > .ui-menu-item-wrapper:hover {
+        background-color: #e3f2fd !important; /* Light blue background */
+        border: none !important;
+        color: #333 !important; /* Ensure text remains black */
+        margin: 0;
+    }
+
+    /* Ensure text within active item remains visible */
+    .ui-state-active .item-desc,
+    .ui-state-active .item-details,
+    .ui-state-active .item-footer,
+    .ui-state-active .item-source,
+    .ui-state-active .item-time {
+        color: #333 !important;
+    }
+
+    /* Fix for mobile autocomplete positioning if needed */
+    @media (max-width: 767px) {
+        .ui-autocomplete {
+            /* Consider if fixed positioning is better on mobile */
+            /* position: fixed !important; */
+            /* top: 50px !important; */
+            left: 5% !important;
+            right: 5% !important;
+            width: 90% !important;
+            min-width: 0;
+        }
+    }
+</style>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+{% endblock %}
+
+{% block content %}
+<!-- Fixed header with back button (hidden in PWA mode) -->
+<div class="form-header">
+    <a href="{% url 'rep_portal:home' %}" class="back-button" id="backButton">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <h2>Create Delivery Note</h2>
+    <div class="spacer"></div>
+</div>
+
+<div class="mobile-form-container">
+    <!-- Color legend for the form sections -->
+    <div class="form-section-legend">
+        <div class="legend-item">
+            <div class="legend-color red"></div>
+            <span>Customer</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color blue"></div>
+            <span>Items</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color green"></div>
+            <span>Notes</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color purple"></div>
+            <span>Signature</span>
+        </div>
+    </div>
+
+    <form method="post" id="deliveryForm" action="{% url 'rep_portal:delivery_create' %}">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        
+        <!-- Customer Selection Section - RED -->
+        <div class="form-section">
+            <h3 class="section-title">Customer Contact Information</h3>
+            
+            <!-- Customer selection dropdown -->
+            <div class="mb-3">
+                <label for="{{ form.customer.id_for_label }}" class="form-label">Select Existing Customer</label>
+                {{ form.customer }}
+                <div class="form-text text-muted">Select a customer or enter details manually below</div>
+            </div>
+            
+            <hr class="my-3">
+            
+            <div class="form-floating mb-3">
+                {{ form.name }}
+                <label for="{{ form.name.id_for_label }}">Customer Name*</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                {{ form.email }}
+                <label for="{{ form.email.id_for_label }}">Email Address*</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                {{ form.phone }}
+                <label for="{{ form.phone.id_for_label }}">Phone Number</label>
+            </div>
+        </div>
+        
+        <!-- Delivery Details Section - BLUE -->
+        <div class="form-section">
+            <h3 class="section-title">Delivery Details</h3>
+            
+            <!-- Order Number moved to top of item section -->
+            <div class="form-floating mb-3">
+                {{ form.order_number }}
+                <label for="{{ form.order_number.id_for_label }}">Order Number (if applicable)</label>
+                <div class="form-text text-muted">Optional: Enter the related order number</div>
+            </div>
+            
+            <h4 class="items-title">Items</h4>
+            
+            {{ formset.management_form }}
+            <div id="items-container">
+                {% for item_form in formset.forms %}
+                <div class="item-row">
+                    <!-- Description field -->
+                    <div class="form-floating mb-3">
+                        {{ item_form.description }}
+                        <label for="{{ item_form.description.id_for_label }}">Item Description*</label>
+                    </div>
+                    
+                    <!-- Quantity field -->
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Qty</span>
+                        {{ item_form.quantity }}
+                    </div>
+                    
+                    <!-- Item notes -->
+                    <div class="form-floating mb-3">
+                        {{ item_form.notes }}
+                        <label for="{{ item_form.notes.id_for_label }}">Item Notes (optional)</label>
+                    </div>
+                    
+                    {% if not forloop.first %}
+                    <button type="button" class="remove-item">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <button type="button" id="add-item-btn" class="btn btn-sm btn-outline-secondary w-100 mb-4">
+                <i class="fas fa-plus me-1"></i> Add Another Item
+            </button>
+        </div>
+        
+        <!-- Notes Section - GREEN -->
+        <div class="form-section">
+            <h3 class="section-title">Additional Notes</h3>
+            
+            <div class="form-floating mb-3">
+                {{ form.notes }}
+                <label for="{{ form.notes.id_for_label }}">Special Instructions (optional)</label>
+            </div>
+        </div>
+        
+        <!-- Signature Section - PURPLE -->
+        <div class="form-section">
+            <h3 class="section-title">Customer Signature</h3>
+            
+            <div class="mb-3">
+                <label class="form-label">Signed By</label>
+                <input type="text" name="signed_by" id="id_signed_by" class="form-control" placeholder="Full name of person signing">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Signature</label>
+                <div class="signature-container" style="border: 1px solid #ccc; border-radius: 4px; position: relative; overflow: hidden;">
+                    <canvas id="signaturePad" style="width: 100%; height: 180px; touch-action: none;"></canvas>
+                    
+                    <!-- Controls -->
+                    <div class="d-flex mt-2">
+                        <button type="button" id="clearSignature" class="btn btn-sm btn-secondary me-2">Clear</button>
+                        <button type="button" id="fullScreenSignature" class="btn btn-sm btn-primary">
+                            <i class="fas fa-expand"></i> Full Screen
+                        </button>
+                    </div>
+                </div>
+                <!-- Hidden field to store signature data -->
+                <input type="hidden" name="digital_signature" id="id_digital_signature">
+            </div>
+        </div>
+
+        <!-- Submit Section - ORANGE -->
+        <div class="form-section">
+            <button type="submit" class="btn btn-primary btn-lg w-100">Create Delivery Note</button>
+        </div>
+    </form>
+</div>
+
+<!-- Add a full-screen signature modal at the end of your form -->
+<div class="modal fade" id="signatureModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Signature</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex align-items-center justify-content-center bg-light">
+                <canvas id="fullScreenPad" style="width: 100%; height: 100%; touch-action: none;"></canvas>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="clearFullScreenSignature" class="btn btn-secondary">Clear</button>
+                <button type="button" id="saveFullScreenSignature" class="btn btn-success">Save & Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Include signature_pad library -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@2.3.2/dist/signature_pad.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if running as PWA and hide back button if needed
+        if (window.matchMedia('(display-mode: standalone)').matches || 
+            window.navigator.standalone === true) {
+            // Running as PWA - hide back button
+            document.getElementById('backButton').style.display = 'none';
+        }
+        
+        // Initialize Select2 for customer dropdown
+        $('#{{ form.customer.id_for_label }}').select2({
+            placeholder: "Select a customer",
+            allowClear: true,
+            width: '100%'
+        });
+        
+        // Auto-fill customer details when selected from dropdown
+        $('#{{ form.customer.id_for_label }}').on('change', function() {
+            const customerId = $(this).val();
+            if (customerId) {
+                // Fetch customer details via AJAX
+                fetch(`/rep/api/customers/${customerId}/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Customer data received:', data);
+                        // Fill the form with customer data
+                        $('#{{ form.name.id_for_label }}').val(data.customer).trigger('change');
+                        $('#{{ form.email.id_for_label }}').val(data.email).trigger('change');
+                        $('#{{ form.phone.id_for_label }}').val(data.number).trigger('change');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching customer data:', error);
+                        alert('Failed to load customer information. Please try again or enter details manually.');
+                    });
+            } else {
+                // Clear fields if no customer selected
+                $('#{{ form.name.id_for_label }}').val('');
+                $('#{{ form.email.id_for_label }}').val('');
+                $('#{{ form.phone.id_for_label }}').val('');
+            }
+        });
+    
+        // Item formset handling
+        const addBtn = document.getElementById('add-item-btn');
+        const formset = document.getElementById('items-container');
+        const totalForms = document.getElementById('id_items-TOTAL_FORMS');
+        
+        // Add new item
+        addBtn.addEventListener('click', function() {
+            const formCount = parseInt(totalForms.value);
+            const newRow = document.createElement('div');
+            newRow.className = 'item-row';
+            
+            // Description floating field
+            const descContainer = document.createElement('div');
+            descContainer.className = 'form-floating mb-3';
+            
+            const descInput = document.createElement('input');
+            descInput.type = 'text';
+            descInput.name = `items-${formCount}-description`;
+            descInput.id = `id_items-${formCount}-description`;
+            descInput.className = 'form-control';
+            descInput.placeholder = 'Item description';
+            descInput.required = true;
+            
+            const descLabel = document.createElement('label');
+            descLabel.setAttribute('for', `id_items-${formCount}-description`);
+            descLabel.textContent = 'Item Description*';
+            
+            descContainer.appendChild(descInput);
+            descContainer.appendChild(descLabel);
+            
+            // Quantity field with prepend
+            const qtyGroup = document.createElement('div');
+            qtyGroup.className = 'input-group mb-3';
+            
+            const qtyPrepend = document.createElement('span');
+            qtyPrepend.className = 'input-group-text';
+            qtyPrepend.textContent = 'Qty';
+            
+            const qtyInput = document.createElement('input');
+            qtyInput.type = 'number';
+            qtyInput.name = `items-${formCount}-quantity`;
+            qtyInput.id = `id_items-${formCount}-quantity`;
+            qtyInput.className = 'form-control';
+            qtyInput.min = '1';
+            qtyInput.value = '1';
+            qtyInput.required = true;
+            
+            qtyGroup.appendChild(qtyPrepend);
+            qtyGroup.appendChild(qtyInput);
+            
+            // Notes field
+            const notesContainer = document.createElement('div');
+            notesContainer.className = 'form-floating mb-3';
+            
+            const notesInput = document.createElement('textarea');
+            notesInput.name = `items-${formCount}-notes`;
+            notesInput.id = `id_items-${formCount}-notes`;
+            notesInput.className = 'form-control';
+            notesInput.placeholder = 'Item notes';
+            notesInput.rows = 2;
+            
+            const notesLabel = document.createElement('label');
+            notesLabel.setAttribute('for', `id_items-${formCount}-notes`);
+            notesLabel.textContent = 'Item Notes (optional)';
+            
+            notesContainer.appendChild(notesInput);
+            notesContainer.appendChild(notesLabel);
+            
+            // Remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-item';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.addEventListener('click', function() {
+                this.closest('.item-row').remove();
+            });
+            
+            // Assemble the row
+            newRow.appendChild(descContainer);
+            newRow.appendChild(qtyGroup);
+            newRow.appendChild(notesContainer);
+            newRow.appendChild(removeBtn);
+            
+            formset.appendChild(newRow);
+            totalForms.value = formCount + 1;
+
+            // --- Find the new description field and set up autocomplete ---
+            const newDescField = $(`#id_items-${formCount}-description`);
+            if (newDescField.length) {
+                setTimeout(function() {
+                    window.setupItemAutocomplete(newDescField);
+                }, 100);
+            }
+        });
+        
+        // Add remove buttons to existing items (except first one)
+        document.querySelectorAll('.remove-item').forEach(button => {
+            button.addEventListener('click', function() {
+                this.closest('.item-row').remove();
+            });
+        });
+        
+        // Form submission handling with validation
+        const form = document.getElementById('deliveryForm');
+        form.addEventListener('submit', function(event) {
+            // Prevent form from submitting while we validate
+            event.preventDefault();
+            
+            // Required fields in main form
+            const requiredFields = [
+                { id: '{{ form.name.id_for_label }}', name: 'Customer Name' },
+                { id: '{{ form.email.id_for_label }}', name: 'Email' }
+            ];
+            
+            let isValid = true;
+            
+            // Check required fields
+            for (const field of requiredFields) {
+                const input = document.getElementById(field.id);
+                if (!input.value.trim()) {
+                    alert(`Please enter ${field.name}`);
+                    input.focus();
+                    isValid = false;
+                    break;
+                }
+                
+                // Simple email validation
+                if (field.name === 'Email' && !input.value.includes('@')) {
+                    alert('Please enter a valid email address');
+                    input.focus();
+                    isValid = false;
+                    break;
+                }
+            }
+            
+            // Check the first item (required)
+            const firstItemDesc = document.getElementById('id_items-0-description');
+            const firstItemQty = document.getElementById('id_items-0-quantity');
+            
+            if (isValid && (!firstItemDesc.value.trim() || !firstItemQty.value)) {
+                alert('Please add at least one item to the delivery note');
+                firstItemDesc.focus();
+                isValid = false;
+            }
+            
+            // Add signature validation if needed
+            if (isValid) {
+                // Get signature as base64 image data if not empty
+                if (!signaturePad.isEmpty()) {
+                    const signatureData = signaturePad.toDataURL('image/png');
+                    document.getElementById('id_digital_signature').value = signatureData;
+                    
+                    // Also check that signed_by is filled if signature exists
+                    const signedBy = document.getElementById('id_signed_by');
+                    if (!signedBy.value.trim()) {
+                        alert('Please enter the name of the person signing');
+                        signedBy.focus();
+                        isValid = false;
+                    }
+                }
+                
+                // If all validations pass, submit the form
+                if (isValid) {
+                    console.log('Form is valid, submitting...');
+                    
+                    // Update the submit button to show loading state
+                    const submitBtn = document.querySelector('button[type="submit"]');
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Creating Delivery Note...';
+                    
+                    // Submit the form
+                    this.submit();
+                }
+            }
+        });
+        
+        // Add signature pad functionality
+        const canvas = document.getElementById('signaturePad');
+        if (!canvas) return;
+        
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        
+        // Full-screen signature pad
+        const fullScreenCanvas = document.getElementById('fullScreenPad');
+        const fullScreenPad = new SignaturePad(fullScreenCanvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        
+        // Ensure the canvas size fits the container
+        function resizeCanvas(canvas, signPad) {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signPad.clear(); // Clear the canvas
+        }
+        
+        // Initialize both canvases
+        resizeCanvas(canvas, signaturePad);
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            resizeCanvas(canvas, signaturePad);
+            if (document.getElementById('signatureModal').classList.contains('show')) {
+                resizeCanvas(fullScreenCanvas, fullScreenPad);
+            }
+        });
+        
+        // Clear signature button
+        document.getElementById('clearSignature').addEventListener('click', function() {
+            signaturePad.clear();
+        });
+        
+        // Full-screen button
+        const signatureModal = new bootstrap.Modal(document.getElementById('signatureModal'));
+        
+        document.getElementById('fullScreenSignature').addEventListener('click', function() {
+            // If there's already a signature, copy it to the full-screen pad
+            if (!signaturePad.isEmpty()) {
+                fullScreenPad.fromDataURL(signaturePad.toDataURL());
+            }
+            
+            signatureModal.show();
+            
+            // Need to resize after modal is shown for proper dimensions
+            setTimeout(function() {
+                resizeCanvas(fullScreenCanvas, fullScreenPad);
+            }, 300);
+        });
+        
+        // Full-screen clear button
+        document.getElementById('clearFullScreenSignature').addEventListener('click', function() {
+            fullScreenPad.clear();
+        });
+        
+        // Save from full-screen to regular pad and close
+        document.getElementById('saveFullScreenSignature').addEventListener('click', function() {
+            if (!fullScreenPad.isEmpty()) {
+                signaturePad.fromDataURL(fullScreenPad.toDataURL());
+                
+                // Show success feedback
+                const successToast = document.createElement('div');
+                successToast.className = 'alert alert-success fixed-bottom m-3';
+                successToast.innerHTML = 'Signature saved! <button type="button" class="btn-close float-end" data-bs-dismiss="alert"></button>';
+                document.body.appendChild(successToast);
+                
+                setTimeout(() => {
+                    successToast.remove();
+                }, 3000);
+            }
+            signatureModal.hide();
+        });
+
+        // --- ADD AUTOCOMPLETE JS ---
+        window.setupItemAutocomplete = function(descField) {
+            if(!descField.length) return;
+
+            console.log("[Rep Portal] Setting up autocomplete for field:", descField.attr('id'));
+
+            // Clean up any existing autocomplete
+            try {
+                if (descField.hasClass('ui-autocomplete-input')) {
+                    descField.autocomplete("destroy");
+                    descField.removeClass('ui-autocomplete-input');
+                }
+            } catch (e) {
+                console.warn("[Rep Portal] Error destroying existing autocomplete:", e);
+            }
+
+            // Make sure jQuery UI autocomplete is available
+            if (typeof $.ui === 'undefined' || typeof $.ui.autocomplete === 'undefined') {
+                console.error("[Rep Portal] jQuery UI autocomplete not available");
+                return;
+            }
+
+            // Create a unique menu class for this specific field
+            var menuClass = 'ac-menu-' + descField.attr('id').replace(/[^a-zA-Z0-9]/g, '_');
+
+            // Assign a unique ID to the field for tracking
+            var acId = 'ac_' + descField.attr('id').replace(/[^a-zA-Z0-9]/g, '_');
+            descField.attr('data-ac-id', acId);
+
+            // Create the autocomplete widget
+            descField.autocomplete({
+                source: function(request, response) {
+                    console.log("[Rep Portal] Searching from", descField.attr('id'), ":", request.term);
+
+                    // First close any other open dropdowns
+                    window.closeAllOtherAutocompletesExcept(descField);
+
+                    $.ajax({
+                        // --- IMPORTANT: Use the Rep Portal API URL ---
+                        url: "/rep/api/items/", // Changed from delivery_notes:item_search
+                        dataType: "json",
+                        data: {
+                            term: request.term,
+                            field_id: descField.attr('id') // Send field ID to help with debugging
+                        },
+                        success: function(data) {
+                            console.log("[Rep Portal] Got", data.length, "results for", descField.attr('id'));
+                            // Assuming the rep API returns an array directly
+                            response(data);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("[Rep Portal] Search error:", error);
+                            response([]);
+                        }
+                    });
+                },
+                minLength: 2,
+                delay: 300,
+                appendTo: descField.closest('.item-row'), // Append dropdown to the item's row
+                position: { my: "left top", at: "left bottom", collision: "none" },
+                select: function(event, ui) {
+                    console.log("[Rep Portal] Selected in", descField.attr('id'), ":", ui.item.label);
+                    // --- ADAPTATION: No price field in rep portal form ---
+                    // Just set the description field value
+                    descField.val(ui.item.value || ui.item.label); // Use value or label
+                    return false; // Prevent default value insertion by autocomplete
+                },
+                focus: function(event, ui) {
+                    // Close other open autocomplete menus when this one gets focus
+                    window.closeAllOtherAutocompletesExcept(descField);
+                    // Prevent filling input with focused value
+                    event.preventDefault();
+                },
+                open: function(event, ui) {
+                    // When this menu opens, close any others
+                    window.closeAllOtherAutocompletesExcept(descField);
+                    // Add a class to the menu for better identification
+                    var menu = $(this).autocomplete("instance").menu.element;
+                    menu.addClass(menuClass);
+                },
+                close: function(event, ui) {
+                    console.log("[Rep Portal] Autocomplete closed for", descField.attr('id'));
+                },
+                classes: {
+                    "ui-autocomplete": menuClass
+                }
+            }).autocomplete("instance")._renderItem = function(ul, item) {
+                // --- UPDATED RENDERING LOGIC ---
+                var description = item.full_description || item.value || "No description";
+                var partNumber = item.part_number ? `[${item.part_number}] ` : "";
+
+                // Format price, cost, markup
+                var priceText = item.selling_price ? `R${item.selling_price.toFixed(2)}` : '<span class="text-muted">No price</span>';
+                var costText = item.cost_price ? `Cost: <span class="text-danger fw-bold">R${item.cost_price.toFixed(2)}</span>` : '<span class="text-muted">No cost</span>';
+                var markupText = item.markup ? `(${item.markup.toFixed(1)}% markup)` : '';
+
+                // Company/Supplier Name
+                var companyName = item.company || item.supplier_name || "Unknown Company/Supplier";
+
+                // Source and Time
+                var sourceDisplay = item.source || "Unknown source";
+                var timeAgo = item.time_text || "";
+
+                // Build the HTML
+                var itemHtml = `<div class='autocomplete-item'>
+                                    <div class='item-desc'>${partNumber}${description}</div>
+                                    <div class='item-details'>
+                                        <span class='price text-success fw-bold'>${priceText}</span>
+                                        <span class='markup text-muted ms-2'>${markupText}</span>
+                                        <span class='cost text-secondary ms-2'>${costText}</span>
+                                    </div>
+                                    <div class='item-company text-muted small'>${companyName}</div>
+                                    <div class='item-footer'>
+                                        <span class='item-source'>${sourceDisplay}</span>
+                                        <span class='item-time'>${timeAgo}</span>
+                                    </div>
+                                </div>`;
+
+                return $("<li>").append(itemHtml).appendTo(ul);
+                // --- END UPDATED RENDERING LOGIC ---
+            };
+
+            // Add direct event handlers to ensure this field takes precedence
+            descField.on('focus click keydown', function() {
+                // Close all other autocomplete dropdowns
+                window.closeAllOtherAutocompletesExcept(descField);
+            });
+
+            // Mark this field as having autocomplete initialized
+            descField.data('autocomplete-active', true);
+            console.log("[Rep Portal] Autocomplete initialized for", descField.attr('id'));
+        };
+
+        window.closeAllOtherAutocompletesExcept = function(currentField) {
+            $('[id$="-description"]').not(currentField).each(function() {
+                var field = $(this);
+                try {
+                    // Check if autocomplete instance exists before trying to close
+                    if (field.hasClass('ui-autocomplete-input') && field.autocomplete("instance")) {
+                        field.autocomplete("close");
+                    }
+                } catch (e) {
+                    // Ignore errors if instance doesn't exist or other issues
+                }
+            });
+        };
+
+        document.querySelectorAll('[id$="-description"]').forEach(function(field) {
+            window.setupItemAutocomplete($(field));
+        });
+    });
+</script>
+{% endblock %}

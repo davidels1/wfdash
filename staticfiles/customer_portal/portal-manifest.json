@@ -1,0 +1,26 @@
+{
+  "name": "WF Sales Customer Portal",
+  "short_name": "WFS - CUSTOMER PORTAL",
+  "description": "Request quotes and place orders with WF Sales",
+  "start_url": "/portal/",
+  "id": "/portal/",
+  "scope": "/portal/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e7f20d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/customer_portal/img/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/customer_portal/img/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

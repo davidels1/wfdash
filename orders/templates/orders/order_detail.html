@@ -2,6 +2,33 @@
 {% load static %}
 {% load order_tags %}
 
+{% block breadcrumbs %}
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col-md-12">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Order Details</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/">
+                            <i class="feather icon-home"></i>
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'orders:order_list' %}">Orders</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <span>Order #{{ order.order_number }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock breadcrumbs %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="card">
@@ -54,12 +81,100 @@
                 </div>
             </div>
 
+            {% if order.quote %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center bg-primary bg-opacity-10">
+                    <h5 class="mb-0">
+                        <i class="feather icon-file-text me-2"></i> 
+                        Linked Quote: {{ order.quote.quote_number }}
+                        {% if order.quote_match_confidence %}
+                        <span class="badge {% if order.quote_match_confidence >= 80 %}bg-success{% elif order.quote_match_confidence >= 60 %}bg-warning{% else %}bg-danger{% endif %}">
+                            {{ order.quote_match_confidence }}% match
+                        </span>
+                        {% endif %}
+                    </h5>
+                    <div>
+                        <a href="{% url 'quotes:quote_detail' order.quote.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="feather icon-external-link"></i> View Quote
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#unlinkQuoteModal">
+                            <i class="feather icon-unlink"></i> Unlink
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Quantity</th>
+                                    <th>Cost Price</th>
+                                    <th>Quoted Price</th>
+                                    <th>Supplier</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.quote.items.all %}
+                                <tr>
+                                    <td>{{ item.description }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{% if item.cost_price %}R{{ item.cost_price }}{% else %}-{% endif %}</td>
+                                    <td>R{{ item.selling_price }}</td>
+                                    <td>{{ item.supplier.suppliername|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Modal for unlinking -->
+            <div class="modal fade" id="unlinkQuoteModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Unlink Quote</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to unlink Quote #{{ order.quote.quote_number }} from this order?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <form method="post" action="{% url 'orders:unlink_quote' order.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Unlink Quote</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% elif order.status == 'new' or order.status == 'processing' %}
+            <div class="alert alert-info mb-4">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="feather icon-link h4 mb-0"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="alert-heading mb-1">Find Matching Quote</h5>
+                        <p class="mb-2">No quote is linked to this order. Would you like to find a matching quote?</p>
+                        <a href="{% url 'orders:find_matching_quotes' order.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="feather icon-search"></i> Find Matching Quotes
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="table-responsive mt-4">
                 <table class="table table-bordered">
                     <thead>
                         <tr>
                             <th>Description</th>
                             <th>Quantity</th>
+                            <th>Selling Price</th>
                             <th>Supplier</th>
                             <th>Cost Price</th>
                             <th>Status</th>
@@ -71,6 +186,7 @@
                         <tr>
                             <td>{{ item.description }}</td>
                             <td>{{ item.quantity }}</td>
+                            <td>{% if item.selling_price %}R {{ item.selling_price }}{% else %}-{% endif %}</td>
                             <td>{{ item.supplier.suppliername|default:"-" }}</td>
                             <td>{% if item.cost_price %}R {{ item.cost_price }}{% else %}-{% endif %}</td>
                             <td>
@@ -86,6 +202,29 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <div class="mt-4">
+                <h5>Order Progress</h5>
+                <div class="progress-tracker">
+                    {% for item in order.items.all %}
+                    <div class="item-progress mb-3">
+                        <p class="mb-1"><strong>{{ item.description }}</strong></p>
+                        <div class="progress" style="height: 25px;">
+                            {% with progress=item_progress|get_item:item.id %}
+                            <div class="progress-bar progress-bar-striped {% if item.item_status == 'delivered' %}bg-success{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ progress }}%;" 
+                                 aria-valuenow="{{ progress }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                {{ item.get_item_status_display }} ({{ progress }}%)
+                            </div>
+                            {% endwith %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
 
             {% if order.notes %}

@@ -4,60 +4,117 @@
 {% block content %}
 <div class="container-fluid">
     <div class="card">
-        <div class="card-header">
-            <h5>{{ page_title }}</h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{{ page_title }}</h5>
+            <div>
+                {% if companies %}
+                    <span class="badge bg-info me-3">
+                        <i class="feather icon-package me-1"></i> 
+                        {{ total_items_count }} item{% if total_items_count != 1 %}s{% endif %} to load
+                    </span>
+                    
+                    <button id="expandCollapseBtn" class="btn btn-sm btn-outline-primary">
+                        <i class="feather icon-chevrons-down me-1"></i> Expand All
+                    </button>
+                {% endif %}
+            </div>
         </div>
         <div class="card-body">
-            {% if invoices %}
-                {% csrf_token %}
-                {% for invoice_number, items in invoices.items %}
-                <div class="invoice-section mb-4">
-                    <h6 class="border-bottom pb-2">
-                        Invoice #{{ invoice_number }}
-                        <button class="btn btn-sm btn-success float-end mark-all-loaded"
-                                data-invoice="{{ invoice_number }}">
-                            Mark All Loaded
+            <!-- Add search bar here -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" id="deliveryPickSearchInput" class="form-control" 
+                               placeholder="Search by invoice #, company, description, supplier, or PO number...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearDeliverySearchBtn">
+                            <i class="fas fa-times"></i>
                         </button>
-                    </h6>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Description</th>
-                                    <th>Quantity</th>
-                                    <th>Supplier</th>
-                                    <th>PO Number</th>
-                                    <th>Customer</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in items %}
-                                <tr id="item-row-{{ item.id }}">
-                                    <td>{{ item.order_item.description }}</td>
-                                    <td>{{ item.received_qty }}</td>
-                                    <td>{{ item.collection.supplier.suppliername }}</td>
-                                    <td>{{ item.order_item.purchase_order.po_number }}</td>
-                                    <td>{{ item.order_item.order.company.company }}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-success mark-loaded"
-                                                data-item-id="{{ item.id }}">
-                                            Mark Loaded
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
                     </div>
                 </div>
-                {% endfor %}
+            </div>
+            
+            <!-- No results message (initially hidden) -->
+            <div id="noDeliveryResultsMessage" class="alert alert-info d-none">
+                <i class="fas fa-info-circle me-2"></i> No items match your search criteria.
+            </div>
+            
+            {% if companies %}
+                {% csrf_token %}
+                <div class="accordion" id="companyAccordion">
+                    {% for company_name, company_data in companies.items %}
+                        <div class="accordion-item mb-3">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#company-{{ company_data.company_id }}">
+                                    <div class="d-flex align-items-center justify-content-between w-100 pe-3">
+                                        <strong>{{ company_name }}</strong>
+                                        <span class="badge bg-primary ms-2">
+                                            {{ company_data.invoices|length }} invoice(s)
+                                        </span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="company-{{ company_data.company_id }}" 
+                                 class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <!-- Nested accordion for invoices -->
+                                    <div class="accordion" id="invoiceAccordion-{{ company_data.company_id }}">
+                                        {% for invoice_number, items in company_data.invoices.items %}
+                                            <div class="invoice-section mb-4" data-invoice="{{ invoice_number }}">
+                                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                                                    <h6 class="mb-0">Invoice #{{ invoice_number }}</h6>
+                                                    <button class="btn btn-sm btn-success mark-all-loaded"
+                                                            data-invoice="{{ invoice_number }}"
+                                                            data-company="{{ company_name }}">
+                                                        <i class="feather icon-check-square me-1"></i> Mark All Loaded
+                                                    </button>
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Description</th>
+                                                                <th>Quantity</th>
+                                                                <th>Supplier</th>
+                                                                <th>PO Number</th>
+                                                                <th>Action</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for item in items %}
+                                                            <tr id="item-row-{{ item.id }}" data-company="{{ company_name }}">
+                                                                <td class="item-description">{{ item.order_item.description }}</td>
+                                                                <td>{{ item.received_qty }}</td>
+                                                                <td>{{ item.collection.supplier.suppliername }}</td>
+                                                                <td>{{ item.order_item.purchase_order.po_number }}</td>
+                                                                <td>
+                                                                    <button class="btn btn-sm btn-outline-success mark-loaded"
+                                                                            data-item-id="{{ item.id }}"
+                                                                            data-item-description="{{ item.order_item.description }}"
+                                                                            data-company="{{ company_name }}"
+                                                                            data-invoice="{{ invoice_number }}">
+                                                                        <i class="feather icon-check me-1"></i> Loaded
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
             {% else %}
                 <div class="alert alert-warning">No items available for loading.</div>
             {% endif %}
         </div>
     </div>
-
 </div>
 {% endblock %}
 
@@ -66,11 +123,69 @@
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+    // Expand/Collapse All functionality
+    const expandCollapseBtn = document.getElementById('expandCollapseBtn');
+    if (expandCollapseBtn) {
+        expandCollapseBtn.dataset.expanded = 'false';
+        
+        expandCollapseBtn.addEventListener('click', function() {
+            const isExpanded = this.dataset.expanded === 'true';
+            const accordionItems = document.querySelectorAll('.accordion-collapse');
+            
+            accordionItems.forEach(item => {
+                if (isExpanded) {
+                    // Collapse all
+                    const bsCollapse = bootstrap.Collapse.getInstance(item);
+                    if (bsCollapse) {
+                        bsCollapse.hide();
+                    } else {
+                        // If no collapse instance exists yet
+                        new bootstrap.Collapse(item, { toggle: false });
+                    }
+                } else {
+                    // Expand all
+                    const bsCollapse = bootstrap.Collapse.getInstance(item);
+                    if (bsCollapse) {
+                        bsCollapse.show();
+                    } else {
+                        // If no collapse instance exists yet
+                        new bootstrap.Collapse(item, { toggle: true });
+                    }
+                }
+            });
+            
+            // Update button text and state
+            if (isExpanded) {
+                this.innerHTML = '<i class="feather icon-chevrons-down me-1"></i> Expand All';
+                this.dataset.expanded = 'false';
+            } else {
+                this.innerHTML = '<i class="feather icon-chevrons-up me-1"></i> Collapse All';
+                this.dataset.expanded = 'true';
+            }
+        });
+    }
+
+    // Initialize Bootstrap Collapse for all accordion items
+    document.querySelectorAll('.accordion-collapse').forEach(item => {
+        new bootstrap.Collapse(item, { toggle: false });
+    });
+
     // Mark single item as loaded
     document.querySelectorAll('.mark-loaded').forEach(button => {
         button.addEventListener('click', async function() {
             const itemId = this.dataset.itemId;
+            const itemDescription = this.dataset.itemDescription;
+            const companyName = this.dataset.company;
+            const invoiceNumber = this.dataset.invoice;
+            
+            // Save reference to the button since 'this' will change in the async function
+            const btn = this;
+            
             try {
+                // Update button to show loading state
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Loading...';
+                
                 const response = await fetch(`/stock/mark-loaded/${itemId}/`, {
                     method: 'POST',
                     headers: {
@@ -78,43 +193,449 @@ document.addEventListener('DOMContentLoaded', function() {
                         'Content-Type': 'application/json'
                     }
                 });
+                
                 const data = await response.json();
                 
                 if (data.status === 'success') {
-                    // Remove the row or update UI
-                    const row = document.querySelector(`#item-row-${itemId}`);
-                    row.style.backgroundColor = '#f1d984';
-                    button.disabled = true;
-                    button.textContent = 'Loaded';
+                    // Show success notification with truncated item description
+                    const shortDesc = itemDescription.length > 30 ? 
+                        itemDescription.substring(0, 30) + '...' : 
+                        itemDescription;
                     
-                    // Optional: Remove row after animation
+                    toastr.success(`"${shortDesc}" marked as loaded`, `${companyName} - Item Loaded`);
+                    
+                    // Update row appearance
+                    const row = document.querySelector(`#item-row-${itemId}`);
+                    row.style.backgroundColor = '#d4edda'; // Bootstrap success light color
+                    
+                    // Update button appearance
+                    btn.className = 'btn btn-sm btn-success';
+                    btn.innerHTML = '<i class="feather icon-check-circle me-1"></i> Loaded';
+                    
+                    // Remove row after animation
                     setTimeout(() => {
-                        row.remove();
+                        row.style.opacity = '0';
+                        row.style.transition = 'opacity 0.5s';
+                        
+                        setTimeout(() => {
+                            row.remove();
+                            
+                            // Check if invoice section is empty
+                            const tbody = document.querySelector(`[data-invoice="${invoiceNumber}"] tbody`);
+                            if (tbody && tbody.children.length === 0) {
+                                // Show notification that all items are loaded
+                                toastr.info(`All items for ${companyName} - Invoice #${invoiceNumber} have been loaded`, 'Invoice Complete');
+                                
+                                // Remove the entire invoice section with animation
+                                const invoiceSection = document.querySelector(`[data-invoice="${invoiceNumber}"]`);
+                                if (invoiceSection) {
+                                    invoiceSection.style.opacity = '0';
+                                    invoiceSection.style.transition = 'opacity 0.5s';
+                                    setTimeout(() => {
+                                        invoiceSection.remove();
+                                        
+                                        // Check if company has no more invoices
+                                        const companyId = row.closest('.accordion-collapse').id;
+                                        const remainingInvoices = document.querySelectorAll(`#${companyId} .invoice-section`).length;
+                                        
+                                        if (remainingInvoices === 0) {
+                                            // Remove the company section
+                                            const companySection = document.getElementById(companyId).closest('.accordion-item');
+                                            companySection.style.opacity = '0';
+                                            companySection.style.transition = 'opacity 0.5s';
+                                            setTimeout(() => {
+                                                companySection.remove();
+                                                
+                                                // Check if all companies are empty
+                                                if (document.querySelectorAll('.accordion-item').length === 0) {
+                                                    document.querySelector('.card-body').innerHTML = 
+                                                        '<div class="alert alert-success">All items have been loaded successfully!</div>';
+                                                }
+                                            }, 500);
+                                        }
+                                    }, 500);
+                                }
+                            }
+                        }, 500);
                     }, 1000);
-
-                    // Check if invoice section is empty
-                    const tbody = row.closest('tbody');
-                    if (tbody.children.length === 1) {
-                        tbody.closest('.invoice-section').remove();
-                    }
+                    
                 } else {
-                    alert(data.message || 'Error marking item as loaded');
+                    // Show error notification
+                    toastr.error(data.message || 'Failed to mark item as loaded', 'Error');
+                    
+                    // Reset button
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="feather icon-check me-1"></i> Mark Loaded';
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error marking item as loaded');
+                toastr.error('Network or server error occurred', 'Error');
+                
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = '<i class="feather icon-check me-1"></i> Mark Loaded';
             }
         });
     });
 
     // Mark all items in an invoice as loaded
     document.querySelectorAll('.mark-all-loaded').forEach(button => {
-        button.addEventListener('click', function() {
-            const invoiceSection = this.closest('.invoice-section');
+        button.addEventListener('click', async function(e) {
+            // Prevent the click from bubbling up to the accordion
+            e.stopPropagation();
+            
+            const invoiceNumber = this.dataset.invoice;
+            const companyName = this.dataset.company;
+            const invoiceSection = document.querySelector(`[data-invoice="${invoiceNumber}"]`);
             const loadButtons = invoiceSection.querySelectorAll('.mark-loaded:not([disabled])');
-            loadButtons.forEach(btn => btn.click());
+            
+            if (loadButtons.length === 0) {
+                toastr.info('No items left to load', 'Information');
+                return;
+            }
+            
+            // Update button to show loading state
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing...';
+            
+            // Show info toast that we're starting the process
+            toastr.info(`Processing ${loadButtons.length} items for ${companyName}...`, 'Marking All Items');
+            
+            // Process each button with a small delay between them
+            let processed = 0;
+            
+            for (const btn of loadButtons) {
+                btn.click();
+                processed++;
+                
+                // Add a small delay between requests to avoid overwhelming the server
+                if (processed < loadButtons.length) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+            }
+            
+            // Once all are processed, show final notification
+            setTimeout(() => {
+                toastr.success(`All items for ${companyName} - Invoice #${invoiceNumber} marked as loaded`, 'Success');
+                
+                // Update the "Mark All" button
+                this.innerHTML = '<i class="feather icon-check-circle"></i> All Loaded';
+            }, 1000);
         });
     });
+
+    // Add search functionality
+    const deliverySearchInput = document.getElementById('deliveryPickSearchInput');
+    const clearDeliverySearchBtn = document.getElementById('clearDeliverySearchBtn');
+    const noDeliveryResultsMessage = document.getElementById('noDeliveryResultsMessage');
+
+    // Function to filter delivery pick list items
+    function filterDeliveryItems() {
+        const searchText = deliverySearchInput.value.toLowerCase();
+        let visibleCompanies = 0;
+        
+        // Process all company sections
+        document.querySelectorAll('.accordion-item').forEach(companyItem => {
+            if (!companyItem.classList.contains('mb-3')) return; // Skip non-company items
+            
+            // Get company name
+            const companyName = companyItem.querySelector('.accordion-button strong').textContent.toLowerCase();
+            let visibleInvoices = 0;
+            
+            // Get all invoice sections
+            const invoiceSections = companyItem.querySelectorAll('.invoice-section');
+            
+            invoiceSections.forEach(section => {
+                // Get invoice number from the data attribute or heading
+                const invoiceNumber = section.dataset.invoice.toLowerCase();
+                
+                // Process all table rows in this invoice
+                const tableRows = section.querySelectorAll('tbody tr');
+                let visibleRows = 0;
+                
+                // First check if the invoice number matches the search text
+                const invoiceMatches = !searchText || invoiceNumber.includes(searchText);
+                
+                if (invoiceMatches) {
+                    // If invoice matches, show all rows
+                    tableRows.forEach(row => {
+                        row.classList.remove('d-none');
+                        visibleRows++;
+                    });
+                } else {
+                    // Otherwise check each row individually
+                    tableRows.forEach(row => {
+                        const description = row.querySelector('.item-description')?.textContent.toLowerCase() || '';
+                        const supplier = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
+                        const poNumber = row.querySelector('td:nth-child(4)')?.textContent.toLowerCase() || '';
+                        
+                        const matchesSearch = !searchText || 
+                            companyName.includes(searchText) || 
+                            description.includes(searchText) || 
+                            supplier.includes(searchText) || 
+                            poNumber.includes(searchText);
+                        
+                        if (matchesSearch) {
+                            row.classList.remove('d-none');
+                            visibleRows++;
+                        } else {
+                            row.classList.add('d-none');
+                        }
+                    });
+                }
+                
+                // Show/hide invoice section based on matches
+                if (visibleRows > 0) {
+                    section.classList.remove('d-none');
+                    visibleInvoices++;
+                } else {
+                    section.classList.add('d-none');
+                }
+            });
+            
+            // Show/hide company section based on matches
+            if (visibleInvoices > 0) {
+                companyItem.classList.remove('d-none');
+                visibleCompanies++;
+                
+                // Auto-expand if search is active and has matches
+                if (searchText) {
+                    const collapseEl = companyItem.querySelector('.accordion-collapse');
+                    const bsCollapse = bootstrap.Collapse.getInstance(collapseEl) || 
+                                       new bootstrap.Collapse(collapseEl, {toggle: false});
+                    bsCollapse.show();
+                }
+            } else {
+                companyItem.classList.add('d-none');
+            }
+        });
+        
+        // Show/hide no results message
+        if (visibleCompanies === 0) {
+            noDeliveryResultsMessage.classList.remove('d-none');
+        } else {
+            noDeliveryResultsMessage.classList.add('d-none');
+        }
+    }
+
+    // Add event listeners
+    deliverySearchInput.addEventListener('input', filterDeliveryItems);
+    clearDeliverySearchBtn.addEventListener('click', function() {
+        deliverySearchInput.value = '';
+        filterDeliveryItems();
+    });
+
+    // Initialize search on page load
+    filterDeliveryItems();
 });
 </script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Improved word wrapping for all cells with text */
+.table td {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    white-space: normal;
+}
+
+/* Make description cell handle long text better */
+.item-description {
+    max-width: 300px;
+    min-width: 200px;
+    padding-right: 10px;
+    /* Better word breaking options */
+    overflow-wrap: break-word;
+    word-wrap: break-word; 
+    word-break: break-word; /* Changed from 'break-all' to 'break-word' for more natural breaks */
+    white-space: normal;
+    hyphens: auto;
+}
+
+/* Add specific width constraints to other columns to prevent layout issues */
+.table th:nth-child(2), /* Quantity column */
+.table td:nth-child(2) {
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    text-align: center;
+}
+
+.table th:nth-child(3), /* Supplier column */
+.table td:nth-child(3) {
+    width: 150px;
+    min-width: 150px;
+    max-width: 150px;
+    /* Add text wrapping for supplier names */
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.table th:nth-child(4), /* PO Number column */
+.table td:nth-child(4) {
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
+    word-break: break-word;
+}
+
+.table th:nth-child(5), /* Action column */
+.table td:nth-child(5) {
+    width: 120px;
+    min-width: 120px;
+    text-align: center;
+}
+
+/* Force table layout to be fixed - critical for proper column sizing */
+.table {
+    table-layout: fixed !important;
+    width: 100%;
+}
+
+/* Add extra control for table responsive */
+.table-responsive {
+    overflow-x: auto;
+    min-height: 0.01%; /* Fix for IE11 */
+}
+
+/* Table styles for better readability */
+.table th {
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,.03);
+}
+
+/* Add smooth transitions */
+.table tr {
+    transition: background-color 0.3s, opacity 0.5s;
+}
+
+/* Button with spinner style */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Company accordion styling */
+.accordion-item {
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: box-shadow 0.3s;
+}
+
+.accordion-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.accordion-button {
+    font-weight: 500;
+    padding: 1rem;
+}
+
+.accordion-button:not(.collapsed) {
+    color: #0c63e4;
+    background-color: #e7f1ff;
+}
+
+/* Add visual cue for collapsed content */
+.accordion-button.collapsed {
+    background-color: #f8f9fa;
+    transition: background-color 0.3s;
+}
+
+.accordion-button.collapsed:hover {
+    background-color: #e9ecef;
+}
+
+.accordion-button .badge {
+    font-size: 0.8rem;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.accordion-button:hover .badge {
+    transform: scale(1.1);
+}
+
+/* Invoice section styling */
+.invoice-section {
+    background-color: #fff;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+    margin-bottom: 1.5rem;
+}
+
+.invoice-section h6 {
+    color: #495057;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    min-height: 38px; /* Match the height of the button */
+}
+
+/* Fix for the Mark All Loaded button */
+.mark-all-loaded {
+    position: relative;
+    display: inline-block;
+    margin-left: 10px;
+    float: none !important; /* Override float */
+}
+
+/* Fix for super long words without spaces */
+@media (max-width: 768px) {
+    .table-responsive {
+        width: 100%;
+        overflow-y: hidden;
+        -ms-overflow-style: -ms-autohiding-scrollbar;
+    }
+    
+    .item-description, 
+    .table td:nth-child(3) {
+        word-break: break-all !important; /* Force break on mobile */
+    }
+}
+
+/* Search input styling */
+.input-group .form-control {
+    border-right: none;
+}
+
+.input-group .btn-outline-secondary {
+    border-left: none;
+    color: #6c757d;
+}
+
+.input-group .btn-outline-secondary:hover {
+    color: #343a40;
+    background-color: transparent;
+}
+
+/* Hidden items */
+.d-none {
+    display: none !important;
+}
+
+/* Alert message styling */
+#noPickResultsMessage, #noDeliveryResultsMessage {
+    margin-bottom: 20px;
+    animation: fadeIn 0.5s;
+}
+
+/* Animation for alerts */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
 {% endblock %}

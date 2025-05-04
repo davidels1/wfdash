@@ -1,0 +1,845 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="feather icon-file-text me-2"></i>Create Delivery Note</h5>
+                    <small class="text-muted">Fields marked with * are required</small>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" id="deliveryForm">
+                        {% csrf_token %}
+                        
+                        <!-- Company and Delivery Information in Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-md-0 mb-3">
+                                <div class="card border shadow-sm h-100">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="feather icon-briefcase me-2"></i>Company Information</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-floating mb-3">
+                                            {{ form.company }}
+                                            <label for="{{ form.company.id_for_label }}">Company *</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            {{ form.contact_person }}
+                                            <label for="{{ form.contact_person.id_for_label }}">Contact Person</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            {{ form.contact_email }}
+                                            <label for="{{ form.contact_email.id_for_label }}">Email</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            {{ form.contact_phone }}
+                                            <label for="{{ form.contact_phone.id_for_label }}">Phone</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border shadow-sm h-100">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="feather icon-truck me-2"></i>Delivery Information</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-floating mb-3">
+                                            {{ form.delivery_date }}
+                                            <label for="{{ form.delivery_date.id_for_label }}">Delivery Date *</label>
+                                        </div>
+                                        <div class="form-floating">
+                                            {{ form.notes }}
+                                            <label for="{{ form.notes.id_for_label }}">Notes</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Delivery Items Section -->
+                        <div class="card border shadow-sm mb-4">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="feather icon-package me-2"></i>Delivery Items</h6>
+                                <button type="button" id="add-item-btn" class="btn btn-sm btn-primary">
+                                    <i class="feather icon-plus me-1"></i> Add Item
+                                </button>
+                            </div>
+                            <div class="card-body p-3">
+                                {{ formset.management_form }}
+                                <div id="items-container">
+                                    {% for itemform in formset %}
+                                    <div class="item-row mb-3">
+                                        <div class="card border">
+                                            <div class="card-body py-3">
+                                                <div class="row g-3">
+                                                    <div class="col-md-5">
+                                                        <div class="form-floating mb-md-0 mb-3">
+                                                            {{ itemform.description }}
+                                                            <label for="{{ itemform.description.id_for_label }}">Description *</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <div class="input-group">
+                                                            <span class="input-group-text bg-light"><i class="feather icon-hash"></i></span>
+                                                            {{ itemform.quantity }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <div class="input-group">
+                                                            <span class="input-group-text bg-light">R</span>
+                                                            {{ itemform.price }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="form-floating mb-md-0 mb-3">
+                                                            {{ itemform.notes }}
+                                                            <label for="{{ itemform.notes.id_for_label }}">Notes</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% if not forloop.first %}
+                                                <button type="button" class="remove-item"><i class="feather icon-trash"></i></button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button with Better Styling -->
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary btn-lg px-4">
+                                <i class="feather icon-save me-2"></i>Create Delivery Note
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Add these CSS rules to fix autocomplete dropdown visibility */
+    
+    /* First, make sure no overflow hidden is cutting off the dropdown */
+    .card, .card-body, .item-row {
+        overflow: visible !important;
+    }
+    
+    /* Super high z-index for all autocomplete elements */
+    .ui-autocomplete {
+        z-index: 99999 !important;
+        position: absolute !important;
+    }
+    
+    /* Ensure the dropdown isn't constrained by parent elements */
+    .ui-autocomplete-input {
+        position: relative;
+        z-index: 9999;
+    }
+    
+    /* Force append to body instead of any container */
+    .ui-front {
+        z-index: 99999 !important;
+    }
+
+    /* Keep your existing CSS */
+    .remove-item {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        border: none;
+        background: none;
+        color: #f44336;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+    
+    .remove-item:hover {
+        background-color: rgba(244, 67, 54, 0.1);
+    }
+    
+    .item-row {
+        position: relative;
+    }
+    
+    .item-row .card {
+        transition: all 0.3s;
+        border-left: 3px solid #e0e0e0;
+    }
+    
+    .item-row .card:hover {
+        border-left-color: #2196F3;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    /* Enhanced styling for form controls */
+    .form-control, .form-select {
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #4caf50;
+        box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
+    }
+    
+    /* Card header improvements */
+    .card-header {
+        border-bottom: 1px solid rgba(0,0,0,.125);
+        background-color: rgba(0,0,0,.03);
+    }
+    
+    .floating-add-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background-color: #4caf50;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        cursor: pointer;
+        font-size: 24px;
+        transition: transform 0.2s, background-color 0.2s;
+    }
+    
+    .floating-add-btn:hover {
+        transform: scale(1.05);
+        background-color: #43a047;
+    }
+    
+    @media (max-width: 767px) {
+        .floating-add-btn {
+            bottom: 80px;
+        }
+        
+        #desktop-add-item {
+            display: none;
+        }
+    }
+
+    /* Keep all your existing autocomplete styling */
+    .ui-autocomplete {
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 9999 !important;
+    }
+
+    /* The rest of your existing CSS styles... */
+    
+    /* Enhanced input groups */
+    .input-group-text {
+        transition: background-color 0.2s;
+    }
+    
+    .input-group:focus-within .input-group-text {
+        background-color: #e8f5e9;
+        border-color: #4caf50;
+    }
+    
+    /* Give the form sections some breathing room */
+    .card {
+        overflow: hidden;
+    }
+    
+    /* Add better transitions for card removal */
+    .item-row .card {
+        transition: all 0.3s ease-out;
+    }
+
+    .ui-autocomplete {
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 9999 !important;
+    }
+
+    .ui-menu-item {
+        padding: 6px 8px;
+    }
+
+    .ui-menu-item:hover {
+        background-color: #e3f2fd;
+        cursor: pointer;
+    }
+
+    /* Better mobile support for autocomplete */
+    @media (max-width: 767px) {
+        .ui-autocomplete {
+            max-width: 90%;
+        }
+    }
+
+    /* Enhanced autocomplete styling */
+    .ui-autocomplete {
+        max-height: 350px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 9999 !important;
+        width: auto !important;
+        min-width: 350px;
+        padding: 0;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .ui-menu-item {
+        padding: 0 !important;
+        border-bottom: 1px solid #eee;
+    }
+
+    .ui-menu-item:last-child {
+        border-bottom: none;
+    }
+
+    .autocomplete-item {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .item-desc {
+        font-weight: 500;
+        margin-bottom: 3px;
+        color: #333;
+    }
+
+    .item-details {
+        font-size: 0.85em;
+        color: #666;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .item-price {
+        font-weight: 500;
+        color: #2196F3;
+    }
+
+    .item-cost {
+        font-weight: 400;
+        color: #F44336;
+    }
+
+    .item-company {
+        font-weight: 400;
+        color: #4CAF50;
+    }
+
+    .item-source {
+        color: #888;
+        font-style: italic;
+        font-size: 0.8em;
+        margin-top: 4px;
+    }
+
+    .ui-state-active .autocomplete-item,
+    .ui-state-active .item-desc,
+    .ui-state-active .item-details,
+    .ui-state-active .item-price,
+    .ui-state-active .item-cost,
+    .ui-state-active .item-company,
+    .ui-state-active .item-source {
+        background-color: #e3f2fd !important;
+        border-color: #e3f2fd !important;
+        color: inherit !important;
+    }
+
+    .ui-state-active {
+        background: #e3f2fd !important;
+        border-color: #e3f2fd !important;
+    }
+
+    /* Add this to your existing CSS */
+    .item-markup {
+        font-weight: 500;
+    }
+
+    .high-markup {
+        color: #4CAF50;  /* Green for high markup */
+    }
+
+    .medium-markup {
+        color: #FF9800;  /* Orange for medium markup */
+    }
+
+    .low-markup {
+        color: #F44336;  /* Red for low markup */
+    }
+
+    .item-footer {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8em;
+        color: #777;
+        margin-top: 4px;
+    }
+
+    .item-time {
+        font-style: italic;
+    }
+
+    .ui-autocomplete {
+        max-height: 400px;  /* Increased to fit more information */
+        min-width: 400px;   /* Wider for more information */
+    }
+
+    .autocomplete-item {
+        padding: 10px;
+        border-left: 3px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .autocomplete-item:hover {
+        border-left-color: #2196F3;
+        background-color: #f5f5f5;
+    }
+
+    /* Fix z-index issues with multiple autocompletes */
+    .ui-autocomplete {
+        z-index: 10000 !important;
+    }
+
+    /* Ensure each autocomplete menu is uniquely positioned */
+    .ui-front {
+        z-index: 100;
+    }
+
+    /* Fix for mobile autocomplete */
+    @media (max-width: 767px) {
+        .ui-autocomplete {
+            position: fixed !important;
+            top: 50px !important;
+            left: 10px !important;
+            right: 10px !important;
+            width: auto !important;
+            max-width: 95% !important;
+        }
+    }
+
+    /* Add these CSS rules to your extra_css block */
+    .ui-autocomplete {
+        z-index: 10000 !important;
+        max-height: 300px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* Ensure autocomplete is wide enough on mobile */
+    @media (max-width: 767px) {
+        .ui-autocomplete {
+            width: 90% !important;
+            left: 5% !important;
+        }
+    }
+
+    /* Fix autocomplete positioning */
+    .ui-autocomplete.ui-front {
+        position: absolute !important;
+    }
+
+    /* Add active state indicator to fields with autocomplete */
+    input.ui-autocomplete-input {
+        background-color: #f9f9ff;
+    }
+
+    /* Add this at the top of your CSS to ensure it takes precedence */
+    .ui-menu-item.ui-state-focus,
+    .ui-menu-item.ui-state-active,
+    .ui-menu-item:hover,
+    .ui-menu-item-wrapper.ui-state-active {
+        color: #333 !important;
+        background-color: #e3f2fd !important;
+        border-color: #e3f2fd !important;
+    }
+    
+    /* Override all nested elements to ensure text stays visible on hover */
+    .ui-menu-item.ui-state-focus *,
+    .ui-menu-item.ui-state-active *,
+    .ui-menu-item:hover *,
+    .ui-menu-item-wrapper.ui-state-active * {
+        color: inherit !important;
+    }
+    
+    /* Specific overrides for important elements */
+    .ui-state-active .item-desc { color: #333 !important; }
+    .ui-state-active .item-price { color: #2196F3 !important; }
+    .ui-state-active .item-cost { color: #F44336 !important; }
+    .ui-state-active .item-company { color: #4CAF50 !important; }
+    .ui-state-active .item-source { color: #888 !important; }
+    .ui-state-active .high-markup { color: #4CAF50 !important; }
+    .ui-state-active .medium-markup { color: #FF9800 !important; }
+    .ui-state-active .low-markup { color: #F44336 !important; }
+    .ui-state-active .item-time { color: #777 !important; }
+    
+    /* Ensure all text in autocomplete is visible */
+    .ui-menu .ui-menu-item {
+        color: #333;
+        background: white;
+    }
+    
+    /* Keep your other CSS rules... */
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Keep all your existing JavaScript code -->
+<!-- Load jQuery first -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Then load jQuery UI after jQuery -->
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+<script>
+    // Keep all your existing JavaScript unchanged
+    window.setupItemAutocomplete = function(descField) {
+        if(!descField.length) return;
+        
+        console.log("Setting up autocomplete for field:", descField.attr('id'));
+        
+        // Get the price field in the same row
+        var rowEl = descField.closest('.item-row');
+        var priceField = rowEl.find('[id$="-price"]');
+        
+        // Clean up any existing autocomplete
+        try {
+            if (descField.hasClass('ui-autocomplete-input')) {
+                descField.autocomplete("destroy");
+                descField.removeClass('ui-autocomplete-input');
+            }
+        } catch (e) {
+            // Ignore errors
+            console.log("No existing autocomplete to destroy");
+        }
+        
+        // Make sure jQuery UI autocomplete is available
+        if (typeof $.ui === 'undefined' || typeof $.ui.autocomplete === 'undefined') {
+            console.error("jQuery UI not available");
+            return;
+        }
+        
+        // Create a unique menu class for this specific field
+        var menuClass = 'ac-menu-' + descField.attr('id').replace(/[^a-zA-Z0-9]/g, '_');
+        
+        // Assign a unique ID to the field for tracking
+        var acId = 'ac_' + descField.attr('id').replace(/[^a-zA-Z0-9]/g, '_');
+        descField.attr('data-ac-id', acId);
+        
+        // Create the autocomplete widget with enhanced options
+        descField.autocomplete({
+            source: function(request, response) {
+                console.log("Searching from", descField.attr('id'), ":", request.term);
+                
+                // First close any other open dropdowns
+                window.closeAllOtherAutocompletesExcept(descField);
+                
+                $.ajax({
+                    url: "{% url 'delivery_notes:item_search' %}",
+                    dataType: "json",
+                    data: { 
+                        term: request.term,
+                        field_id: descField.attr('id') // Send field ID to help with debugging
+                    },
+                    success: function(data) {
+                        console.log("Got", data.length, "results for", descField.attr('id'));
+                        response(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Search error:", error);
+                        response([]);
+                    }
+                });
+            },
+            minLength: 2,
+            delay: 300,
+            appendTo: rowEl, // Critical - append dropdown to the item's row
+            position: { my: "left top", at: "left bottom", collision: "none" },
+            select: function(event, ui) {
+                console.log("Selected in", descField.attr('id'), ":", ui.item.label);
+                if (priceField.length && ui.item.price !== null && ui.item.price !== undefined) {
+                    console.log("Setting price:", ui.item.price);
+                    priceField.val(ui.item.price).trigger('change');
+                }
+                return true;
+            },
+            focus: function(event, ui) {
+                // Close other open autocomplete menus when this one gets focus
+                window.closeAllOtherAutocompletesExcept(descField);
+                return true;
+            },
+            open: function(event, ui) {
+                // When this menu opens, close any others
+                window.closeAllOtherAutocompletesExcept(descField);
+                
+                // Add a class to the menu for better identification
+                var menu = $(this).autocomplete("instance").menu.element;
+                menu.addClass(menuClass);
+            },
+            close: function(event, ui) {
+                console.log("Autocomplete closed for", descField.attr('id'));
+            },
+            classes: {
+                "ui-autocomplete": menuClass
+            }
+        }).autocomplete("instance")._renderItem = function(ul, item) {
+            // Custom rendering of dropdown items
+            var sellingPrice = item.price ? "R" + parseFloat(item.price).toFixed(2) : "No price";
+            var costPrice = item.cost_price ? "R" + parseFloat(item.cost_price).toFixed(2) : "-";
+            var companyDisplay = item.company || "Unknown";
+            var sourceDisplay = item.source || "Unknown source";
+            var timeAgo = item.time_text || "";
+            
+            // Format markup if available
+            var markupDisplay = "";
+            if (item.markup !== null && item.markup !== undefined) {
+                var markupClass = item.markup >= 30 ? "high-markup" : 
+                                (item.markup >= 15 ? "medium-markup" : "low-markup");
+                markupDisplay = "<span class='item-markup " + markupClass + "'>" + 
+                                Math.round(item.markup) + "% markup</span> | ";
+            }
+            
+            return $("<li>")
+                .append("<div class='autocomplete-item'>" + 
+                        "<div class='item-desc'>" + item.label + "</div>" +
+                        "<div class='item-details'>" +
+                        "<span class='item-price'>SP: " + sellingPrice + "</span> | " +
+                        "<span class='item-cost'>CP: " + costPrice + "</span> | " +
+                        markupDisplay +
+                        "<span class='item-company'>For: " + companyDisplay + "</span>" +
+                        "</div>" +
+                        "<div class='item-footer'>" +
+                        "<span class='item-source'>" + sourceDisplay + "</span>" +
+                        "<span class='item-time'>" + timeAgo + "</span>" +
+                        "</div>" +
+                        "</div>")
+                .appendTo(ul);
+        };
+        
+        // Add direct event handlers to ensure this field takes precedence
+        descField.on('focus click keydown', function() {
+            // Close all other autocomplete dropdowns
+            window.closeAllOtherAutocompletesExcept(descField);
+        });
+        
+        // Mark this field as having autocomplete initialized
+        descField.data('autocomplete-active', true);
+        console.log("Autocomplete initialized for", descField.attr('id'));
+    };
+
+    // Add this function after your setupItemAutocomplete function
+    window.closeAllOtherAutocompletesExcept = function(currentField) {
+        $('[id$="-description"]').not(currentField).each(function() {
+            var field = $(this);
+            try {
+                if (field.autocomplete("instance")) {
+                    field.autocomplete("close");
+                }
+            } catch (e) {
+                // Ignore errors
+            }
+        });
+    };
+
+    // Add new item to the form
+    window.addNewItem = function() {
+        console.log("Adding new item");
+        var formCount = parseInt($('#id_items-TOTAL_FORMS').val());
+        
+        // Get the first item and clone it
+        var template = $('#items-container').children().first().clone(true);
+        
+        // Find the description field and clean up any autocomplete
+        var origDescField = template.find('[id$="-description"]');
+        origDescField.removeClass('ui-autocomplete-input').removeAttr('data-ac-id');
+        origDescField.removeData('autocomplete-active').removeData('uiAutocomplete');
+        
+        // Update form indices - use regex that matches any digit, not just 0
+        template.find(':input, label').each(function() {
+            var elem = $(this);
+            
+            // Update name attribute
+            var name = elem.attr('name');
+            if (name) {
+                name = name.replace(/items-\d+-/g, 'items-' + formCount + '-');
+                elem.attr('name', name);
+            }
+            
+            // Update id attribute
+            var id = elem.attr('id');
+            if (id) {
+                id = id.replace(/id_items-\d+-/g, 'id_items-' + formCount + '-');
+                elem.attr('id', id);
+            }
+            
+            // Update for attribute (for labels)
+            var forAttr = elem.attr('for');
+            if (forAttr) {
+                forAttr = forAttr.replace(/id_items-\d+-/g, 'id_items-' + formCount + '-');
+                elem.attr('for', forAttr);
+            }
+            
+            // Clear values except quantity
+            if (name && name.indexOf('quantity') !== -1) {
+                elem.val('1');
+            } else if (elem.is(':input')) {
+                elem.val('');
+            }
+        });
+        
+        // Add remove button if not present
+        if (template.find('.remove-item').length === 0) {
+            var removeBtn = $('<button type="button" class="remove-item"><i class="feather icon-trash"></i></button>');
+            template.find('.card-body').append(removeBtn);
+        }
+        
+        // Add to container and update form count
+        $('#items-container').append(template);
+        $('#id_items-TOTAL_FORMS').val(formCount + 1);
+        
+        // Find the newly added field
+        var newField = $('#id_items-' + formCount + '-description');
+        console.log("Added new field:", newField.attr('id'), "exists:", newField.length);
+        
+        // Set up autocomplete after a brief delay to ensure DOM is updated
+        setTimeout(function() {
+            window.setupItemAutocomplete(newField);
+        }, 100);
+        
+        // Scroll to the new item
+        $('html, body').animate({
+            scrollTop: template.offset().top - 100
+        }, 500);
+    };
+
+    // Document ready function
+    $(document).ready(function() {
+        console.log("jQuery ready - setting up form");
+        
+        // Check jQuery UI
+        if (typeof $.ui === 'undefined' || typeof $.ui.autocomplete === 'undefined') {
+            console.error("jQuery UI missing - loading now");
+            $.getScript('https://code.jquery.com/ui/1.13.2/jquery-ui.js', function() {
+                console.log("jQuery UI loaded via script");
+                initializeForm();
+            });
+        } else {
+            console.log("jQuery UI detected:", $.ui.version);
+            initializeForm();
+        }
+        
+        function initializeForm() {
+            // Setup floating labels
+            $('.form-control, .form-select').each(function() {
+                var label = $(this).closest('.form-floating').find('label');
+                if (label.length > 0) {
+                    $(this).attr('placeholder', label.text().replace('*', ''));
+                }
+            });
+            
+            // Remove placeholders on quantity/price fields
+            $('.input-group .form-control').attr('placeholder', '');
+            
+            // Set up autocomplete on all description fields
+            $('[id$="-description"]').each(function(index) {
+                setTimeout(function() {
+                    window.setupItemAutocomplete($(this));
+                }.bind(this), index * 100);
+            });
+            
+            // Setup buttons
+            $('#add-item-btn').on('click', window.addNewItem);
+            
+            // Add mobile button
+            if ($('#mobile-add-item').length === 0) {
+                $('body').append(
+                    $('<div id="mobile-add-item" class="floating-add-btn">')
+                        .html('<i class="feather icon-plus"></i>')
+                        .on('click', window.addNewItem)
+                );
+            }
+            
+            // Remove item handling
+            $(document).on('click', '.remove-item', function() {
+                var item = $(this).closest('.item-row');
+                item.css({
+                    'opacity': '0',
+                    'max-height': '0',
+                    'overflow': 'hidden'
+                });
+                setTimeout(function() {
+                    item.remove();
+                    $('#id_items-TOTAL_FORMS').val($('#items-container').children().length);
+                }, 300);
+            });
+            
+            // Form validation
+            $('#deliveryForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                var isValid = true;
+                
+                // Check required fields
+                var requiredFields = [
+                    { id: '{{ form.company.id_for_label }}', name: 'Company' },
+                    { id: '{{ form.delivery_date.id_for_label }}', name: 'Delivery Date' }
+                ];
+                
+                for (var i = 0; i < requiredFields.length; i++) {
+                    var field = $('#' + requiredFields[i].id);
+                    if (!field.val()) {
+                        alert('Please enter ' + requiredFields[i].name);
+                        field.focus();
+                        isValid = false;
+                        break;
+                    }
+                }
+                
+                // Check at least one item
+                var firstItemDesc = $('#id_items-0-description');
+                var firstItemQty = $('#id_items-0-quantity');
+                
+                if (isValid && (!firstItemDesc.val() || !firstItemQty.val())) {
+                    alert('Please add at least one item to your delivery note');
+                    firstItemDesc.focus();
+                    isValid = false;
+                }
+                
+                if (isValid) {
+                    // Show loading state
+                    var submitBtn = $(this).find('button[type="submit"]');
+                    submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> Creating...');
+                    
+                    // Submit the form
+                    this.submit();
+                }
+            });
+        }
+    });
+
+    // Add event handlers for dynamically added fields
+    $(document).on('focus', '[id$="-description"]', function() {
+        var field = $(this);
+        if (!field.data('autocomplete-active')) {
+            window.setupItemAutocomplete(field);
+        }
+    });
+</script>
+{% endblock %}

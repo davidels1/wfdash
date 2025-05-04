@@ -1,27 +1,40 @@
 {% extends "layouts/base.html" %}
 {% load static %}
+{% load order_tags %}
 
 {% block title %}Collection Pool{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5>Collection Pool</h5>
+            <div>
+                <select id="statusFilter" class="form-select form-select-sm" style="width: auto;">
+                    <option value="all">All Items</option>
+                    <option value="problem">Problem Items</option>
+                    <option value="pending">Pending Items</option>
+                </select>
+            </div>
+            <a href="{% url 'driver_list:add_manual_collection' %}" class="btn btn-success btn-sm me-2">
+                <i class="fas fa-plus"></i> Add Manual Collection
+            </a>
         </div>
         <div class="card-body">
             <!-- Bulk assignment form at the top -->
-            <form method="POST" action="{% url 'driver_list:bulk_assign_driver' %}">
+            <form method="POST" action="{% url 'driver_list:bulk_assign_driver' %}" id="bulk-assign-form">
                 {% csrf_token %}
                 <div class="mb-3 d-flex gap-2">
                     <select name="driver" class="form-select" style="width: auto;" required>
                         <option value="">Select Driver</option>
                         {% for user in users %}
-                            <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                            <option value="{{ user.id }}" {% if user.id == default_driver %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
                         {% endfor %}
                     </select>
                     <input type="date" name="planned_date" class="form-control" style="width: auto;" required>
-                    <button type="submit" class="btn btn-primary">Assign Selected</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-1"></i> Assign Selected
+                    </button>
                 </div>
 
                 <!-- Supplier groups with checkboxes -->
@@ -39,7 +52,11 @@
                         </div>
                         <div class="list-group mt-2">
                             {% for item in group.items %}
-                                <div class="list-group-item {% if item.is_future %}bg-warning-subtle{% endif %}">
+                                <div class="list-group-item 
+                                    {% if item.stock_order %}bg-purple-subtle border-start border-purple border-4{% endif %}
+                                    {% if item.is_future %}bg-warning-subtle{% endif %} 
+                                    {% if item.status == 'problem' %}bg-danger-subtle border-start border-danger border-4{% endif %}
+                                    {% if item.order_item.order and item.order_item.order.order_number and 'breakdown' in item.order_item.order.order_number|lower %}breakdown-order{% endif %}">
                                     <div class="row align-items-center">
                                         <div class="col-auto">
                                             <div class="form-check">
@@ -53,14 +70,60 @@
                                         <div class="col">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div>
-                                                    <h6 class="mb-1">{{ item.order_item.description }}</h6>
-                                                    <small class="text-muted">
-                                                        Order #: {{ item.order_item.order.order_number }} |
-                                                        {% if item.order_item.purchase_order %}
-                                                            PO #: {{ item.order_item.purchase_order.po_number }} |
+                                                    <h6 class="mb-1">
+                                                        {% if item.stock_order %}
+                                                            <i class="fas fa-boxes text-purple me-1" title="Stock Order"></i>
                                                         {% endif %}
-                                                        Quantity: {{ item.quantity }}
+                                                        {{ item.order_item.description }}
+                                                    </h6>
+                                                    <small class="text-muted">
+                                                        {% if item.is_manual %}
+                                                            <!-- Manual collection -->
+                                                            {{ item.description }}<br>
+                                                            Quantity: {{ item.quantity }} {{ item.unit }}
+                                                        {% else %}
+                                                            <!-- Regular collection from order -->
+                                                            <!-- For PO # -->
+                                                            <td>
+                                                                {% if item.order_item and item.order_item.purchase_order %}
+                                                                    PO #: {{ item.order_item.purchase_order.po_number }}
+                                                                {% elif item.stock_order %}
+                                                                    PO #: {{ item.stock_order.po_number }}
+                                                                {% endif %}
+                                                            </td>
+                                                            <!-- For Order # -->
+                                                            <td>
+                                                                {% if item.order_item and item.order_item.order %}
+                                                                    Order #: {{ item.order_item.order.order_number }}
+                                                                {% elif item.stock_order %}
+                                                                    Order #: {{ item.stock_order.order_number }}
+                                                                {% endif %}
+                                                            </td>
+                                                            <!-- For Description -->
+                                                            <td>
+                                                                {% if item.order_item %}
+                                                                    {{ item.order_item.description }}
+                                                                {% elif item.stock_item %}
+                                                                    {{ item.stock_item.description }}
+                                                                {% else %}
+                                                                    {{ item.description }}
+                                                                {% endif %}
+                                                            </td>
+                                                            {% if item.order_item.order and item.order_item.order.order_number and 'breakdown' in item.order_item.order.order_number|lower %}
+                                                                <span class="breakdown-badge">
+                                                                    <i class="fas fa-tools"></i> BREAKDOWN
+                                                                </span>
+                                                            {% endif %}
+                                                            Expected: {{ item.quantity }} {{ item.order_item.unit }}
+                                                        {% endif %}
                                                     </small>
+                                                    {% if item.status == 'problem' %}
+                                                        <br>
+                                                        <small class="text-danger">
+                                                            <i class="fas fa-exclamation-triangle"></i> 
+                                                            Problem reported: {{ item.notes|truncatechars:60 }}
+                                                        </small>
+                                                    {% endif %}
                                                     {% if item.planned_date %}
                                                         <br>
                                                         <small class="{% if item.is_future %}text-warning{% endif %}">
@@ -72,8 +135,21 @@
                                                         <small class="text-muted">Notes: {{ item.notes }}</small>
                                                     {% endif %}
                                                 </div>
-                                                {% if item.is_future %}
+
+
+
+
+
+
+
+
+                                                {% if item.status == 'problem' %}
+                                                    <span class="badge bg-danger">Problem</span>
+                                                {% elif item.is_future %}
                                                     <span class="badge bg-warning">Future Date</span>
+                                                {% endif %}
+                                                {% if item.stock_order %}
+                                                    <span class="badge bg-purple">Stock Order</span>
                                                 {% endif %}
                                             </div>
                                         </div>
@@ -100,6 +176,107 @@ document.addEventListener('DOMContentLoaded', function() {
             items.forEach(item => item.checked = this.checked);
         });
     });
+    
+    // Handle form submission with toastr notifications
+    const form = document.getElementById('bulk-assign-form');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Count selected items
+        const selectedItems = form.querySelectorAll('input[name="items[]"]:checked');
+        if (selectedItems.length === 0) {
+            toastr.warning('Please select at least one collection item', 'No Items Selected');
+            return;
+        }
+        
+        // Check driver selection
+        const driver = form.querySelector('select[name="driver"]').value;
+        if (!driver) {
+            toastr.warning('Please select a driver', 'Driver Required');
+            return;
+        }
+        
+        // Check date selection
+        const date = form.querySelector('input[name="planned_date"]').value;
+        if (!date) {
+            toastr.warning('Please select a planned date', 'Date Required');
+            return;
+        }
+        
+        // Show loading notification
+        toastr.info(`Assigning ${selectedItems.length} items...`, 'Processing');
+        
+        // Submit the form
+        this.submit();
+    });
+    
+    // Handle Django messages
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                toastr.success('{{ message }}', 'Success');
+            {% elif message.tags == 'info' %}
+                toastr.info('{{ message }}', 'Information');
+            {% elif message.tags == 'warning' %}
+                toastr.warning('{{ message }}', 'Warning');
+            {% elif message.tags == 'error' %}
+                toastr.error('{{ message }}', 'Error');
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    
+    // Add this to the extra_js block in collection_pool.html
+    document.getElementById('statusFilter').addEventListener('change', function() {
+        const filterValue = this.value;
+        
+        document.querySelectorAll('.list-group-item').forEach(item => {
+            if (filterValue === 'all') {
+                item.style.display = '';
+            } else if (filterValue === 'problem') {
+                if (item.classList.contains('bg-danger-subtle')) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            } else if (filterValue === 'pending') {
+                if (!item.classList.contains('bg-danger-subtle')) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            }
+        });
+    });
 });
 </script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Improve checkbox visibility */
+    .form-check-input {
+        width: 1.2em;
+        height: 1.2em;
+        cursor: pointer;
+    }
+    
+    /* Style for future dates */
+    .bg-warning-subtle {
+        background-color: rgba(255, 193, 7, 0.15);
+    }
+
+    /* Style for stock orders */
+    .bg-purple-subtle {
+        background-color: rgba(138, 43, 226, 0.15);
+    }
+
+    /* Adding a purple border for additional distinction */
+    .border-purple {
+        border-color: #8a2be2 !important;
+    }
+
+    .bg-purple {
+        background-color: #8a2be2;
+    }
+</style>
 {% endblock %}

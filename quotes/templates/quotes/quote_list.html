@@ -1,6 +1,24 @@
 {% extends "layouts/base.html" %}
 {% load static %}
 
+{% block breadcrumbs %}
+<div class="page-header">
+  <div class="page-block">
+    <div class="row align-items-center">
+      <div class="col-md-12">
+        <div class="page-header-title">
+          <h5 class="m-b-10">Quotes</h5>
+        </div>
+        <ul class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'index' %}"><i class="feather icon-home"></i></a></li>
+          <li class="breadcrumb-item"><a href="{% url 'quotes:quote_list' %}">Quotes</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock breadcrumbs %}
+
 {% block content %}
 <div class="container-fluid pb-5">
     <!-- Search Bar -->
@@ -26,53 +44,113 @@
     {% if quotes_by_status %}
         {% for status, data in quotes_by_status.items %}
             <div class="status-group mb-4">
-                <div class="status-header">
-                    <h6 class="status-title">
-                        {{ status }}
-                        <span class="badge badge-pill badge-info ml-2">{{ data.count }}</span>
-                    </h6>
+                <div class="status-header {% if status == 'New' %}new-header{% elif status == 'Claimed' %}claimed-header{% elif status == 'Processed' %}processed-header{% elif status == 'Complete' %}complete-header{% elif status == 'Cancelled' %}cancelled-header{% elif status == 'Emailed' %}emailed-header{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center collapsible-header collapsed" data-target="status-{{ status|slugify }}">
+                        <div>
+                            <i class="feather icon-chevron-down toggle-icon me-2"></i>
+                            <span class="status-title">{{ status }}</span>
+                            <span class="badge rounded-pill bg-primary ms-2 count-badge">{{ data.count }}</span>
+                        </div>
+                        <div class="status-total">
+                            <span class="badge rounded-pill bg-dark">R{{ data.total_value|floatformat:2 }}</span>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Quote #</th>
-                                <th>Customer</th>
-                                <th>Description</th>
-                                <th>Items</th>
-                                <th>Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for quote in data.quotes %}
+                <div class="status-content" id="status-{{ status|slugify }}" style="display: none; max-height: 0;">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
                                 <tr>
-                                    <td>{{ quote.quote_number }}</td>
-                                    <td>{{ quote.customer.company }}</td>
-                                    <td>{{ quote.description|truncatechars:50 }}</td>
-                                    <td>
-                                        <span class="badge badge-info">
-                                            {{ quote.items.count }} items
-                                        </span>
-                                    </td>
-                                    <td>{{ quote.created_at|date:"d M Y" }}</td>
-                                    <td>
-                                        <a href="{% url 'quotes:quote_detail' quote.pk %}" 
-                                           class="btn btn-primary btn-sm">
-                                            <i class="feather icon-eye"></i> View
-                                        </a>
-                                        {% if not quote.is_complete %}
-                                            <a href="{% url 'quotes:quote_edit' quote.pk %}" 
-                                               class="btn btn-secondary btn-sm">
-                                                <i class="feather icon-edit"></i> Edit
-                                            </a>
-                                        {% endif %}
-                                    </td>
+                                    <th>Quote #</th>
+                                    <th>Customer / Contact</th>  <!-- Change this label -->
+                                    <th>Description</th>
+                                    <th>Claimed By</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for quote in data.quotes %}
+                                    <tr class="quote-row {% if quote.status == 'emailed' %}table-success{% endif %}" data-quote-id="{{ quote.id }}">
+                                        <td>
+                                            {{ quote.quote_number }}
+                                            <button class="btn btn-sm btn-link p-0 ms-2 toggle-items" 
+                                                    data-quote-id="{{ quote.id }}" 
+                                                    title="Toggle items">
+                                                <i class="feather icon-list"></i>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <div>{{ quote.customer.company }}</div>
+                                            {% if quote.customer.customer %}
+                                                <small class="text-muted">
+                                                    <i class="feather icon-user me-1"></i>{{ quote.customer.customer }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ quote.description|truncatechars:50 }}</td>
+                                        <td>
+                                            {% if quote.assigned_to %}
+                                                <span class="badge {% if quote.assigned_to == request.user %}bg-warning{% else %}bg-info{% endif %}">
+                                                    <i class="feather icon-user"></i> {{ quote.assigned_to.username }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="feather icon-circle"></i> Unclaimed
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ quote.created_at|date:"d M Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'quotes:quote_detail' quote.pk %}" 
+                                               class="btn btn-primary btn-sm">
+                                                <i class="feather icon-eye"></i> View
+                                            </a>
+                                            {% if not quote.is_complete %}
+                                                <a href="{% url 'quotes:quote_edit' quote.pk %}" 
+                                                   class="btn btn-secondary btn-sm">
+                                                    <i class="feather icon-edit"></i> Edit
+                                                </a>
+                                            {% endif %}
+                                            {% if quote.status == 'emailed' %}
+                                                <span class="badge badge-success">
+                                                    <i class="feather icon-mail"></i> Emailed
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    
+                                    <!-- Quote Items Row -->
+                                    <tr class="item-details-row" data-quote-id="{{ quote.id }}" style="display: none">
+                                        <td colspan="6" class="items-cell">
+                                            <div class="quote-items-container p-2">
+                                                <div class="row mb-2">
+                                                    <div class="col-12">
+                                                        <span class="text-muted">Items:</span>
+                                                    </div>
+                                                </div>
+                                                {% for item in quote.items.all %}
+                                                    <div class="quote-item-box mb-1">
+                                                        <div class="item-description">
+                                                            <span class="item-quantity badge bg-light text-dark">{{ item.quantity }}</span>
+                                                            {{ item.description }}
+                                                            {% if item.selling_price %} 
+                                                            <span class="badge bg-success">
+                                                                R{{ item.selling_price|floatformat:2 }}
+                                                            </span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                {% empty %}
+                                                    <p class="text-muted">No items in this quote</p>
+                                                {% endfor %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         {% endfor %}
@@ -112,18 +190,115 @@
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 6px;
+    overflow: hidden;
 }
 
+/* Enhanced status header styling */
 .status-header {
-    padding: 12px 15px;
-    border-bottom: 1px solid #eee;
+    padding: 15px;
+    border-radius: 6px 6px 0 0;
+    margin-bottom: 0;
+    transition: all 0.3s ease;
 }
 
-/* Status Colors */
-.status-group:nth-child(1) .status-header { background: #e3f2fd; } /* New */
-.status-group:nth-child(2) .status-header { background: #fff3e0; } /* In Progress */
-.status-group:nth-child(3) .status-header { background: #e8f5e9; } /* Complete */
-.status-group:nth-child(4) .status-header { background: #ffebee; } /* Cancelled */
+.new-header {
+    background: #e3f2fd;
+    border-left: 8px solid #2196F3;
+}
+
+.claimed-header {
+    background: #fff8e1;
+    border-left: 8px solid #FFC107;
+}
+
+.processed-header {
+    background:rgb(125, 216, 174);
+    border-left: 8px solid #009688;
+}
+
+.complete-header {
+    background: #e8f5e9;
+    border-left: 8px solid #4CAF50;
+}
+
+.cancelled-header {
+    background: #ffebee;
+    border-left: 8px solid #F44336;
+}
+
+.emailed-header {
+    background:rgb(192, 219, 148);
+    border-left: 8px solid #28a745;
+}
+
+/* Make the count badge more prominent */
+.count-badge {
+    font-size: 1rem;
+    padding: 5px 12px;
+}
+
+/* Styling for the collapsible header */
+.collapsible-header {
+    cursor: pointer;
+    user-select: none;
+}
+
+.collapsible-header:hover {
+    background-color: rgba(0,0,0,0.03);
+}
+
+/* Status content */
+.status-content {
+    border: 1px solid #eee;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    transition: max-height 0.4s ease-in-out;
+    overflow: visible; /* Change from hidden to visible */
+    max-height: 0;
+}
+
+/* Add this new style to ensure the expanded content has enough space */
+.status-content.expanded {
+    max-height: none !important;
+    overflow: visible;
+}
+
+/* Improve the animation */
+.status-content {
+    transition: max-height 0.3s ease-in-out;
+    overflow: hidden;
+}
+
+/* Collapsed state indicator */
+.toggle-icon {
+    transition: transform 0.3s ease;
+    display: inline-block;
+    color: #666;
+}
+
+.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+    color: #aaa;
+}
+
+/* Add a subtle hover effect */
+.collapsible-header:hover .toggle-icon {
+    color: #333;
+}
+
+/* Status total styling */
+.status-total {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.status-total .badge {
+    font-size: 0.9rem;
+    padding: 6px 10px;
+}
 
 /* Table Styling */
 .table {
@@ -132,6 +307,37 @@
 
 .table td, .table th {
     vertical-align: middle;
+}
+
+/* Make status header value right-aligned */
+.status-title .float-right {
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+/* Style for emailed quotes */
+.table-success {
+    background-color: rgba(40, 167, 69, 0.1);
+}
+.table-success:hover {
+    background-color: rgba(40, 167, 69, 0.15) !important;
+}
+
+/* Toggle items styling */
+.item-details-row {
+    background-color: #f8f9fa;
+}
+
+.item-description {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: #ffffff;
+    margin-bottom: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.toggle-items.active i {
+    color: #007bff;
 }
 
 /* Responsive */
@@ -144,5 +350,205 @@
         padding-bottom: 80px;
     }
 }
+
+/* Make the table inside status content more pleasant */
+.status-content .table {
+    margin-bottom: 0;
+}
+
+.status-content .table th {
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+// Add this to your CSS
+
+/* Make user badges more prominent */
+.badge.bg-warning, .badge.bg-info {
+    font-size: 0.85rem;
+    padding: 5px 8px;
+    font-weight: 500;
+}
+
+/* Add this to your existing styles in quote_list.html */
+.text-muted .feather.icon-user {
+    color: #007bff; /* Blue icon color */
+}
+
+/* Style for customer name */
+.text-muted {
+    display: inline-block;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-top: 4px;
+    font-size: 0.9rem;
+    border-left: 3px solid #6c757d;
+}
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Quote list script loaded");
+    
+    // Toggle items functionality
+    document.querySelectorAll('.toggle-items').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Get the quote ID from the button's data attribute
+            const quoteId = this.dataset.quoteId;
+            console.log("Toggle clicked for quote ID:", quoteId);
+            
+            // Find the corresponding items row
+            const itemsRow = document.querySelector(`tr.item-details-row[data-quote-id="${quoteId}"]`);
+            console.log("Found item row:", itemsRow);
+            
+            if (itemsRow) {
+                // Toggle visibility with visual feedback
+                const isCurrentlyHidden = window.getComputedStyle(itemsRow).display === 'none';
+                
+                if (isCurrentlyHidden) {
+                    itemsRow.style.display = 'table-row';
+                    this.querySelector('i').classList.add('text-primary');
+                    console.log(`Showing items for quote ${quoteId}`);
+                } else {
+                    itemsRow.style.display = 'none';
+                    this.querySelector('i').classList.remove('text-primary');
+                    console.log(`Hiding items for quote ${quoteId}`);
+                }
+            } else {
+                console.error("Could not find item details row for quote ID:", quoteId);
+            }
+        });
+    });
+    
+    // Also enable clicking on row (except buttons and links)
+    document.querySelectorAll('.quote-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Only trigger if not clicking on a button or link
+            if (!e.target.closest('a') && !e.target.closest('button')) {
+                // Find the next row which should be the items row
+                const itemsRow = this.nextElementSibling;
+                if (itemsRow && itemsRow.classList.contains('item-details-row')) {
+                    const quoteId = itemsRow.dataset.quoteId;
+                    
+                    // Toggle visibility
+                    const isCurrentlyHidden = window.getComputedStyle(itemsRow).display === 'none';
+                    
+                    if (isCurrentlyHidden) {
+                        itemsRow.style.display = 'table-row';
+                        // Also update the button icon
+                        const toggleButton = this.querySelector('.toggle-items i');
+                        if (toggleButton) toggleButton.classList.add('text-primary');
+                    } else {
+                        itemsRow.style.display = 'none';
+                        // Also update the button icon
+                        const toggleButton = this.querySelector('.toggle-items i');
+                        if (toggleButton) toggleButton.classList.remove('text-primary');
+                    }
+                }
+            }
+        });
+    });
+
+    // Display Django messages with toastr
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                toastr.success('{{ message }}', 'Success');
+            {% elif message.tags == 'info' %}
+                toastr.info('{{ message }}', 'Information');
+            {% elif message.tags == 'warning' %}
+                toastr.warning('{{ message }}', 'Warning');
+            {% elif message.tags == 'error' %}
+                toastr.error('{{ message }}', 'Error');
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    // Add this to your existing DOMContentLoaded function
+    document.querySelectorAll('.collapsible-header').forEach(header => {
+        header.addEventListener('click', function() {
+            // Toggle collapsed class for styling
+            this.classList.toggle('collapsed');
+            
+            // Find the target content
+            const targetId = this.getAttribute('data-target');
+            const targetContent = document.getElementById(targetId);
+            
+            // Get the status group container (parent of the header)
+            const statusGroup = this.closest('.status-group');
+            
+            // Toggle visibility with better animation
+            if (targetContent.style.display === 'block') {
+                // Closing the section
+                targetContent.classList.remove('expanded');
+                targetContent.style.maxHeight = null;
+                
+                // Wait for animation then add display none
+                setTimeout(() => {
+                    targetContent.style.display = 'none';
+                }, 300);
+            } else {
+                // Opening the section
+                targetContent.style.display = 'block';
+                
+                // Set a very large max-height to ensure content is visible
+                targetContent.style.maxHeight = '5000px';
+                
+                // Mark as fully expanded after animation completes
+                setTimeout(() => {
+                    targetContent.classList.add('expanded');
+                }, 400);
+                
+                // Scroll the group into view if needed
+                setTimeout(() => {
+                    // Ensure the full section is visible by scrolling if needed
+                    const rect = statusGroup.getBoundingClientRect();
+                    const isPartiallyVisible = (
+                        rect.top < window.innerHeight &&
+                        rect.bottom > 0
+                    );
+                    
+                    if (!isPartiallyVisible || rect.bottom > window.innerHeight) {
+                        statusGroup.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 50);
+            }
+        });
+    });
+
+    // Initialize all sections as collapsed when page loads
+    document.querySelectorAll('.status-content').forEach(content => {
+        content.style.display = 'none';
+        content.style.maxHeight = null;
+    });
+
+    document.querySelectorAll('.collapsible-header').forEach(header => {
+        header.classList.add('collapsed');
+    });
+
+    // If there's only one category, or if there's a search query, expand all sections
+    {% if quotes_by_status|length == 1 or search_query %}
+    document.querySelectorAll('.collapsible-header').forEach(header => {
+        // Find the target content
+        const targetId = header.getAttribute('data-target');
+        const targetContent = document.getElementById(targetId);
+        
+        // Set to visible
+        header.classList.remove('collapsed');
+        targetContent.style.display = 'block';
+        setTimeout(() => {
+            targetContent.style.maxHeight = targetContent.scrollHeight + 'px';
+        }, 10);
+    });
+    {% endif %}
+});
+</script>
 {% endblock %}

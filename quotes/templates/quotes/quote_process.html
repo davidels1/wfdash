@@ -1,8 +1,911 @@
 {% extends "layouts/base.html" %}
+{% load static quote_filters %}
 {% load static %}
+
+{% block breadcrumbs %}
+<div class="page-header">
+  <div class="page-block">
+    <div class="row align-items-center">
+      <div class="col-md-12">
+        <div class="page-header-title">
+          <h5 class="m-b-10">Process Quote</h5>
+        </div>
+        <ul class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'index' %}"><i class="feather icon-home"></i></a></li>
+          <li class="breadcrumb-item"><a href="{% url 'quotes:quote_list' %}">Quotes</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'quotes:quote_detail' quote.id %}">Quote #{{ quote.quote_number }}</a></li>
+          <li class="breadcrumb-item"><span>Process</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock breadcrumbs %}
+
+{% block head_css %}
+{{ block.super }}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<!-- Add Bootstrap 5 theme for Select2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<style>
+    /* Add these styles for required fields */
+    .form-label span.text-danger {
+        font-size: 1.2em;
+        line-height: 0;
+    }
+    
+    .form-control.is-invalid, 
+    .was-validated .form-control:invalid,
+    .form-select.is-invalid {
+        border-color: #dc3545;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    
+    /* Shake animation for validation errors */
+    .validation-shake {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    
+    @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-2px, 0, 0); }
+        40%, 60% { transform: translate3d(2px, 0, 0); }
+    }
+
+    /* Add styles for item completion indicators */
+    .item-status-indicator {
+        font-size: 0.7rem;
+        vertical-align: middle;
+    }
+
+    /* Include in Quote checkbox styling */
+    .include-in-quote-container {
+        flex-grow: 1;
+        margin-right: 10px;
+        text-align: right;
+    }
+
+    .form-check-label {
+        font-size: 0.85rem;
+        color: #5a5a5a;
+    }
+
+    /* Selling price styling */
+    input[type="number"].selling-price {
+        transition: background-color 0.6s ease, color 0.6s ease;
+    }
+
+    input[type="number"].selling-price:hover {
+        opacity: 0.9;
+    }
+
+    /* Supplier select styling */
+    .supplier-select + .select2-container .select2-selection {
+        background-color: rgb(153, 205, 248) !important;
+        transition: background-color 0.6s ease, color 0.6s ease;
+    }
+
+    .supplier-select + .select2-container .select2-selection .select2-selection__rendered {
+        color: #000 !important;
+    }
+
+    /* PIN error animation */
+    .shake {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        transform: translate3d(0, 0, 0);
+    }
+
+    @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+        40%, 60% { transform: translate3d(4px, 0, 0); }
+    }
+
+    .item-in-quote {
+        border-left: 4px solid #bc8912;
+    }
+
+    .item-saved {
+        box-shadow: 0 0 10px rgba(49, 40, 167, 0.5);
+        transition: box-shadow 0.5s ease;
+    }
+
+    /* Add table view styles */
+    .items-table {
+        width: 100%;
+    }
+    
+    .items-table th {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 10;
+        font-weight: bold;
+        padding: 10px;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .items-table td {
+        padding: 0.5rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    /* Toggle notes button styling */
+    .toggle-notes {
+        color: #6c757d;
+        font-size: 0.8rem;
+        cursor: pointer;
+        padding: 2px 5px;
+    }
+    
+    .toggle-notes:hover {
+        color: #007bff;
+    }
+    
+    /* Item saved animation */
+    .row-saved {
+        animation: flash-success 1s ease;
+    }
+    
+    @keyframes flash-success {
+        0%, 100% { background-color: transparent; }
+        50% { background-color: rgb(25, 135, 84); }
+    }
+    
+    /* Row styling */
+    .item-row {
+        transition: all 0.2s ease;
+    }
+    
+    .item-row:hover {
+        background-color: rgba(0,0,0,0.03);
+    }
+    
+    .item-row.item-in-quote {
+        border-left: 4px solid #ce0005;
+    }
+
+    /* Enhanced Item saved animation */
+    .row-saved {
+        animation: flash-success 2s ease;
+    }
+    
+    @keyframes flash-success {
+        0%, 100% { background-color: transparent; }
+        20%, 80% { background-color: rgba(25, 135, 84, 0.3); }
+    }
+    
+    /* Add a green border to the saved row */
+    .row-saved td {
+        box-shadow: inset 0 0 0 5px rgba(121, 11, 238, 0.82);
+        position: relative;
+    }
+
+    /* UPDATED: Enhanced Item saved animation */
+    .row-saved {
+        animation: flash-success 3s ease;
+        position: relative;
+    }
+    
+    @keyframes flash-success {
+        0%, 100% { background-color: transparent; }
+        10%, 90% { background-color: rgba(135, 47, 25, 0.4); }
+    }
+    
+    /* Add a bolder green border to the saved row */
+    .row-saved td {
+        box-shadow: inset 0 0 0 3px #cc024e;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Improved persistent saved item highlight */
+    .item-saved-persistent {
+        background-color: rgba(25, 135, 84, 0.15) !important; /* Increased opacity from 0.05 to 0.15 */
+        border-left: 6px solid #a42ba4 !important; /* Increased from 4px to 6px */
+        position: relative;
+    }
+    
+    .item-saved-persistent td {
+        border-bottom: 2px solid rgba(25, 135, 84, 0.4) !important; /* Thicker and more visible border */
+        border-top: 1px solid rgb(245, 181, 6) !important; /* Added top border */
+    }
+    
+    /* Add a subtle glow effect for more emphasis */
+    .item-saved-persistent::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        box-shadow: inset 0 0 5px rgba(135, 25, 58, 0.3);
+        pointer-events: none;
+    }
+
+    /* Improved persistent saved item highlight with neon green border */
+    .item-saved-persistent {
+        background-color: rgba(57, 255, 20, 0.08) !important; /* Subtle neon green background */
+        border-left: 5px solid #39ff14 !important; /* Neon green thick border */
+        position: relative;
+    }
+
+    .item-saved-persistent td {
+        border-bottom: 2px solid #39ff14 !important; /* Neon green bottom border */
+        border-top: 2px solid #39ff14 !important; /* Matching top border */
+    }
+
+    /* Add a glowing effect for the neon look */
+    .item-saved-persistent::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        box-shadow: inset 0 0 8px rgba(57, 255, 20, 0.6), 0 0 15px rgba(57, 255, 20, 0.3);
+        pointer-events: none;
+    }
+
+    /* Make the animation border also neon green */
+    .row-saved td {
+        box-shadow: inset 0 0 0 5px #39ff14;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Add to your existing CSS in the style block */
+    .item-subrow {
+        border-top: none !important;
+        border-bottom: 2px dashed #dee2e6;
+    }
+
+    /* Style the labels */
+    .form-label.fw-bold {
+        color: #495057;
+        margin-bottom: 0.2rem;
+    }
+
+    /* Make the quantity stand out even more */
+    input[name^="quantity_"] {
+        color: #000;
+        box-shadow: 0 0 5px rgba(0,123,255,0.3);
+    }
+
+    /* Adjust the supplier select to match the style */
+    .supplier-select {
+        margin-top: 0.5rem;
+    }
+
+    /* More compact buttons */
+    .btn-xs {
+        padding: 0.1rem 0.4rem;
+        font-size: 0.75rem;
+        line-height: 1.5;
+        border-radius: 0.2rem;
+    }
+
+    /* Make action buttons more compact */
+    .btn-group-sm > .btn {
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Better spacing for the table */
+    .items-table td {
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+
+    /* Highlight saved items */
+    .item-saved-persistent td {
+        border-left: 4px solid #39ff14;
+        background-color: rgba(57, 255, 20, 0.05);
+    }
+
+    /* Remove excessive padding from form controls */
+    .form-control, .form-select {
+        padding: 0.375rem 0.5rem;
+    }
+
+    /* Tooltips for buttons */
+    [title] {
+        position: relative;
+        cursor: help;
+    }
+
+    /* Make sure toggle buttons are noticeable */
+    .toggle-notes, .toggle-item-notes {
+        color: #007bff;
+        padding: 0.1rem 0.3rem;
+        font-size: 0.75rem;
+    }
+
+    /* Add to your existing CSS */
+    .select2-container {
+        z-index: 1050;
+        width: 100% !important;
+    }
+
+    .select2-container--bootstrap-5 .select2-selection {
+        min-height: calc(1.5em + 0.75rem + 2px);
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.25rem;
+        border: 1px solid #ced4da;
+    }
+
+    /* Show when Select2 isn't initialized properly */
+    select.supplier-select:not(.select2-hidden-accessible) {
+        border: 2px dashed red !important;
+    }
+
+    /* Add these at the bottom of your style block */
+    .select2-container {
+        z-index: 10000 !important; /* Ensure dropdowns appear above all content */
+        width: 100% !important;
+    }
+
+    .select2-dropdown {
+        z-index: 10001 !important; /* Higher than container */
+    }
+
+    .select2-container .select2-selection--single {
+        height: calc(1.5em + 0.75rem + 2px) !important;
+    }
+
+    /* Fix dropdown width to match the input */
+    .select2-container--open .select2-dropdown {
+        width: auto !important;
+        min-width: 100% !important;
+    }
+
+    /* Improve the dropdown appearance */
+    .select2-results__option {
+        padding: 6px 12px !important;
+    }
+
+    /* Fix border color on focus */
+    .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+        border-color: #86b7fe !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
+
+    /* Add this to your existing CSS in the style block */
+
+    /* Fixed save confirmation banner */
+    .save-confirmation-banner {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        background-color: #198754;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        transform: translateX(120%);
+        transition: transform 0.3s ease-out;
+        max-width: 350px;
+    }
+
+    .save-confirmation-banner.show {
+        transform: translateX(0);
+    }
+
+    .save-confirmation-banner i {
+        font-size: 20px;
+        margin-right: 12px;
+    }
+
+    .save-confirmation-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .save-confirmation-title {
+        font-weight: bold;
+        font-size: 16px;
+        margin-bottom: 3px;
+    }
+
+    .save-confirmation-message {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    /* Persistent item marker - simple and professional */
+    .item-saved-indicator {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 4px;
+        height: 100%;
+        background-color: #198754;
+    }
+
+    /* Simple success highlight */
+    .item-saved-persistent {
+        background-color: rgba(25, 135, 84, 0.05) !important;
+        position: relative;
+    }
+
+    /* Clear badge for saved items */
+    .saved-badge {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: #198754;
+        color: white;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        opacity: 0.8;
+    }
+
+    /* Add this right after your existing style block */
+    <style>
+    /* Quick fix for saved items - prominently visible */
+    .item-saved-persistent {
+        background-color: rgba(40, 167, 69, 0.1) !important;
+        border: 2px solid #28a745 !important;
+        position: relative;
+    }
+    
+    .saved-badge {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: #28a745;
+        color: white;
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        z-index: 5;
+    }
+    
+    /* Enhanced row saved animation */
+    .row-saved {
+        animation: save-flash 1.5s ease;
+    }
+    
+    @keyframes save-flash {
+        0%, 100% { background-color: transparent; }
+        30%, 70% { background-color: rgba(40, 167, 69, 0.4); }
+    }
+    
+    .item-saved-marker {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 6px;
+        background-color: #28a745;
+    }
+</style>
+
+<!-- Add this to your existing CSS in the style block -->
+<style>
+    /* Enhanced saved item styling */
+    .item-saved-persistent {
+        background-color: rgba(40, 167, 69, 0.08) !important;
+        position: relative;
+        border-left: none !important; /* Remove default border if any */
+    }
+    
+    /* Remove the saved badge */
+    .saved-badge {
+        display: none !important;
+    }
+    
+    /* Improved left marker */
+    .item-saved-marker {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 10px !important;
+        background-color: #28a745 !important;
+        box-shadow: 0 0 8px rgba(40, 167, 69, 0.7) !important;
+        animation: pulse-marker 2s infinite;
+    }
+    
+    @keyframes pulse-marker {
+        0% { opacity: 0.8; }
+        50% { opacity: 1; }
+        100% { opacity: 0.8; }
+    }
+    
+    /* Add subtle texture to the saved row */
+    .item-saved-persistent::after {
+        content: '';
+        position: absolute;
+        left: 10px; /* Match the marker width */
+        top: 0;
+        right: 0;
+        bottom: 0;
+        background: repeating-linear-gradient(
+            45deg,
+            rgba(40, 167, 69, 0.03),
+            rgba(40, 167, 69, 0.03) 10px,
+            rgba(40, 167, 69, 0.06) 10px,
+            rgba(40, 167, 69, 0.06) 20px
+        );
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    /* Make sure the left marker is above the texture */
+    .item-saved-marker {
+        z-index: 2;
+    }
+    
+    /* Enhanced row animation */
+    .row-saved {
+        animation: save-flash 1.5s ease;
+    }
+    
+    @keyframes save-flash {
+        0%, 100% { background-color: transparent; }
+        30%, 70% { background-color: rgba(40, 167, 69, 0.4); }
+    }
+
+</style>
+
+<style>
+    /* jQuery UI autocomplete styling */
+    .ui-autocomplete {
+        max-height: 300px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 9999 !important;
+    }
+    
+    .ui-menu-item {
+        padding: 5px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .ui-menu-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .ui-menu-item .ui-menu-item-wrapper.ui-state-active {
+        background-color: #007bff !important;
+        border: none !important;
+        color: white !important;
+    }
+    
+    /* Stock badge styling */
+    .stock-badge {
+        font-size: 0.7rem;
+        border-radius: 10px;
+        padding: 2px 6px;
+    }
+</style>
+
+<style>
+    /* Make item-saved-indicator match item-saved-marker */
+    .item-saved-indicator {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 10px !important;
+        background-color: #28a745 !important;
+        box-shadow: 0 0 8px rgba(40, 167, 69, 0.7) !important;
+        animation: pulse-marker 2s infinite;
+        z-index: 2;
+    }
+</style>
+
+<style>
+    /* Small screen optimizations */
+    @media (max-width: 992px) {
+        /* Optimize table layout for mobile */
+        .items-table thead {
+            display: none; /* Hide the header row on mobile */
+        }
+        
+        .items-table, 
+        .items-table tbody, 
+        .items-table tr, 
+        .items-table td {
+            display: block;
+            width: 100%;
+        }
+        
+        /* Create a card-like layout for each row */
+        .items-table tr[data-item-id] {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            position: relative;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* Hide column table cells that will be rearranged */
+        .items-table td {
+            border: none;
+            padding: 0.25rem 0;
+        }
+        
+        /* Create a mobile grid layout */
+        .mobile-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* Label for mobile fields */
+        .mobile-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Make primary fields larger */
+        .mobile-primary-field {
+            grid-column: span 2;
+        }
+        
+        /* Make quantity, cost and markup fields more prominent */
+        .mobile-grid .form-control[name^="quantity_"],
+        .mobile-grid .input-group-sm,
+        .mobile-grid .select2-selection {
+            height: 42px !important;
+            font-size: 16px !important;
+        }
+        
+        /* Reduce size of description */
+        .items-table textarea[name^="quote_reference_"] {
+            height: 50px;
+            font-size: 0.9rem;
+            min-height: auto;
+            border-left: 3px solid #1070d9;
+        }
+        
+        /* Hide duplicate buttons in mobile view */
+        .mobile-grid .btn-group-sm {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        
+        /* Item number and checkbox in mobile */
+        .mobile-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .mobile-item-number {
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Save button in mobile view */
+        .mobile-save-btn {
+            width: 100%;
+            margin-top: 1rem;
+            height: 44px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        /* Saved indicator in mobile */
+        .mobile-saved-indicator {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 6px;
+            background-color: #28a745;
+        }
+        
+        /* Mobile view actions area */
+        .mobile-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .mobile-actions .btn {
+            flex: 1;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            height: auto;
+        }
+    }
+</style>
+
+<style>
+.edit-pricing-btn {
+  transition: all 0.2s ease;
+}
+
+.edit-pricing-btn:hover {
+  background-color: #3984b8;
+  color: white;
+}
+
+.pricing-display {
+  margin-top: 8px;
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+#pricingModal .modal-content {
+  border-top: 4px solid #3984b8;
+}
+
+#modalItemDescription {
+  font-weight: 500;
+  min-height: 40px;
+  white-space: pre-wrap;
+}
+</style>
+
+<style>
+.is-invalid {
+    border-color: #dc3545 !important;
+    padding-right: calc(1.5em + 0.75rem) !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right calc(0.375em + 0.1875rem) center !important;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+}
+
+/* Make sure toastr notifications are visible */
+.toast-error {
+    background-color: #dc3545 !important;
+}
+
+.toast-error .toast-title, 
+.toast-error .toast-message {
+    color: white !important;
+}
+
+.toast-error .toast-message ul {
+    margin-top: 5px;
+    margin-bottom: 0;
+    padding-left: 20px;
+}
+
+/* Mobile textarea improvements */
+.mobile-description {
+    resize: vertical !important;
+    min-height: 80px !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    line-height: 1.5 !important;
+}
+
+/* Improve textarea display on mobile */
+@media (max-width: 767px) {
+    textarea.form-control {
+        min-height: 100px !important;
+        font-size: 16px !important; /* Prevents iOS zoom on focus */
+    }
+    
+    /* Better spacing for the description field */
+    .mobile-description {
+        margin-bottom: 10px !important;
+    }
+    
+    /* Make textareas expand to show all content */
+    textarea.auto-expand {
+        overflow: hidden;
+    }
+}
+</style>
+{% endblock head_css %}
 
 {% block content %}
 <div class="container-fluid">
+    <!-- NEW: Quote Overview Card -->
+    <div class="card mb-3">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Quote #{{ quote.quote_number }} Overview</h5>
+                <span class="badge {% if quote.status == 'new' %}bg-warning{% elif quote.status == 'claimed' %}bg-info{% elif quote.status == 'processed' %}bg-primary{% else %}bg-success{% endif %}">
+                    {{ quote.status|title }}
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Customer Information -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="feather icon-user me-2"></i>Customer Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Name:</strong> {{ quote.customer.customer }}</p>
+                            <p><strong>Company:</strong> {{ quote.customer.company }}</p>
+                            <p><strong>Email:</strong> {{ quote.customer.email }}</p>
+                            <p><strong>Phone:</strong> {{ quote.customer.number }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quote Details -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="feather icon-file-text me-2"></i>Quote Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Created:</strong> {{ quote.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Reference:</strong> {{ quote.quote_reference|default:"None" }}</p>
+                            <p><strong>Description:</strong> {{ quote.description|truncatechars:50 }}</p>
+                            <p><strong>Items:</strong> {{ quote.items.count }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Staff Information -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="feather icon-users me-2"></i>Staff Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Requested By:</strong> {{ quote.rep.get_full_name|default:quote.rep.username }}</p>
+                            <p><strong>Assigned To:</strong> {{ quote.assigned_to.get_full_name|default:quote.assigned_to.username|default:"Not Assigned" }}</p>
+                            <p><strong>Company Letterhead:</strong> {{ quote.company_letterhead }}</p>
+                            <p><strong>Last Updated:</strong> {{ quote.updated_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this before the quote form -->
+    {% if quote.status == 'submitted_for_approval' %}
+    <div class="alert alert-info">
+        <i class="feather icon-clock"></i> This quote is awaiting approval.
+    </div>
+    {% elif quote.status == 'rejected' %}
+    <div class="alert alert-danger">
+        <i class="feather icon-x-circle"></i> This quote was rejected.
+        {% if quote.notes %}
+        <hr>
+        <strong>Reason:</strong>
+        <pre>{{ quote.notes }}</pre>
+        {% endif %}
+    </div>
+    {% elif quote.status == 'approved' %}
+    <div class="alert alert-success">
+        <i class="feather icon-check-circle"></i> This quote has been approved and is ready to send.
+    </div>
+    {% endif %}
+
+    <!-- Replace the original card with table view -->
     <div class="card">
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
@@ -13,136 +916,156 @@
             </div>
         </div>
         <div class="card-body">
+            <!-- Make sure this appears at the top of the form -->
             <form method="post" id="quote-process-form">
                 {% csrf_token %}
-                <div class="mb-3">
-                    <label class="form-label">Company Letterhead</label>
-                    <select name="company_letterhead" class="form-select">
-                        {% for code, name in quote.COMPANY_CHOICES %}
-                        <option value="{{ code }}" {% if quote.company_letterhead == code %}selected{% endif %}>
-                            {{ name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div id="items-container">
-                    {% for item in items %}
-                    <div class="item-section card mb-3">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6>Item #{{ forloop.counter }}</h6>
-                                {% if forloop.counter > 1 %}
-                                <button type="button" class="btn btn-danger btn-sm remove-item">
-                                    <i class="feather icon-trash-2"></i>
-                                </button>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    <label class="form-label">RFQ Description</label>
-                                    <textarea name="description_{{ item.id }}" 
-                                            class="form-control" 
-                                            rows="2" 
-                                            style="background-color:rgb(255, 255, 255);">{{ item.description }}</textarea>
-                                </div>
-                                
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Quote Number</label>
-                                    <input type="text" name="quote_number_{{ item.id }}" 
-                                           class="form-control" value="{{ item.quote_number|default:quote.quote_number }}" 
-                                           readonly
-                                           style="background-color:rgb(255, 255, 255);">
-                                </div>
-                                
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Quote DESCRIPTION</label>
-                                    <input type="text" name="quote_reference_{{ item.id }}" 
-                                           class="form-control" value="{{ item.quote_reference|default:'' }}"
-                                           style="background-color:rgb(153, 205, 248);">
-                                </div>
-                                
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Quantity</label>
+                <div class="table-responsive">
+                    <!-- Update your table layout to be more compact -->
+                    <table class="table items-table">
+                        <thead>
+                            <tr>
+                                <!-- Remove the markup and selling price columns from the header -->
+                                <!-- Keep only necessary columns -->
+                                <th>Item</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Supplier</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-container" data-quote-id="{{ quote.id }}">
+                            {% for item in items %}
+                            <tr data-item-id="{{ item.id }}" class="{% if item.is_processed %}item-saved{% endif %}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <input type="checkbox" name="selected_items" value="{{ item.id }}" class="me-2">
+                                        <span class="item-number">
+                                            #{{ forloop.counter }}
+                                            {% if item.is_processed %}
+                                            <span class="save-indicator" title="Item saved">
+                                                <i class="feather icon-check-circle text-success"></i>
+                                            </span>
+                                            {% else %}
+                                            <span class="save-indicator d-none" title="Item saved">
+                                                <i class="feather icon-check-circle text-success"></i>
+                                            </span>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="hidden" name="quote_number_{{ item.id }}" value="{{ item.quote_number|default:quote.quote_number }}">
+
+                                    <!-- Replace the existing quote reference textarea with this -->
+                                    <textarea name="quote_reference_{{ item.id }}" 
+                                        class="form-control mobile-description" 
+                                        rows="3"
+                                        style="background-color:rgb(153, 205, 248); min-height: 80px; resize: vertical;"
+                                        placeholder="Type to search internal stock items..."
+                                        required>{{ item.quote_reference|default:'' }}</textarea>
+                                    
+                                    <div class="btn-toolbar mt-1">
+                                        <button type="button" class="btn btn-xs btn-link toggle-notes mobile-friendly-btn" 
+                                                data-bs-target="#description-{{ item.id }}">
+                                            <i class="feather icon-info"></i> RFQ Details
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-link toggle-item-notes" 
+                                                data-bs-target="#notes-row-{{ item.id }}">
+                                            <i class="feather icon-message-square"></i>
+                                            {% if item.notes %}<span class="badge bg-info text-white">✓</span>{% endif %}
+                                            Notes
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>
                                     <input type="number" name="quantity_{{ item.id }}" 
                                            class="form-control" value="{{ item.quantity }}"
-                                           style="background-color:rgb(153, 205, 248);">
-                                </div>
-                                
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Supplier</label>
-                                    <select name="supplier_{{ item.id }}" 
-                                            class="form-control supplier-select" 
-                                            data-item-id="{{ item.id }}">
-                                        <option value="">Select Supplier</option>
-                                        {% if item.supplier %}
-                                            <option value="{{ item.supplier.id }}" selected>
-                                                {{ item.supplier.suppliername }}
+                                           style="background-color:rgb(153, 205, 248); font-weight: bold;">
+                                </td>
+                                <td>
+                                    <select class="form-control supplier-select mobile-friendly-select" name="supplier_{{ item.id }}" required>
+                                        <option value="">Select supplier</option>  <!-- Empty value for validation -->
+                                        {% for supplier in suppliers %}
+                                            <option value="{{ supplier.id }}" {% if item.supplier_id == supplier.id %}selected{% endif %}>
+                                                {{ supplier.suppliername }}
                                             </option>
-                                        {% endif %}
+                                        {% endfor %}
                                     </select>
-                                </div>
-                                
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Cost Price</label>
-                                    <input type="number" step="0.01" name="cost_price_{{ item.id }}" 
-                                           class="form-control cost-price" 
-                                           value="{{ item.cost_price|default:'' }}"
-                                           data-item-id="{{ item.id }}"
-                                           onchange="calculatePrices({{ item.id }}, 'cost')"
-                                           style="background-color:rgb(153, 205, 248);">
-                                </div>
-                                
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Markup %</label>
-                                    <input type="number" step="0.01" 
-                                           name="markup_{{ item.id }}" 
-                                           class="form-control markup" 
-                                           value="{{ item.markup|default:'' }}"
-                                           data-item-id="{{ item.id }}"
-                                           onchange="calculatePrices({{ item.id }}, 'markup')"
-                                           style="background-color:rgb(153, 205, 248);">
-                                </div>
-                                
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Selling Price</label>
-                                    <input type="number" step="0.01" name="selling_price_{{ item.id }}" 
-                                           class="form-control selling-price" 
-                                           value="{{ item.selling_price|default:'' }}"
-                                           data-item-id="{{ item.id }}"
-                                           onchange="calculatePrices({{ item.id }}, 'selling')"
-                                           style="background-color:rgb(255, 255, 255);">
-                                </div>
-                                
-                                <div class="col-md-12 mb-3">
-                                    <label class="form-label">Notes</label>
-                                    <textarea name="notes_{{ item.id }}" class="form-control" rows="2"
-                                              style="background-color:rgb(153, 205, 248);">{{ item.notes }}</textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <!-- Edit Pricing button moved to be first -->
+                                        <button type="button" class="btn btn-outline-primary btn-sm edit-pricing-btn" data-item-id="{{ item.id }}" title="Edit Pricing">
+                                            <i class="feather icon-dollar-sign"></i> Edit Pricing
+                                        </button>
+                                        
+                                        <!-- Original action buttons -->
+                                        <button type="button" class="btn btn-info btn-sm save-item-btn" data-item-id="{{ item.id }}" title="Save Item">
+                                            <i class="feather icon-save"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm remove-item" data-item-id="{{ item.id }}" title="Delete Item">
+                                            <i class="feather icon-trash-2"></i>
+                                        </button>
+
+                                        <!-- Hidden pricing fields - keep these -->
+                                        <input type="hidden" name="cost_price_{{ item.id }}" value="{{ item.cost_price|default:'' }}">
+                                        <input type="hidden" name="markup_{{ item.id }}" value="{{ item.markup|default:'' }}">
+                                        <input type="hidden" name="selling_price_{{ item.id }}" value="{{ item.selling_price|default:'' }}">
+
+                                        <!-- Pricing display section -->
+                                        <div class="pricing-display-{{ item.id }} ms-2">
+                                            {% if item.cost_price and item.markup %}
+                                                <span class="badge bg-light text-dark">Cost: R{{ item.cost_price }}</span>
+                                                <span class="badge bg-light text-dark">Markup: {{ item.markup }}%</span>
+                                                <span class="badge bg-light text-dark">Selling: R{{ item.selling_price }}</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-secondary">No pricing set</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Description row -->
+                            <tr id="description-{{ item.id }}" class="collapse bg-light">
+                                <td colspan="8">
+                                    <div class="p-2">
+                                        <label class="form-label">RFQ Description</label>
+                                        <textarea name="description_{{ item.id }}" 
+                                                  class="form-control" rows="2"
+                                                  required>{{ item.description }}</textarea>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Notes row -->
+                            <tr id="notes-row-{{ item.id }}" class="collapse bg-light">
+                                <td colspan="8">
+                                    <div class="p-2">
+                                        <label class="form-label">Notes</label>
+                                        <textarea name="notes_{{ item.id }}" class="form-control" rows="2"
+                                                style="background-color:rgb(153, 205, 248);">{{ item.notes }}</textarea>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
                 
-                <div class="text-end">
-                    <button type="submit" class="btn btn-success">Save All Items</button>
+                <div class="card-footer mt-3">
+                    <div class="d-flex justify-content-between">
+
+                        
+                        <div>
+                            <button type="button" class="btn btn-success generate-quote-btn" data-letterhead="CNL">
+                                <i class="feather icon-file-text"></i> Generate CNL Quote
+                            </button>
+                            <button type="button" class="btn btn-info generate-quote-btn" data-letterhead="ISH">
+                                <i class="feather icon-file-text"></i> Generate Isherwood Quote
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </form>
-            <div class="card-footer">
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-                <button type="button" id="save-generate-quote" class="btn btn-success">
-                    <i class="feather icon-file-text"></i> Save & Generate Quote
-                </button>
-            </div>
-            {% if quote.all_items_complete %}
-            <div class="text-end mt-3">
-                <a href="{% url 'quotes:generate_quote_pdf' quote.id %}" 
-                   class="btn btn-success">
-                    <i class="feather icon-file-text"></i> Generate Quote PDF
-                </a>
-            </div>
-            {% endif %}
         </div>
     </div>
 
@@ -151,7 +1074,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5>Email Quote Details</h5>
-                <button class="btn btn-primary btn-sm" type="button" 
+                <button class="btn btn-primary btn-sm" type="button"
                         data-bs-toggle="collapse" data-bs-target="#emailDetails">
                     <i class="feather icon-eye"></i> Toggle Details
                 </button>
@@ -182,7 +1105,7 @@
                                     {% for attachment in quote.attachments.all %}
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
                                             <a href="{{ attachment.file.url }}" target="_blank">
-                                                <i class="feather icon-paperclip"></i> 
+                                                <i class="feather icon-paperclip"></i>
                                                 {{ attachment.filename }}
                                             </a>
                                             <span class="text-muted small">
@@ -200,487 +1123,503 @@
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
 
-{% block javascripts %}
-{{ block.super }}
-<script>
-    // Remember collapse state in localStorage
-    document.addEventListener('DOMContentLoaded', function() {
-        const emailDetails = document.getElementById('emailDetails');
-        const collapseState = localStorage.getItem('emailDetailsCollapsed');
-        
-        if (collapseState === 'true') {
-            emailDetails.classList.remove('show');
-        }
-
-        emailDetails.addEventListener('hidden.bs.collapse', function () {
-            localStorage.setItem('emailDetailsCollapsed', 'true');
-        });
-
-        emailDetails.addEventListener('shown.bs.collapse', function () {
-            localStorage.setItem('emailDetailsCollapsed', 'false');
-        });
-    });
-
-    function calculatePrices(itemId, source) {
-        const costPriceInput = document.querySelector(`[name="cost_price_${itemId}"]`);
-        const markupInput = document.querySelector(`[name="markup_${itemId}"]`);
-        const sellingPriceInput = document.querySelector(`[name="selling_price_${itemId}"]`);
-        
-        if (!costPriceInput || !markupInput || !sellingPriceInput) return;
-        
-        const costPrice = parseFloat(costPriceInput.value) || 0;
-        const markup = parseFloat(markupInput.value) || 0;
-        const sellingPrice = parseFloat(sellingPriceInput.value) || 0;
-
-        console.log('Calculating prices:', { costPrice, markup, sellingPrice });
-
-        switch(source) {
-            case 'cost':
-            case 'markup':
-                if (costPrice > 0 && markup >= 0) {
-                    const calculatedSellingPrice = costPrice * (1 + (markup / 100));
-                    sellingPriceInput.value = calculatedSellingPrice.toFixed(2);
-                    updatePriceColor(sellingPriceInput, markup);
-                }
-                break;
-                
-            case 'selling':
-                if (costPrice > 0 && sellingPrice > 0) {
-                    const calculatedMarkup = ((sellingPrice - costPrice) / costPrice) * 100;
-                    markupInput.value = calculatedMarkup.toFixed(2);
-                    updatePriceColor(sellingPriceInput, calculatedMarkup);
-                }
-                break;
-        }
-    }
-
-    $(document).ready(function() {
-        // Move itemCounter outside the template literal
-        let itemCounter = {{ items|length|default:0 }};
-        
-        $('#add-item-btn').click(function() {
-            itemCounter++;
-            const supplierOptions = `
-                {% for supplier in suppliers %}
-                    <option value="{{ supplier.id }}">{{ supplier.suppliername }}</option>
-                {% endfor %}
-            `;
-            
-            const newItemHtml = `
-                <div class="item-section card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6>New Item</h6>
-                            <button type="button" class="btn btn-danger btn-sm remove-item">
-                                <i class="feather icon-trash-2"></i>
-                            </button>
+    <!-- Add this after the Email Details Card -->
+    <div class="col-sm-12 mt-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Quote Attachments & Voice Notes</h5>
+                <button class="btn btn-primary btn-sm" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#attachmentDetails">
+                    <i class="feather icon-eye"></i> Toggle Details
+                </button>
+            </div>
+            <div class="collapse show" id="attachmentDetails">
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Quote Photo Display -->
+                        {% if quote.photo %}
+                        <div class="col-md-6 mb-4">
+                            <h6>Quote Photo:</h6>
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <a href="{{ quote.photo.url }}" target="_blank">
+                                        <img src="{{ quote.photo.url }}" alt="Quote Photo" class="img-fluid rounded" 
+                                             style="max-height: 200px; max-width: 100%;">
+                                    </a>
+                                    <p class="small text-muted mt-2">Click to view full size</p>
+                                </div>
+                            </div>
                         </div>
+                        {% endif %}
                         
+                        <!-- Voice Notes Display -->
+                        {% if quote.voice_notes.exists %}
+                        <div class="col-md-6 mb-4">
+                            <h6>Voice Notes:</h6>
+                            <div class="list-group">
+                                {% for voice_note in quote.voice_notes.all %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Voice Note</h6>
+                                        <small>{{ voice_note.created_at|date:"Y-m-d H:i" }}</small>
+                                    </div>
+                                    <div class="mt-2">
+                                        <audio controls style="width: 100%;">
+                                            <source src="{{ voice_note.audio_file.url }}" type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- File Attachments Display -->
+                    {% if quote.attachments.exists %}
+                    <div class="mt-4">
+                        <h6>File Attachments:</h6>
                         <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label">Description</label>
-                                <textarea name="description_new_${itemCounter}" class="form-control" rows="2"></textarea>
+                            {% for attachment in quote.attachments.all %}
+                            <div class="col-md-3 col-sm-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body p-2 text-center">
+                                        <a href="{{ attachment.file.url }}" target="_blank">
+                                            {% if attachment.file.name|lower|endswith:'.jpg,.jpeg,.png,.gif' %}
+                                                <img src="{{ attachment.file.url }}" class="img-thumbnail" style="max-height: 100px;">
+                                            {% elif attachment.file.name|lower|endswith:'.pdf' %}
+                                                <i class="feather icon-file-text text-danger" style="font-size: 2rem;"></i>
+                                            {% else %}
+                                                <i class="feather icon-file" style="font-size: 2rem;"></i>
+                                            {% endif %}
+                                        </a>
+                                        <p class="small mb-1 text-truncate">{{ attachment.filename }}</p>
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Quote Number</label>
-                                <input type="text" name="quote_number_new_${itemCounter}" class="form-control">
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Quote Reference</label>
-                                <input type="text" name="quote_reference_new_${itemCounter}" class="form-control">
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Quantity</label>
-                                <input type="number" name="quantity_new_${itemCounter}" class="form-control">
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Supplier</label>
-                                <select name="supplier_new_${itemCounter}" class="form-select">
-                                    <option value="">Select Supplier</option>
-                                    ${supplierOptions}
-                                </select>
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Cost Price</label>
-                                <input type="number" step="0.01" name="cost_price_new_${itemCounter}" 
-                                       class="form-control cost-price" data-item="new_${itemCounter}">
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Selling Price</label>
-                                <input type="number" step="0.01" name="selling_price_new_${itemCounter}" 
-                                       class="form-control selling-price" data-item="new_${itemCounter}">
-                            </div>
-                            
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label">Notes</label>
-                                <textarea name="notes_new_${itemCounter}" class="form-control" rows="2"></textarea>
-                            </div>
+                            {% endfor %}
                         </div>
                     </div>
+                    {% else %}
+                    <p class="text-muted mt-3">No file attachments found.</p>
+                    {% endif %}
+                    
+                    {% if not quote.photo and not quote.voice_notes.exists and not quote.attachments.exists %}
+                    <div class="alert alert-light text-center">
+                        <i class="feather icon-file-text"></i> No attachments or voice notes found for this quote.
+                    </div>
+                    {% endif %}
                 </div>
-            `;
-            $('#items-container').append(newItemHtml);
-        });
-        
-        // Remove item
-        $(document).on('click', '.remove-item', function() {
-            $(this).closest('.item-section').remove();
-        });
-    });
+            </div>
+        </div>
+    </div>
 
-    function updatePrices(itemId, source) {
-        const costPrice = parseFloat(document.querySelector(`[name="cost_price_${itemId}"]`).value) || 0;
-        const markupInput = document.querySelector(`[name="markup_${itemId}"]`);
-        const sellingPriceInput = document.querySelector(`[name="selling_price_${itemId}"]`);
-        
-        switch(source) {
-            case 'cost':
-            case 'markup':
-                // Calculate selling price from cost and markup
-                const markup = parseFloat(markupInput.value) || 0;
-                const calculatedSellingPrice = costPrice * (1 + (markup / 100));
-                sellingPriceInput.value = calculatedSellingPrice.toFixed(2);
-                break;
-                
-            case 'selling':
-                // Calculate markup from cost and selling price
-                const sellingPrice = parseFloat(sellingPriceInput.value) || 0;
-                if (costPrice > 0 && sellingPrice > 0) {
-                    const calculatedMarkup = ((sellingPrice - costPrice) / costPrice) * 100;
-                    markupInput.value = calculatedMarkup.toFixed(2);
-                    // Update color after calculation based on calculated markup
-                    if (calculatedMarkup >= 15) {
-                        sellingPriceInput.style.backgroundColor = '#d4edda';
-                        sellingPriceInput.style.color = '#155724';
-                    } else {
-                        sellingPriceInput.style.backgroundColor = '#f8d7da';
-                        sellingPriceInput.style.color = '#721c24';
-                    }
-                }
-                break;
-        }
-    }
+    <!-- Add this somewhere in your page, it can be hidden -->
+    <div class="d-none">
+        <div class="customer-info">
+            <span class="customer-email">{{ quote.customer.email }}</span>
+        </div>
+        <div class="rep-info">
+            <span class="rep-email">{{ quote.rep.email }}</span>
+        </div>
+    </div>
 
-    // For new items
-    function addNewItem() {
-        itemCounter++;
-        const newItemHtml = `
-            <!-- ... existing new item template ... -->
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Quote Number</label>
-                <input type="text" 
-                       name="quote_number_new_${itemCounter}" 
-                       class="form-control" 
-                       value="{{ quote.quote_number }}" 
-                       readonly>
+    <!-- Manager PIN Override Modal -->
+    <div class="modal fade" id="pinOverrideModal" tabindex="-1" aria-labelledby="pinOverrideModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pinOverrideModalLabel">Manager Override Required</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-danger">
+                        <i class="feather icon-alert-triangle me-1"></i>
+                        The markup is below 20%. Manager approval required.
+                    </p>
+                    <div class="mb-3">
+                        <label for="managerPin" class="form-label">Enter Manager PIN</label>
+                        <input type="password" class="form-control" id="managerPin" placeholder="Enter PIN">
+                        <div class="invalid-feedback">Invalid PIN. Please try again or contact a manager.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="validatePinBtn">Validate</button>
+                </div>
             </div>
-            
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Cost Price</label>
-                <input type="number" step="0.01" 
-                       name="cost_price_new_${itemCounter}" 
-                       class="form-control cost-price" 
-                       onchange="updatePrices('new_${itemCounter}', 'cost')">
-            </div>
-            
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Markup %</label>
-                <input type="number" step="0.01" 
-                       name="markup_new_${itemCounter}" 
-                       class="form-control markup" 
-                       onchange="updatePrices('new_${itemCounter}', 'markup')">
-            </div>
-            
-            <div class="col-md-4 mb-3">
+        </div>
+    </div>
+
+    <!-- Add this modal markup at the end of your content block -->
+    <div class="modal fade" id="pricingModal" tabindex="-1" aria-labelledby="pricingModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="pricingModalLabel">Item Pricing</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="modalItemId" value="">
+            <div class="row mb-3">
+              <div class="col-md-12 mb-3">
+                <label class="form-label">Item Description</label>
+                <div id="modalItemDescription" class="form-control bg-light"></div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Cost Price <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text">R</span>
+                  <input type="number" step="0.01" id="modalCostPrice" class="form-control" style="background-color:rgb(153, 205, 248);" required>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Markup % <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input type="number" step="0.01" id="modalMarkup" class="form-control" style="background-color:rgb(153, 205, 248);" required>
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+              <div class="col-md-4">
                 <label class="form-label">Selling Price</label>
-                <input type="number" step="0.01" 
-                       name="selling_price_new_${itemCounter}" 
-                       class="form-control selling-price" 
-                       onchange="updatePrices('new_${itemCounter}', 'selling')">
+                <div class="input-group">
+                  <span class="input-group-text">R</span>
+                  <input type="number" step="0.01" id="modalSellingPrice" class="form-control" style="background-color:rgb(255, 255, 255);">
+                </div>
+              </div>
             </div>
-            <!-- ... rest of the new item template ... -->
-        `;
-        $('#items-container').append(newItemHtml);
-    }
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="savePricingBtn">Save Pricing</button>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+{% endblock %}
+{% block javascripts %}
+    {{ block.super }}
+{% endblock %}
 
-    function initializeSelect2(element) {
-        $(element).select2({
-            theme: 'bootstrap-5',
-            width: '100%',
-            placeholder: 'Select a supplier',
-            allowClear: true,
-            minimumInputLength: 1,
-            ajax: {
-                url: "{% url 'wfdash:supplier_search' %}",
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        search: params.term
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data.map(function(item) {
-                            return {
-                                id: item.id,
-                                text: item.suppliername
-                            };
-                        })
-                    };
-                },
-                cache: true
-            }
-        });
-    }
-
-    $(document).ready(function() {
-        // Initialize existing supplier dropdowns
-        $('.supplier-select').each(function() {
-            initializeSelect2(this);
-        });
-    });
-</script>
-<script>
-$(document).ready(function() {
-    $('.supplier-select').select2({
-        theme: 'bootstrap-5',
-        width: '100%',
-        placeholder: 'Select a supplier',
-        allowClear: true,
-        minimumInputLength: 1,
-        ajax: {
-            url: "{% url 'wfdash:supplier_search' %}",  // Updated URL name
-            dataType: 'json',
-            delay: 250,
-            data: function(params) {
-                return {
-                    search: params.term,
-                    csrf_token: '{{ csrf_token }}'
-                };
-            },
-            headers: {
-                "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            processResults: function(data) {
-                return {
-                    results: data
-                };
-            },
-            cache: true
-        }
-    });
-});
-</script>
-<script>
-$('#quote-process-form').on('submit', function(e) {
-    e.preventDefault();
+{% block extra_js %}
+    {{ block.super }}
+    <!-- Make sure jQuery is loaded BEFORE Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+    <!-- Add jQuery UI -->
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Your existing scripts -->
+    <script src="{% static '/js/quote_process_n.js' %}"></script>
+    <script src="{% static '/js/quote_email.js' %}"></script>
+    <!-- Add the new internal stock script -->
+    <script src="{% static '/js/internal_stock.js' %}"></script>
     
-    $.ajax({
-        url: $(this).attr('action'),
-        type: 'POST',
-        data: $(this).serialize(),
-        success: function(response) {
-            if (response.status === 'success') {
-                toastr.success('Quote processed successfully!');
-                setTimeout(() => {
-                    window.location.href = "{% url 'quotes:quote_list' %}";
-                }, 1500);
-            } else {
-                toastr.error('Error processing quote');
-            }
-        },
-        error: function() {
-            toastr.error('Error processing quote');
-        }
-    });
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Function to calculate prices
-    function calculatePrices(itemId, source) {
-        console.log('Calculating prices for item:', itemId, 'source:', source);
+    <script>
+    // Initialize quote process on page load with improved debugging
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Document ready, checking for jQuery and Select2...");
         
-        const costPriceInput = document.querySelector(`[name="cost_price_${itemId}"]`);
-        const markupInput = document.querySelector(`[name="markup_${itemId}"]`);
-        const sellingPriceInput = document.querySelector(`[name="selling_price_${itemId}"]`);
-        
-        if (!costPriceInput || !markupInput || !sellingPriceInput) {
-            console.error('Required inputs not found');
+        // Check if jQuery is available
+        if (!window.jQuery) {
+            console.error("jQuery not available! Select2 initialization will fail.");
             return;
         }
         
-        const costPrice = parseFloat(costPriceInput.value) || 0;
-        const markup = parseFloat(markupInput.value) || 0;
-        const sellingPrice = parseFloat(sellingPriceInput.value) || 0;
+        console.log("jQuery version:", jQuery.fn.jquery);
+        console.log("Select2 plugin available:", typeof jQuery.fn.select2 === 'function');
+        
+        // Count supplier dropdowns
+        const supplierSelects = document.querySelectorAll('.supplier-select');
+        console.log(`Found ${supplierSelects.length} supplier select elements`);
+        
+        // Force immediate initialization with simplified config
+        jQuery(function($) {
+            $('.supplier-select').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select supplier',
+                dropdownParent: $('body')  // Set to body for proper positioning
+            });
+            
+            console.log("Direct Select2 initialization complete");
+            
+            // Initialize price calculations
+            document.querySelectorAll('.cost-price').forEach(input => {
+                const itemId = input.name.split('_').pop();
+                calculatePrices(itemId, 'cost');
+            });
+        });
+        
+        // Call the main initialization function for other behaviors
+        if (window.initQuoteProcessPage) {
+            setTimeout(window.initQuoteProcessPage, 100); // Slight delay
+        }
 
-        console.log('Values:', { costPrice, markup, sellingPrice });
+        // Call the auto-expand setup function
+        setupAutoExpandTextareas();
 
-        switch(source) {
-            case 'cost':
-            case 'markup':
-                if (costPrice > 0 && markup >= 0) {
-                    const calculatedSellingPrice = costPrice * (1 + (markup / 100));
-                    sellingPriceInput.value = calculatedSellingPrice.toFixed(2);
-                    updatePriceColor(sellingPriceInput, markup);
-                }
-                break;
+        // Call the double-tap expand setup function
+        setupDoubleTapToExpand();
+
+        // Call the expand buttons setup function
+        addExpandButtons();
+    });
+
+    // Add this to your document.addEventListener('DOMContentLoaded', function() { ... })
+    function setupAutoExpandTextareas() {
+        // Convert textareas to auto-expand
+        document.querySelectorAll('textarea.mobile-description').forEach(textarea => {
+            textarea.classList.add('auto-expand');
+            
+            // Auto-resize function
+            function autoResize() {
+                textarea.style.height = 'auto';
+                textarea.style.height = (textarea.scrollHeight) + 'px';
+            }
+            
+            // Initial resize and event listeners
+            autoResize();
+            textarea.addEventListener('input', autoResize);
+            textarea.addEventListener('focus', autoResize);
+            
+            // Ensure at least minimum height
+            if (parseInt(textarea.style.height) < 80) {
+                textarea.style.height = '80px';
+            }
+        });
+        
+        console.log("Auto-expand textareas initialized");
+    }
+
+    // Add double-tap to expand functionality for textareas
+    function setupDoubleTapToExpand() {
+        let lastTap = 0;
+        
+        document.querySelectorAll('textarea.mobile-description').forEach(textarea => {
+            textarea.addEventListener('touchend', function(e) {
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap;
                 
-            case 'selling':
-                if (costPrice > 0 && sellingPrice > 0) {
-                    const calculatedMarkup = ((sellingPrice - costPrice) / costPrice) * 100;
-                    markupInput.value = calculatedMarkup.toFixed(2);
-                    updatePriceColor(sellingPriceInput, calculatedMarkup);
+                if (tapLength < 500 && tapLength > 0) {
+                    // Double tap detected
+                    e.preventDefault();
+                    
+                    // Toggle expanded state
+                    if (this.classList.contains('expanded')) {
+                        this.classList.remove('expanded');
+                        this.style.height = '80px';
+                    } else {
+                        this.classList.add('expanded');
+                        this.style.height = '200px';
+                    }
                 }
-                break;
-        }
+                
+                lastTap = currentTime;
+            });
+        });
+        
+        console.log("Double-tap expand initialized");
     }
 
-    // Function to update price color based on markup
-    function updatePriceColor(element, markup) {
-        if (markup >= 15) {
-            element.style.backgroundColor = '#d4edda';
-            element.style.color = '#155724';
-        } else {
-            element.style.backgroundColor = '#f8d7da';
-            element.style.color = '#721c24';
-        }
+    // Add expand buttons next to each textarea
+    function addExpandButtons() {
+        document.querySelectorAll('textarea.mobile-description').forEach(textarea => {
+            // Create expand button
+            const expandBtn = document.createElement('button');
+            expandBtn.type = 'button';
+            expandBtn.className = 'btn btn-sm btn-outline-secondary expand-textarea-btn mt-1';
+            expandBtn.innerHTML = '<i class="feather icon-maximize-2"></i> Expand';
+            expandBtn.style.fontSize = '0.8rem';
+            
+            // Insert after textarea
+            textarea.parentNode.insertBefore(expandBtn, textarea.nextSibling);
+            
+            // Add click event
+            expandBtn.addEventListener('click', function() {
+                if (textarea.classList.contains('expanded')) {
+                    textarea.classList.remove('expanded');
+                    textarea.style.height = '80px';
+                    this.innerHTML = '<i class="feather icon-maximize-2"></i> Expand';
+                } else {
+                    textarea.classList.add('expanded');
+                    textarea.style.height = '200px';
+                    this.innerHTML = '<i class="feather icon-minimize-2"></i> Collapse';
+                }
+            });
+        });
     }
-
-    // Add event listeners to all price inputs
-    document.querySelectorAll('.cost-price, .markup, .selling-price').forEach(input => {
-        input.addEventListener('input', function() {
-            const itemId = this.getAttribute('name').split('_').pop();
-            const source = this.classList.contains('cost-price') ? 'cost' : 
-                         this.classList.contains('markup') ? 'markup' : 'selling';
-            calculatePrices(itemId, source);
+    </script>
+<script>
+    // Fix for Select2 positioning on mobile
+    $(document).on('select2:open', function() {
+        // Set timeout to allow the dropdown to render first
+        setTimeout(function() {
+            // For each dropdown
+            $('.select2-container--open .select2-dropdown').each(function() {
+                // Get the position relative to viewport
+                const rect = this.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                
+                // If dropdown extends beyond viewport, reposition it
+                if (rect.bottom > windowHeight) {
+                    const select2 = $(this).parent();
+                    select2.addClass('select2-container--above');
+                    select2.removeClass('select2-container--below');
+                }
+            });
+        }, 10);
+    });
+</script>
+<!-- Add this validation code directly to the template -->
+<script>
+// Direct inline validation script
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Direct validation script loaded");
+    
+    // Add direct event handlers to generate quote buttons
+    document.querySelectorAll('.generate-quote-btn').forEach(function(button) {
+        // Remove any existing click handlers
+        const newButton = button.cloneNode(true);
+        if (button.parentNode) {
+            button.parentNode.replaceChild(newButton, button);
+        }
+        
+        // Add direct onclick handler
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log("Generate quote button clicked - inline handler");
+            
+            // Validation logic
+            const allItems = document.querySelectorAll('tr[data-item-id]');
+            let isValid = true;
+            let firstInvalidField = null;
+            let invalidItems = [];
+            
+            allItems.forEach(function(row) {
+                const itemId = row.getAttribute('data-item-id');
+                const itemNumber = row.querySelector('.item-number')?.textContent || `Item #${itemId}`;
+                const missingFields = [];
+                
+                // Check required fields
+                const quoteRefField = document.querySelector(`[name="quote_reference_${itemId}"]`);
+                const supplierField = document.querySelector(`select[name="supplier_${itemId}"]`);
+                const costPriceField = document.querySelector(`[name="cost_price_${itemId}"]`);
+                const markupField = document.querySelector(`[name="markup_${itemId}"]`);
+                
+                if (!quoteRefField || !quoteRefField.value.trim()) {
+                    isValid = false;
+                    quoteRefField.classList.add('is-invalid');
+                    missingFields.push('Quote Description');
+                    firstInvalidField = firstInvalidField || quoteRefField;
+                }
+                
+                if (!supplierField || !supplierField.value) {
+                    isValid = false;
+                    supplierField.classList.add('is-invalid');
+                    missingFields.push('Supplier');
+                    firstInvalidField = firstInvalidField || supplierField;
+                    
+                    // Add red border to Select2 container if it exists
+                    if (window.jQuery && window.jQuery.fn.select2) {
+                        jQuery(supplierField).next('.select2-container').css('border', '1px solid #dc3545');
+                    }
+                }
+                
+                if (!costPriceField || !costPriceField.value) {
+                    isValid = false;
+                    costPriceField.classList.add('is-invalid');
+                    missingFields.push('Cost Price');
+                    firstInvalidField = firstInvalidField || costPriceField;
+                }
+                
+                if (!markupField || !markupField.value) {
+                    isValid = false;
+                    markupField.classList.add('is-invalid');
+                    missingFields.push('Markup');
+                    firstInvalidField = firstInvalidField || markupField;
+                }
+                
+                if (missingFields.length > 0) {
+                    invalidItems.push({
+                        id: itemId,
+                        number: itemNumber,
+                        fields: missingFields
+                    });
+                }
+            });
+            
+            if (!isValid) {
+                // Show detailed error message with all missing fields
+                let errorMessage = '<strong>Cannot generate quote - missing required information:</strong><ul>';
+                invalidItems.forEach(function(item) {
+                    errorMessage += `<li>${item.number}: Missing ${item.fields.join(', ')}</li>`;
+                });
+                errorMessage += '</ul><p>Please fill in all required fields before generating the quote.</p>';
+                
+                // Show error using toastr if available
+                if (window.toastr) {
+                    toastr.error(errorMessage, 'Validation Error', {
+                        closeButton: true,
+                        timeOut: 0,
+                        extendedTimeOut: 0,
+                        progressBar: false,
+                        enableHtml: true,
+                        newestOnTop: true,
+                        positionClass: "toast-top-center"
+                    });
+                } else {
+                    // Fallback to alert if toastr not available
+                    alert("Please fill in all required fields before generating the quote.");
+                }
+                
+                // Focus on the first invalid field
+                if (firstInvalidField) {
+                    firstInvalidField.focus();
+                }
+                
+                return false;
+            }
+            
+            // Proceed with quote generation
+            this.innerHTML = '<i class="feather icon-file-text fa-spin"></i> Generating...';
+            
+            // Get the letterhead and quote ID for generation
+            const letterhead = this.dataset.letterhead;
+            const quoteId = document.querySelector('#items-container').dataset.quoteId;
+            
+            // Navigate to generate quote URL
+            window.location.href = `/quotes/${quoteId}/generate-${letterhead.toLowerCase()}-quote/`;
         });
     });
+    
+    console.log("Direct validation script initialized");
 });
 </script>
+
 <style>
-.email-content pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    max-height: 300px;
-    overflow-y: auto;
+/* Add these validation styles inline */
+.is-invalid {
+    border-color: #dc3545 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right calc(0.375em + 0.1875rem) center !important;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
 }
 
-.attachment-list {
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.card-header .btn-sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-}
-
-/* Add this to your existing style section */
-input[type="number"].selling-price {
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Optional: Add hover effect */
-input[type="number"].selling-price:hover {
-    opacity: 0.9;
+.select2-container--default.is-invalid .select2-selection--single {
+    border-color: #dc3545 !important;
 }
 </style>
 {% endblock %}
 
-{% block extra_js %}
-{{ block.super }}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Select2 for supplier selection
-    $('.supplier-select').select2({
-        theme: 'bootstrap-5',
-        width: '100%',
-        placeholder: 'Select a supplier',
-        allowClear: true,
-        minimumInputLength: 1,
-        ajax: {
-            url: "{% url 'wfdash:supplier_search' %}",
-            dataType: 'json',
-            delay: 250,
-            data: function(params) {
-                return {
-                    search: params.term
-                };
-            },
-            processResults: function(data) {
-                return {
-                    results: data
-                };
-            },
-            cache: true
-        }
-    });
-
-    // Price calculation function
-    function calculatePrices(itemId) {
-        const costInput = document.querySelector(`[name="cost_price_${itemId}"]`);
-        const markupInput = document.querySelector(`[name="markup_${itemId}"]`);
-        const sellingInput = document.querySelector(`[name="selling_price_${itemId}"]`);
-        
-        if (!costInput || !markupInput || !sellingInput) return;
-
-        const cost = parseFloat(costInput.value) || 0;
-        const markup = parseFloat(markupInput.value) || 0;
-        
-        if (cost > 0 && markup >= 0) {
-            const selling = cost * (1 + (markup / 100));
-            sellingInput.value = selling.toFixed(2);
-            
-            // Update color based on markup
-            if (markup >= 15) {
-                sellingInput.style.backgroundColor = '#d4edda';
-                sellingInput.style.color = '#155724';
-            } else {
-                sellingInput.style.backgroundColor = '#f8d7da';
-                sellingInput.style.color = '#721c24';
-            }
-        }
-    }
-
-    // Add event listeners for price calculations
-    document.querySelectorAll('.cost-price, .markup').forEach(input => {
-        input.addEventListener('input', function() {
-            const itemId = this.getAttribute('name').split('_').pop();
-            calculatePrices(itemId);
-        });
-    });
-
-    // Save and Generate Quote button handler
-    document.getElementById('save-generate-quote').addEventListener('click', function(e) {
-        e.preventDefault();
-        const form = document.getElementById('quote-process-form');
-        
-        fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // Redirect to generate PDF
-                window.location.href = "{% url 'quotes:generate_quote_pdf' quote.pk %}";
-            }
-        });
-    });
-});
-</script>
-{% endblock %}
+{% block extra_scripts %}
+<!-- IMPORTANT: Place jQuery and Select2 at the top of extra_scripts -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- Your other scripts -->
+<script src="{% static '/js/quote_process_n.js' %}"></script>
+<script src="{% static '/js/quote_email.js' %}"></script>
+{% endblock extra_scripts %}

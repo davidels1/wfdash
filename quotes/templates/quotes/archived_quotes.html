@@ -1,0 +1,311 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block breadcrumbs %}
+<div class="page-header">
+  <div class="page-block">
+    <div class="row align-items-center">
+      <div class="col-md-12">
+        <div class="page-header-title">
+          <h5 class="m-b-10">Archived Quotes</h5>
+        </div>
+        <ul class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'index' %}"><i class="feather icon-home"></i></a></li>
+          <li class="breadcrumb-item"><a href="{% url 'quotes:quote_list' %}">Quotes</a></li>
+          <li class="breadcrumb-item"><span>Archived Quotes</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="container-fluid pb-5">
+    <!-- Search Bar -->
+    <div class="search-bar-sticky">
+        <form method="get" class="mb-3">
+            <div class="input-group">
+                <input type="text" 
+                       class="form-control form-control-lg" 
+                       name="search" 
+                       placeholder="Search across all quote data (items, prices, customers, reps, etc.)" 
+                       value="{{ search_query }}"
+                       autocomplete="off">
+                <div class="input-group-append">
+                    <button class="btn btn-primary btn-lg" type="submit">
+                        <i class="feather icon-search"></i>
+                    </button>
+                </div>
+            </div>
+            <small class="text-muted mt-1">
+                Search by quote number, customer details, rep name, item description, supplier, or any price value
+            </small>
+        </form>
+    </div>
+
+    <!-- Archive Quotes Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Archived Quotes <span class="badge bg-secondary">{{ total_count }}</span></h2>
+            <a href="{% url 'quotes:quote_list' %}" class="btn btn-primary">
+                <i class="feather icon-list"></i> Back to Active Quotes
+            </a>
+        </div>
+        <p class="text-muted">Showing approved, completed and emailed quotes</p>
+    </div>
+
+    <!-- Quotes Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Quote #</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quote in quotes %}
+                        <tr class="quote-row" data-quote-id="{{ quote.id }}">
+                            <td>
+                                {{ quote.quote_number }}
+                                <button class="btn btn-sm btn-link p-0 ms-2 toggle-items" 
+                                        data-quote-id="{{ quote.id }}" 
+                                        title="Toggle items">
+                                    <i class="feather icon-list"></i>
+                                </button>
+                            </td>
+                            <td>
+                                <strong>{{ quote.customer.company }}</strong><br>
+                                <small>{{ quote.customer.customer }}</small>
+                            </td>
+                            <td>{{ quote.created_at|date:"d M Y" }}</td>
+                            <td>
+                                {% if quote.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif quote.status == 'complete' %}
+                                    <span class="badge bg-primary">Complete</span>
+                                {% else %}
+                                    <span class="badge bg-info">Emailed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'quotes:quote_detail' quote.pk %}" class="btn btn-sm btn-light">
+                                    <i class="feather icon-eye"></i> View
+                                </a>
+                                {% if quote.pdf_file %}
+                                <a href="{{ quote.pdf_file.url }}" class="btn btn-sm btn-info" download>
+                                    <i class="feather icon-download"></i> PDF
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <!-- Item Details Row (Hidden by default) -->
+                        <tr class="item-details-row" data-quote-id="{{ quote.id }}" style="display: none">
+                            <td colspan="5" class="items-cell">
+                                <div class="quote-items-container p-2">
+                                    <div class="row mb-2">
+                                        <div class="col-12">
+                                            <span class="text-muted">Items:</span>
+                                        </div>
+                                    </div>
+                                    {% for item in quote.items.all %}
+                                        <div class="quote-item-box mb-1">
+                                            <div class="item-description">
+                                                <span class="item-quantity badge bg-light text-dark">{{ item.quantity }}</span>
+                                                {{ item.description }}
+                                                {% if item.selling_price %} 
+                                                <span class="badge bg-success">
+                                                    R{{ item.selling_price|floatformat:2 }}
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-muted">No items in this quote</p>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <div class="empty-state">
+                                    <i class="feather icon-archive empty-state-icon mb-3"></i>
+                                    <h4>No archived quotes found</h4>
+                                    <p class="text-muted">No quotes matching your criteria were found in the archive.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if quotes.has_other_pages %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                {% if quotes.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ quotes.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for i in quotes.paginator.page_range %}
+                    {% if quotes.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% elif i > quotes.number|add:'-3' and i < quotes.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if quotes.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ quotes.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ quotes.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Styling for quote items */
+.item-details-row {
+    background-color: #f8f9fa;
+}
+
+.quote-items-container {
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.quote-item-box {
+    margin-bottom: 8px;
+}
+
+.item-description {
+    padding: 6px 10px;
+    border-radius: 4px;
+    background-color: #ffffff;
+    margin-bottom: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.item-quantity {
+    margin-right: 8px;
+    min-width: 30px;
+    display: inline-block;
+    text-align: center;
+}
+
+/* Button styling */
+.toggle-items {
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.toggle-items:hover {
+    color: #007bff;
+}
+
+.toggle-items.active i {
+    color: #007bff;
+}
+
+/* Make the rows clickable */
+.quote-row {
+    cursor: pointer;
+}
+
+/* Make sure the search bar works well */
+.search-bar-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: white;
+    padding: 10px 0;
+    margin: -16px -16px 16px -16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Archived quotes script loaded");
+    
+    // Toggle items functionality
+    document.querySelectorAll('.toggle-items').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Get the quote ID from the button's data attribute
+            const quoteId = this.dataset.quoteId;
+            console.log("Toggle clicked for quote ID:", quoteId);
+            
+            // Find the corresponding items row
+            const itemsRow = document.querySelector(`tr.item-details-row[data-quote-id="${quoteId}"]`);
+            
+            if (itemsRow) {
+                // Toggle visibility with visual feedback
+                const isCurrentlyHidden = window.getComputedStyle(itemsRow).display === 'none';
+                
+                if (isCurrentlyHidden) {
+                    itemsRow.style.display = 'table-row';
+                    this.querySelector('i').classList.add('text-primary');
+                    console.log(`Showing items for quote ${quoteId}`);
+                } else {
+                    itemsRow.style.display = 'none';
+                    this.querySelector('i').classList.remove('text-primary');
+                    console.log(`Hiding items for quote ${quoteId}`);
+                }
+            } else {
+                console.error("Could not find item details row for quote ID:", quoteId);
+            }
+        });
+    });
+    
+    // Also enable clicking on row (except buttons and links)
+    document.querySelectorAll('.quote-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Only trigger if not clicking on a button or link
+            if (!e.target.closest('a') && !e.target.closest('button')) {
+                // Find the toggle button in this row
+                const toggleBtn = this.querySelector('.toggle-items');
+                if (toggleBtn) {
+                    // Simulate a click on the toggle button
+                    toggleBtn.click();
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

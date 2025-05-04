@@ -40,16 +40,29 @@ urlpatterns = [
     path("tables/", include("apps.tables.urls")),
     path('users/', include('apps.users.urls')),
     path('i18n/', include('django.conf.urls.i18n')),
-    path('wfdash/', include('wfdash.urls')), 
-    path('quotes/', include('quotes.urls')), 
+    path('wfdash/', include('wfdash.urls')),
+    path('quotes/', include('quotes.urls')),
     path('orders/', include('orders.urls')),
     path('drivers/', include('driver_list.urls')),
     path('', include('pwa.urls')),
     path('stock/', include('stock_management.urls')),
     path('dashboard/', include(('dashboard.urls', 'dashboard'), namespace='dashboard')),
+    path('stock-orders/', include('stock_orders.urls', namespace='stock_orders')),
+    path('portal/', include('customer_portal.urls', namespace='customer_portal')),
+    path('delivery/', include('delivery_notes.urls', namespace='delivery_notes')),
+    path('delivery-notes/', include('delivery_notes.urls', namespace='delivery_notes')),
+    path("rep/", include("rep_portal.urls", namespace="rep_portal")),
+    path("search/", include("search.urls", namespace="search")),
 
-    re_path(r'^media/(?P<path>.*)$', serve,{'document_root': settings.MEDIA_ROOT}), 
-    re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}), 
+    path(
+        "internal_stock/", include("internal_stock.urls", namespace="internal_stock")
+    ),  # Add this line
+
+
+
+
+    re_path(r'^media/(?P<path>.*)$', serve,{'document_root': settings.MEDIA_ROOT}),
+    re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
 
     # Debug toolbar
     path("__debug__/", include("debug_toolbar.urls")),

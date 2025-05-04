@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Quote Request</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            background-color: #33cc7a;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+        .content {
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .quote-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .quote-ref {
+            font-weight: bold;
+            font-size: 18px;
+            color: #edae41;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .items-table th {
+            background-color: #f8f9fa;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+        .items-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .action-button {
+            display: inline-block;
+            background-color: #edae41;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>New Quote Request</h1>
+    </div>
+    
+    <div class="content">
+        <div class="quote-info">
+            <p>A new quote request has been submitted through the Customer Portal.</p>
+            <p>Reference Number: <span class="quote-ref">{{ quote.quote_number }}</span></p>
+            <p>Submitted: {{ date|date:"F j, Y g:i A" }}</p>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">Customer Information</h2>
+            <p><strong>Name:</strong> {{ customer.customer }}</p>
+            <p><strong>Email:</strong> {{ customer.email }}</p>
+            <p><strong>Phone:</strong> {{ customer.number }}</p>
+            {% if customer.company %}
+            <p><strong>Company:</strong> {{ customer.company }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">Quote Details</h2>
+            <p><strong>Description:</strong></p>
+            <p>{{ quote.description }}</p>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">Requested Items</h2>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Qty</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <a href="{{ admin_url }}" class="action-button">View in Admin Panel</a>
+        
+        {% if has_attachments %}
+        <div class="section">
+            <h2 class="section-title">Attachments</h2>
+            <p>Number of Attachments: {{ attachment_count }}</p>
+            
+            <!-- File list -->
+            <div class="attachment-list">
+                {% for attachment in attachments %}
+                <div class="attachment-item">
+                    <i class="fa {% if attachment.is_image %}fa-image{% else %}fa-file{% endif %}"></i>
+                    <a href="{{ attachment.url }}" target="_blank">{{ attachment.name }}</a>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Image previews -->
+            {% if image_previews %}
+            <div class="image-previews">
+                <h3>Image Previews</h3>
+                {% for image_url in image_previews %}
+                <div class="image-preview">
+                    <img src="{{ image_url }}" alt="Attached image" style="max-width: 100%; max-height: 300px; margin-bottom: 10px;">
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="footer">
+        <p>This is an automated notification from the WF Sales Portal. Please do not reply directly to this email.</p>
+    </div>
+</body>
+</html>

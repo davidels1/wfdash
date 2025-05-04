@@ -1,0 +1,128 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Batch Match Results{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Batch Match Results</h5>
+            
+            <!-- Add Reset Button -->
+            <form method="post" action="{% url 'orders:reset_matching' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-redo"></i> Reset All Matching Attempts
+                </button>
+            </form>
+        </div>
+        <div class="card-body">
+            <h6>Processing complete! ({{ processing_time }} seconds)</h6>
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body text-center">
+                            <h3 class="mb-0">{{ results.total }}</h3>
+                            <p class="mb-0">Orders Processed</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success bg-opacity-10 mb-3">
+                        <div class="card-body text-center">
+                            <h3 class="mb-0">{{ results.matched }}</h3>
+                            <p class="mb-0">Automatic Matches</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning bg-opacity-10 mb-3">
+                        <div class="card-body text-center">
+                            <h3 class="mb-0">{{ results.potential }}</h3>
+                            <p class="mb-0">Potential Matches</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger bg-opacity-10 mb-3">
+                        <div class="card-body text-center">
+                            <h3 class="mb-0">{{ results.no_match }}</h3>
+                            <p class="mb-0">No Matches</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if results.matched > 0 %}
+            <h6 class="mt-4">Successful Matches:</h6>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Quote #</th>
+                            <th>Company</th>
+                            <th>Confidence</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for match in results.matched_orders %}
+                        <tr>
+                            <td>{{ match.order.order_number }}</td>
+                            <td>{{ match.quote.quote_number }}</td>
+                            <td>{{ match.order.company.company }}</td>
+                            <td>{{ match.confidence }}%</td>
+                            <td>
+                                <a href="{% url 'orders:order_detail' match.order.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View Order
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            
+            <div class="mt-3">
+                <a href="{% url 'orders:order_list' %}" class="btn btn-primary">
+                    <i class="fas fa-list"></i> Return to Orders
+                </a>
+                
+                <!-- Add individual reset buttons for orders -->
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#resetOrdersModal">
+                    <i class="fas fa-eraser"></i> Reset Selected Orders
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Selected Orders Modal -->
+<div class="modal fade" id="resetOrdersModal" tabindex="-1" aria-labelledby="resetOrdersModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetOrdersModalLabel">Reset Orders</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'orders:reset_selected_matching' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="orderNumbersInput" class="form-label">Enter comma-separated order numbers to reset:</label>
+                        <textarea class="form-control" id="orderNumbersInput" name="order_numbers" rows="4" placeholder="ORD00123, ORD00124, ORD00125"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reset Selected Orders</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+<div class="item-section card mb-3 {% if item.included_in_quote %}item-in-quote{% endif %}">
+    <!-- Add a badge if item is in a quote -->
+    {% if item.included_in_quote %}
+    <div class="position-absolute top-0 end-0 mt-2 me-2">
+        <span class="badge bg-success">Included in Quote</span>
+    </div>
+    {% endif %}
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center">
+                <div class="form-check me-2">
+                    <input class="form-check-input" type="checkbox" name="selected_items" 
+                           value="{{ item.id }}" id="checkbox_{{ item.id }}" 
+                           {% if checked %}checked{% endif %}>
+                    <label class="form-check-label" for="checkbox_{{ item.id }}">
+                        Include in quote
+                    </label>
+                </div>
+                <h6>Item #{{ forloop.counter }}</h6>
+            </div>
+            <button type="button" class="btn btn-danger btn-sm remove-item" data-item-id="{{ item.id }}">
+                <i class="feather icon-trash-2"></i>
+            </button>
+        </div>
+        
+        <!-- Rest of the item fields -->
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">RFQ Description</label>
+                <textarea name="description_{{ item.id }}" 
+                        class="form-control" 
+                        rows="2" 
+                        style="background-color:rgb(255, 255, 255);">{{ item.description }}</textarea>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Quote Number</label>
+                <input type="text" name="quote_number_{{ item.id }}" 
+                       class="form-control" value="{{ item.quote_number|default:quote.quote_number }}" 
+                       readonly
+                       style="background-color:rgb(255, 255, 255);">
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Quote DESCRIPTION</label>
+                <textarea name="quote_reference_{{ item.id }}" 
+                          class="form-control" 
+                          rows="2"
+                          style="background-color:rgb(153, 205, 248);">{{ item.quote_reference|default:'' }}</textarea>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Quantity</label>
+                <input type="number" name="quantity_{{ item.id }}" 
+                       class="form-control" value="{{ item.quantity }}"
+                       style="background-color:rgb(153, 205, 248);">
+            </div>
+            
+            <!-- Update the supplier field to indicate it's required -->
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Supplier <span class="text-danger">*</span></label>
+                <select class="form-select supplier-select" name="supplier_{{ item.id }}" required>
+                    <option value="">Select Supplier</option>
+                    {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" {% if item.supplier_id == supplier.id %}selected{% endif %}>
+                            {{ supplier.suppliername }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="invalid-feedback">
+                    A supplier is required.
+                </div>
+            </div>
+            
+            <!-- Update the cost price field to indicate it's required -->
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Cost Price <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" name="cost_price_{{ item.id }}" 
+                       class="form-control cost-price" 
+                       value="{{ item.cost_price|default:'' }}"
+                       style="background-color:rgb(153, 205, 248);"
+                       required>
+                <div class="invalid-feedback">
+                    Cost price is required.
+                </div>
+            </div>
+            
+            <!-- Update the markup field to indicate it's required -->
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Markup % <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" 
+                       name="markup_{{ item.id }}" 
+                       class="form-control markup" 
+                       value="{{ item.markup|default:'' }}"
+                       style="background-color:rgb(153, 205, 248);"
+                       required>
+                <div class="invalid-feedback">
+                    Markup percentage is required.
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Selling Price</label>
+                <input type="number" step="0.01" name="selling_price_{{ item.id }}"
+                       class="form-control selling-price"
+                       value="{{ item.selling_price|default:'' }}"
+                       style="background-color:rgb(255, 255, 255);">
+            </div>
+            
+            <div class="col-md-12 mb-3">
+                <label class="form-label">Notes</label>
+                <textarea name="notes_{{ item.id }}" class="form-control" rows="2"
+                          style="background-color:rgb(153, 205, 248);">{{ item.notes }}</textarea>
+            </div>
+            
+            <div class="col-md-12 text-end mt-2">
+                <button type="button" class="btn btn-info save-item-btn" data-item-id="{{ item.id }}">
+                    <i class="feather icon-save"></i> Save Item
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,22 @@
+/* Override Bootstrap's toast with higher specificity */
+html body #toast-container .toast,
+.toast.colored-toast {
+    --bs-toast-bg: transparent !important;
+    background-color: #97d81f !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Make sure Toastr has proper colors */
+#toast-container > .toast-success {
+    background-color: #28a745 !important;
+}
+#toast-container > .toast-error {
+    background-color: #dc3545 !important;
+}
+#toast-container > .toast-info {
+    background-color: #17a2b8 !important;
+}
+#toast-container > .toast-warning {
+    background-color: #ffc107 !important;
+}

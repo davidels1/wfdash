@@ -1,0 +1,808 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.css">
+<style>
+    #signaturePad {
+        border: 1px solid #e6e6e6;
+        background-color: #fff;
+    }
+    .signature-container {
+        text-align: center;
+    }
+    .signature-preview {
+        max-width: 100%;
+        max-height: 200px;
+        border: 1px solid #ddd;
+    }
+
+    /* Improved signature styling for mobile */
+    @media (max-width: 768px) {
+        .signature-container {
+            max-width: 100%;
+            overflow: hidden;
+        }
+        
+        #signaturePad {
+            width: 100%;
+            height: 180px;
+        }
+        
+        /* Larger buttons for touch devices */
+        .signature-container .btn {
+            padding: 10px 15px;
+            font-size: 16px;
+        }
+        
+        /* Modal improvements */
+        .modal-fullscreen .modal-body {
+            padding: 0;
+        }
+        
+        /* Larger footer buttons for touch */
+        .modal-footer .btn {
+            padding: 12px 20px;
+            font-size: 18px;
+        }
+    }
+
+    /* Fix for iOS PWA scrolling issue */
+    #fullScreenPad {
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    /* Add these animation styles for notifications */
+    @keyframes fadeInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes fadeOutRight {
+        from {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+    }
+
+    /* Success notification styling */
+    .pricing-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 250px;
+        max-width: 350px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        animation: fadeInRight 0.5s forwards;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Delivery Note: {{ delivery.delivery_number }}</h5>
+                    <div>
+                        {% if delivery.status == 'draft' %}
+                        <a href="{% url 'delivery_notes:edit' delivery.pk %}" class="btn btn-primary">
+                            <i class="feather icon-edit me-1"></i> Edit
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Add this creator badge at the top -->
+                    <div class="mb-3">
+                        <span class="badge bg-info p-2">
+                            <i class="feather icon-user me-1"></i>
+                            Created by: 
+                            {% if delivery.created_by %}
+                                {% if delivery.created_by.get_full_name %}
+                                    {{ delivery.created_by.get_full_name }}
+                                {% else %}
+                                    {{ delivery.created_by.username }}
+                                {% endif %}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                            on {{ delivery.created_at|date:"d M Y" }}
+                        </span>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Company Information</h6>
+                            <p>
+                                <strong>Company:</strong> {{ delivery.company.company }}<br>
+                                {% if delivery.contact_person %}
+                                <strong>Contact:</strong> {{ delivery.contact_person }}<br>
+                                {% endif %}
+                                {% if delivery.contact_email %}
+                                <strong>Email:</strong> {{ delivery.contact_email }}<br>
+                                {% endif %}
+                                {% if delivery.contact_phone %}
+                                <strong>Phone:</strong> {{ delivery.contact_phone }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Delivery Information</h6>
+                            <p>
+                                <strong>Delivery Date:</strong> {{ delivery.delivery_date|date:"F d, Y" }}<br>
+                                <strong>Status:</strong> 
+                                <span class="badge {% if delivery.status == 'draft' %}bg-secondary{% elif delivery.status == 'delivered' %}bg-info{% elif delivery.status == 'signed' %}bg-success{% elif delivery.status == 'converted' %}bg-primary{% else %}bg-dark{% endif %}">
+                                    {{ delivery.get_status_display }}
+                                </span><br>
+                                <strong>Created By:</strong> 
+                                {% if delivery.created_by %}
+                                    {% if delivery.created_by.get_full_name %}
+                                        {{ delivery.created_by.get_full_name }}
+                                    {% else %}
+                                        {{ delivery.created_by.username }}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Unknown</span>
+                                {% endif %}<br>
+                                <strong>Created:</strong> {{ delivery.created_at|date:"F d, Y H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if delivery.notes %}
+                    <div class="mb-4">
+                        <h6>Notes</h6>
+                        <p>{{ delivery.notes }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <h6>Delivery Items</h6>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Quantity</th>
+                                    <!-- Only show price columns if we have prices -->
+                                    {% if has_prices %}
+                                    <th>Cost Price</th>
+                                    <th>Selling Price</th>
+                                    <th>Total</th>
+                                    {% endif %}
+                                    <th>Notes</th>
+                                    <th>Actions</th>  <!-- New column for actions -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in delivery.items.all %}
+                                <tr data-item-id="{{ item.id }}">
+                                    <td>
+                                        {{ item.description }}
+                                        {% if item.stock_item %}
+                                            <span class="badge bg-info">From Stock</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.quantity }}</td>
+                                    <!-- Only show price columns if we have prices -->
+                                    {% if has_prices %}
+                                    <td>{% if item.cost_price %}R{{ item.cost_price|floatformat:2 }}{% else %}-{% endif %}</td>
+                                    <td>{% if item.price %}R{{ item.price|floatformat:2 }}{% else %}-{% endif %}</td>
+                                    <td>{% if item.price %}R{{ item.item_total|floatformat:2 }}{% else %}-{% endif %}</td>
+                                    {% endif %}
+                                    <td>{{ item.notes }}</td>
+                                    <td>
+                                        <!-- Always show pricing button regardless of status -->
+                                        <button type="button" class="btn btn-sm btn-primary set-pricing-btn" 
+                                                data-id="{{ item.id }}" 
+                                                data-description="{{ item.description }}" 
+                                                data-quantity="{{ item.quantity }}"
+                                                data-cost-price="{{ item.cost_price|default_if_none:'' }}"
+                                                data-price="{{ item.price|default_if_none:'' }}"
+                                                data-markup="{{ item.markup|default_if_none:'' }}"
+                                                data-notes="{{ item.notes }}">
+                                            <i class="feather icon-dollar-sign"></i> Set Pricing
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                
+                                <!-- Add a total row if prices exist -->
+                                {% if has_prices %}
+                                <tr class="table-info">
+                                    <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                                    <td><strong>R{{ total_price|floatformat:2 }}</strong></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Add this section in your delivery detail page -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Documents</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Link to the generated delivery note PDF -->
+                    {% if delivery.pdf_file %}
+                    <div class="mb-3">
+                        <a href="{{ delivery.pdf_file.url }}" class="btn btn-outline-primary" target="_blank">
+                            <i class="feather icon-file-text me-1"></i> View Delivery Note PDF
+                        </a>
+                        <small class="text-muted ms-2">
+                            Generated on {{ delivery.updated_at|date:"d M Y H:i" }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Link to the uploaded signed document if available -->
+                    {% if delivery.signed_document %}
+                    <div class="mb-3">
+                        <a href="{{ delivery.signed_document.url }}" class="btn btn-outline-success" target="_blank">
+                            <i class="feather icon-file me-1"></i> View Uploaded Signed Document
+                        </a>
+                        <small class="text-muted ms-2">
+                            Uploaded on {{ delivery.signature_date|date:"d M Y H:i" }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Refresh PDF button if signed -->
+                    {% if delivery.is_signed %}
+                    <div>
+                        <a href="{% url 'delivery_notes:regenerate_pdf' delivery.pk %}" class="btn btn-outline-secondary">
+                            <i class="feather icon-refresh-cw me-1"></i> Regenerate PDF with Signature
+                        </a>
+                        <small class="text-muted ms-2">
+                            Force refresh the PDF with the latest signature
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Signature Card -->
+            {% if delivery.status != 'converted' and delivery.status != 'ordered' %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Signature</h5>
+                </div>
+                <div class="card-body">
+                    {% if not delivery.digital_signature %}
+                    <form method="post" action="{% url 'delivery_notes:save_signature' delivery.pk %}" id="signatureForm">
+                        {% csrf_token %}
+                        {{ signature_form.digital_signature }}
+                        
+                        <!-- Replace your existing signature container with this improved version -->
+                        <div class="mb-3">
+                            <label class="form-label">Sign Below</label>
+                            <div class="signature-container" style="border: 1px solid #ccc; border-radius: 4px; position: relative; max-width: 100%; overflow: hidden;">
+                                <canvas id="signaturePad" style="width: 100%; height: 180px; touch-action: none;"></canvas>
+                                
+                                <!-- Controls -->
+                                <div class="d-flex mt-2">
+                                    <button type="button" id="clearSignature" class="btn btn-sm btn-secondary me-2">Clear</button>
+                                    <button type="button" id="fullScreenSignature" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-expand"></i> Full Screen
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Signed By</label>
+                            {{ signature_form.signed_by }}
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Save Signature</button>
+                    </form>
+                    {% else %}
+                    <div class="signature-preview-container">
+                        <p><strong>Signed By:</strong> {{ delivery.signed_by }} on {{ delivery.signature_date|date:"F d, Y H:i" }}</p>
+                        <img src="{{ delivery.digital_signature }}" alt="Signature" class="signature-preview">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Action Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'stock_management:stock_list' %}" class="btn btn-outline-primary">
+                            <i class="feather icon-box me-1"></i> Back to Stock Items
+                        </a>
+                        
+                        <a href="{% url 'delivery_notes:list' %}" class="btn btn-outline-secondary">
+                            <i class="feather icon-list me-1"></i> Back to Delivery Notes
+                        </a>
+                        
+                        <!-- Add this new button if you want a link to invoices -->
+                        {% if "invoice" in request.session.apps_available %}
+                        <a href="{% url 'invoice:list' %}" class="btn btn-outline-info">
+                            <i class="feather icon-file-text me-1"></i> Go to Invoices
+                        </a>
+                        {% endif %}
+                        
+                        <!-- The rest of your buttons -->
+                        <!-- Add this new button for paper signature uploads -->
+                        {% if not delivery.is_signed %}
+                        <a href="{% url 'delivery_notes:upload_signature' delivery.pk %}" class="btn btn-primary">
+                            <i class="feather icon-upload me-1"></i> Upload Signed Document
+                        </a>
+                        {% endif %}
+                        
+                        <!-- Keep your existing buttons -->
+                        {% if delivery.is_signed and delivery.status != 'converted' %}
+                        <a href="{% url 'delivery_notes:convert_to_quote' delivery.pk %}" class="btn btn-success">
+                            <i class="feather icon-file-text me-1"></i> Convert to Quote
+                        </a>
+                        {% endif %}
+                        
+                        {% if delivery.converted_to_quote %}
+                        <a href="{% url 'quotes:edit_quote' delivery.converted_to_quote.pk %}" class="btn btn-info">
+                            <i class="feather icon-file me-1"></i> View Related Quote
+                        </a>
+                        {% endif %}
+                        
+                        <!-- Add this to your action cards in delivery_detail.html -->
+                        {% if user.is_staff %}
+                        <div class="mt-3">
+                            <h6 class="text-muted">Admin Actions</h6>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'admin:delivery_notes_deliverynote_change' delivery.pk %}" class="btn btn-outline-primary">
+                                    <i class="feather icon-edit-3 me-1"></i> Edit in Admin
+                                </a>
+                                
+                                {% if delivery.items.count > 0 %}
+                                <a href="{% url 'admin:delivery_notes_deliveryitem_changelist' %}?delivery_note__id__exact={{ delivery.pk }}" class="btn btn-outline-secondary">
+                                    <i class="feather icon-list me-1"></i> Manage Items in Admin
+                                </a>
+                                {% endif %}
+                                
+                                <!-- Add the Delete button here instead -->
+                                {% if delivery.status == 'draft' or user.is_staff %}
+                                <a href="{% url 'delivery_notes:delete' delivery.pk %}" class="btn btn-outline-danger">
+                                    <i class="feather icon-trash-2 me-1"></i> Delete Delivery Note
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Add this to your action card in delivery_detail.html -->
+                        <a href="#" class="btn btn-warning" id="priceAllItemsBtn">
+                            <i class="feather icon-tag me-1"></i> Price All Items
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this modal markup at the end of your template body -->
+<div class="modal fade" id="signatureModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sign Here</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex flex-column">
+                <!-- Full-screen signature pad -->
+                <div class="flex-grow-1 position-relative" style="background: #f8f9fa; border: 1px dashed #ccc;">
+                    <canvas id="fullScreenPad" style="width: 100%; height: 100%; touch-action: none;"></canvas>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="clearFullScreenSignature" class="btn btn-secondary">Clear</button>
+                <button type="button" id="saveFullScreenSignature" class="btn btn-success">Save & Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this to the bottom of your delivery_detail.html template -->
+<div class="modal fade" id="pricingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Item Pricing</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="itemPricingForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="item_id" name="item_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <div id="item_description" class="form-control-plaintext"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="item_quantity" name="quantity" min="1">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Cost Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R</span>
+                            <input type="number" class="form-control" id="item_cost_price" name="cost_price" step="0.01" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Markup (%)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="item_markup" name="markup" step="0.01" min="0">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Selling Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R</span>
+                            <input type="number" class="form-control" id="item_selling_price" name="price" step="0.01" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="item_notes" name="notes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="savePricing">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this hidden input field -->
+<input type="hidden" id="delivery-id" value="{{ delivery.id }}">
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@2.3.2/dist/signature_pad.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Regular signature pad
+        const canvas = document.getElementById('signaturePad');
+        if (!canvas) return;
+        
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        
+        // Full-screen signature pad
+        const fullScreenCanvas = document.getElementById('fullScreenPad');
+        const fullScreenPad = new SignaturePad(fullScreenCanvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        
+        // Ensure the canvas size fits the container
+        function resizeCanvas(canvas, signPad) {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signPad.clear(); // Clear the canvas
+        }
+        
+        // Initialize both canvases
+        resizeCanvas(canvas, signaturePad);
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            resizeCanvas(canvas, signaturePad);
+            if (document.getElementById('signatureModal').classList.contains('show')) {
+                resizeCanvas(fullScreenCanvas, fullScreenPad);
+            }
+        });
+        
+        // Clear signature button
+        document.getElementById('clearSignature').addEventListener('click', function() {
+            signaturePad.clear();
+        });
+        
+        // Full-screen button
+        const signatureModal = new bootstrap.Modal(document.getElementById('signatureModal'));
+        
+        document.getElementById('fullScreenSignature').addEventListener('click', function() {
+            // If there's already a signature, copy it to the full-screen pad
+            if (!signaturePad.isEmpty()) {
+                fullScreenPad.fromDataURL(signaturePad.toDataURL());
+            }
+            
+            signatureModal.show();
+            
+            // Need to resize after modal is shown for proper dimensions
+            setTimeout(function() {
+                resizeCanvas(fullScreenCanvas, fullScreenPad);
+            }, 300);
+        });
+        
+        // Full-screen clear button
+        document.getElementById('clearFullScreenSignature').addEventListener('click', function() {
+            fullScreenPad.clear();
+        });
+        
+        // Save from full-screen to regular pad and close
+        document.getElementById('saveFullScreenSignature').addEventListener('click', function() {
+            if (!fullScreenPad.isEmpty()) {
+                signaturePad.fromDataURL(fullScreenPad.toDataURL());
+                
+                // Show success feedback
+                const successToast = document.createElement('div');
+                successToast.className = 'alert alert-success fixed-bottom m-3';
+                successToast.innerHTML = 'Signature saved! <button type="button" class="btn-close float-end" data-bs-dismiss="alert"></button>';
+                document.body.appendChild(successToast);
+                
+                setTimeout(() => {
+                    successToast.remove();
+                }, 3000);
+            }
+            signatureModal.hide();
+        });
+        
+        // Form submission
+        const signatureForm = document.getElementById('signatureForm');
+        if (signatureForm) {
+            signatureForm.addEventListener('submit', function(e) {
+                if (signaturePad.isEmpty()) {
+                    e.preventDefault();
+                    alert('Please provide a signature');
+                    return false;
+                }
+                
+                // Get signature as base64 image data
+                const signatureData = signaturePad.toDataURL('image/png');
+                document.getElementById('id_digital_signature').value = signatureData;
+                
+                // Visual feedback
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalText;
+                    }, 5000); // Reset if form submission takes too long
+                }
+            });
+        }
+        
+        // Fix for iOS devices - prevent scrolling when signing
+        document.querySelectorAll('#signaturePad, #fullScreenPad').forEach(function(canvas) {
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+            });
+        });
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize pricing modal
+    const pricingModal = new bootstrap.Modal(document.getElementById('pricingModal'));
+    
+    // Set pricing button event handlers
+    document.querySelectorAll('.set-pricing-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-id');
+            const description = this.getAttribute('data-description');
+            const quantity = this.getAttribute('data-quantity');
+            const costPrice = this.getAttribute('data-cost-price');
+            const sellingPrice = this.getAttribute('data-price');
+            const markup = this.getAttribute('data-markup');
+            const notes = this.getAttribute('data-notes');
+            
+            // Set values in the modal form
+            document.getElementById('item_id').value = itemId;
+            document.getElementById('item_description').textContent = description;
+            document.getElementById('item_quantity').value = quantity;
+            document.getElementById('item_cost_price').value = costPrice;
+            document.getElementById('item_selling_price').value = sellingPrice;
+            document.getElementById('item_markup').value = markup;
+            document.getElementById('item_notes').value = notes;
+            
+            pricingModal.show();
+        });
+    });
+    
+    // Auto-calculate selling price based on cost and markup
+    document.getElementById('item_cost_price').addEventListener('input', calculateSellingPrice);
+    document.getElementById('item_markup').addEventListener('input', calculateSellingPrice);
+    
+    // Auto-calculate markup based on cost and selling
+    document.getElementById('item_selling_price').addEventListener('input', calculateMarkup);
+    
+    function calculateSellingPrice() {
+        const costPrice = parseFloat(document.getElementById('item_cost_price').value) || 0;
+        const markup = parseFloat(document.getElementById('item_markup').value) || 0;
+        
+        if (costPrice > 0 && markup > 0) {
+            const sellingPrice = costPrice * (1 + (markup / 100));
+            document.getElementById('item_selling_price').value = sellingPrice.toFixed(2);
+        }
+    }
+    
+    function calculateMarkup() {
+        const costPrice = parseFloat(document.getElementById('item_cost_price').value) || 0;
+        const sellingPrice = parseFloat(document.getElementById('item_selling_price').value) || 0;
+        
+        if (costPrice > 0 && sellingPrice > 0) {
+            const markup = ((sellingPrice - costPrice) / costPrice) * 100;
+            document.getElementById('item_markup').value = markup.toFixed(2);
+        }
+    }
+    
+    // Handle save button click
+    document.getElementById('savePricing').addEventListener('click', function() {
+        const formData = new FormData(document.getElementById('itemPricingForm'));
+        const itemId = document.getElementById('item_id').value;
+        
+        // Add CSRF token
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        
+        // Send AJAX request to update pricing
+        fetch(`/delivery-notes/update-item-pricing/${itemId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(`Server error: ${response.status} - ${errorData.error || 'Unknown error'}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Success:', data);
+            if (data.success) {
+                // Create notification as before...
+                
+                // Update the row data without reloading
+                const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+                if (row) {
+                    // Update quantity - ADD SAFETY CHECK
+                    if (data.data && data.data.quantity !== undefined) {
+                        row.querySelector('td:nth-child(2)').textContent = data.data.quantity;
+                    }
+                    
+                    // Check if price columns exist
+                    const hasPrices = Array.from(document.querySelectorAll('th')).some(th => 
+                        th.textContent.includes('Cost Price') || th.textContent.includes('Selling Price')
+                    );
+
+                    if (hasPrices && data.data) {  // ADD SAFETY CHECK HERE
+                        // Update cost price with safety checks
+                        const costPriceCell = row.querySelector('td:nth-child(3)');
+                        if (costPriceCell && data.data.cost_price !== undefined) {
+                            costPriceCell.textContent = data.data.cost_price != null ? 
+                                `R${parseFloat(data.data.cost_price).toFixed(2)}` : '-';
+                        }
+                        
+                        // Update selling price with safety checks
+                        const sellingPriceCell = row.querySelector('td:nth-child(4)');
+                        if (sellingPriceCell && data.data.price !== undefined) {
+                            sellingPriceCell.textContent = data.data.price != null ? 
+                                `R${parseFloat(data.data.price).toFixed(2)}` : '-';
+                        }
+                        
+                        // Update total with safety checks
+                        const totalCell = row.querySelector('td:nth-child(5)');
+                        if (totalCell && data.data.price !== undefined && data.data.quantity !== undefined) {
+                            const total = parseFloat(data.data.price || 0) * parseInt(data.data.quantity || 0);
+                            totalCell.textContent = `R${total.toFixed(2)}`;
+                        } else if (totalCell) {
+                            totalCell.textContent = '-';
+                        }
+                    }
+                    
+                    // Update button data attributes with safety checks
+                    const button = row.querySelector('.set-pricing-btn');
+                    if (button && data.data) {
+                        if (data.data.quantity !== undefined) button.setAttribute('data-quantity', data.data.quantity);
+                        if (data.data.cost_price !== undefined) button.setAttribute('data-cost-price', data.data.cost_price || '');
+                        if (data.data.price !== undefined) button.setAttribute('data-price', data.data.price || '');
+                        if (data.data.markup !== undefined) button.setAttribute('data-markup', data.data.markup || '');
+                        if (data.data.notes !== undefined) button.setAttribute('data-notes', data.data.notes || '');
+                    }
+                }
+                
+                // Close the modal
+                pricingModal.hide();
+            } else {
+                // Show error message
+                alert(data.error || 'An error occurred while updating pricing');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(`Failed to update pricing: ${error.message}`);
+        });
+    });
+
+    // "Price All Items" button handler 
+    document.getElementById('priceAllItemsBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Ask for confirmation
+        if (!confirm('Do you want to set pricing for all items? This will open pricing dialogs for each item in sequence.')) {
+            return;
+        }
+        
+        // Get all pricing buttons
+        const pricingButtons = document.querySelectorAll('.set-pricing-btn');
+        if (pricingButtons.length === 0) {
+            alert('No items to price');
+            return;
+        }
+        
+        // Click the first button to start the process
+        pricingButtons[0].click();
+        
+        // Setup the next button handler
+        let currentIndex = 0;
+        
+        document.getElementById('savePricing').addEventListener('click', function handleNext() {
+            // Move to the next item after saving
+            currentIndex++;
+            
+            // If there are more items, open the next one after a short delay
+            if (currentIndex < pricingButtons.length) {
+                setTimeout(() => {
+                    pricingButtons[currentIndex].click();
+                }, 500);
+            } else {
+                // Remove the event handler when done
+                document.getElementById('savePricing').removeEventListener('click', handleNext);
+                // Reload the page after finishing all items
+                setTimeout(() => {
+                    alert('All items priced successfully!');
+                    window.location.reload();
+                }, 1000);
+            }
+        }, { once: true });
+    });
+});
+</script>
+{% endblock %}

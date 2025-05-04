@@ -1,6 +1,8 @@
 {% extends "layouts/base.html" %}
 {% load static %}
 
+{% block title %}New Order{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <form method="post" id="orderForm">
@@ -18,6 +20,14 @@
         </div>
         {% endif %}
         
+        <!-- Add this right before your Order Details card -->
+        <div id="lastOrderInfo" class="alert alert-success mb-3 d-none">
+            <div class="d-flex justify-content-between align-items-center">
+                <span style="color:rgb(255, 255, 255);">Last order #<strong id="lastOrderNumber" style="color: #000000; font-weight: 700;"></strong> created successfully!</span>
+                <a href="#" id="viewLastOrder" class="btn btn-sm btn-outline-success">View Order</a>
+            </div>
+        </div>
+
         <!-- Order Details -->
         <div class="card mb-3">
             <div class="card-header">
@@ -38,6 +48,14 @@
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label>Sales Representative *</label>
+                            {{ form.rep }}
+                        </div>
+                    </div>
+                </div>
                 <div class="mb-3">
                     <label>Notes</label>
                     {{ form.notes }}
@@ -51,54 +69,129 @@
                 <h5>Order Items</h5>
             </div>
             <div class="card-body p-0">
-                <div id="itemsList">
-                    <div class="item-row border-bottom p-3">
-                        <div class="mb-2">
-                            <label>Description *</label>
-                            <input type="text" name="description[]" class="form-control" required>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-2">
-                                    <label>Quantity</label>
-                                    <input type="number" name="quantity[]" class="form-control" value="1" min="1">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-2">
-                                    <label>Selling Price</label>
-                                    <input type="number" name="selling_price[]" class="form-control" step="0.01" min="0.01" required>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <label>Notes</label>
-                            <textarea name="notes[]" class="form-control" rows="2"></textarea>
-                        </div>
-                        <div class="text-end">
-                            <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">
-                                <i class="feather icon-trash-2"></i> Remove
-                            </button>
-                        </div>
-                    </div>
+                <div class="item-container">
+                    <table id="items-table" class="table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Selling Price</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- This section will be populated by JavaScript when adding new items -->
+                            <!-- But for existing items, we'll render them from the server -->
+                            {% if existing_items %}
+                                {% for item in existing_items %}
+                                <tr class="item-row">
+                                    <td>
+                                        <input type="text" name="description[]" class="form-control" 
+                                               value="{{ item.description }}" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="quantity[]" class="form-control quantity" 
+                                               value="{{ item.quantity }}" min="1">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="selling_price[]" class="form-control selling-price" 
+                                               value="{{ item.selling_price }}" step="0.01">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="notes[]" class="form-control" 
+                                               value="{{ item.notes|default:'' }}">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm remove-item">
+                                            <i class="feather icon-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <!-- Default empty row if no items exist -->
+                                <tr class="item-row">
+                                    <td>
+                                        <input type="text" name="description[]" class="form-control" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="quantity[]" class="form-control quantity" min="1" value="1">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="selling_price[]" class="form-control selling-price" step="0.01" value="0.00">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="notes[]" class="form-control">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm remove-item">
+                                            <i class="feather icon-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <!-- Add Item Button -->
+                    <button type="button" id="add-item" class="btn btn-secondary">
+                        <i class="feather icon-plus"></i> Add Item
+                    </button>
                 </div>
-            </div>
-            <div class="card-footer">
-                <button type="button" class="btn btn-secondary w-100 mb-2" onclick="addItem()">
-                    <i class="feather icon-plus"></i> Add Another Item
-                </button>
             </div>
         </div>
 
-        <!-- Submit Button -->
-        <div class="d-grid">
-            <button type="submit" class="btn btn-primary btn-lg">Create Order</button>
+        <!-- Update the Submit Button section at the bottom of your form -->
+        <div class="d-grid mt-4">
+            {% if order %}
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="feather icon-save"></i> Save Changes
+                </button>
+            {% else %}
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="feather icon-plus-circle"></i> Create Order
+                </button>
+            {% endif %}
         </div>
     </form>
+</div>
+
+<!-- Duplicate Warning Modal Template -->
+<div class="modal fade" id="duplicateWarningModal" tabindex="-1" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="feather icon-alert-triangle me-2"></i>
+                    Possible Duplicate Orders
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> We found potential duplicate order(s) that match this new order.
+                </div>
+                
+                <div class="duplicate-orders-container">
+                    <!-- Duplicate orders will be inserted here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-cancel" data-bs-dismiss="modal">
+                    <i class="feather icon-x me-1"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-warning" id="proceedWithDuplicates">
+                    <i class="feather icon-alert-triangle me-1"></i> Create Anyway
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_css %}
+<!-- Add Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
 .item-row {
     background: #fff;
@@ -135,88 +228,1186 @@
         padding-bottom: 80px;
     }
 }
+
+/* Add Select2 customization */
+.select2-container--default .select2-selection--single {
+    height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.5;
+    padding-left: 0;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100%;
+}
+
+/* Style for invalid order number */
+.is-invalid-order {
+    border-color: #dc3545;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+/* Replace your existing order-number-feedback style with this enhanced version */
+.order-number-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #fff;
+    background: linear-gradient(45deg, #dc3545, #ff6b6b);
+    padding: 0.7rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+    animation: pulse 1.5s infinite;
+    border-left: 4px solid #b30000;
+    position: relative;
+}
+
+.order-number-feedback::before {
+    content: "⚠️";
+    margin-right: 8px;
+    font-size: 1.2rem;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+    70% { box-shadow: 0 0 0 7px rgba(220, 53, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+/* Additional Select2 styling for loading state */
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color:rgb(150, 164, 207) transparent transparent transparent;
+    border-width: 6px 4px 0 4px;
+}
+
+.select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+    border-color: transparent transparentrgb(203, 208, 222) transparent;
+    border-width: 0 4px 6px 4px;
+}
+
+/* Loading animation */
+.select2-container--default .select2-selection--single .loading-indicator {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(78, 115, 223, 0.3);
+    border-radius: 50%;
+    border-top-color: #4e73df;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Company dropdown styling */
+.company-result {
+    padding: 8px 0;
+}
+
+.company-name {
+    font-weight: 500;
+}
+
+.company-address {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+.select2-container--default .select2-selection--single {
+    height: auto;
+    padding: 10px 12px;
+    border: 2px solid #4e73df;
+    border-radius: 8px;
+    background-color: #f0f7ff;
+    transition: border-color 0.15s ease-in-out;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #333;
+    line-height: 1.5;
+    padding-left: 0;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100%;
+}
+
+/* Mobile-specific enhancements */
+@media (max-width: 768px) {
+    .select2-container--default .select2-selection--single {
+        padding: 12px;
+        background-color: #e3ebff;
+    }
+}
+
+/* Enhanced Select2 styling - with !important to ensure they apply */
+.select2-container--default .select2-selection--single {
+    height: auto !important;
+    padding: 10px 12px !important;
+    border: 3px solid #4e73df !important;
+    border-radius: 8px !important;
+    background-color: #f0f7ff !important;
+    transition: border-color 0.15s ease-in-out !important;
+    box-shadow: 0 2px 8px rgba(78, 115, 223, 0.2) !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #333 !important;
+    line-height: 1.5 !important;
+    padding-left: 0 !important;
+    font-weight: 500 !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100% !important;
+    right: 8px !important;
+}
+
+/* Enhanced dropdown styling */
+.select2-dropdown {
+    border: 3px solid #4e73df !important;
+    border-radius: 8px !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15) !important;
+}
+
+.select2-search--dropdown .select2-search__field {
+    padding: 10px !important;
+    border: 2px solid #ced4da !important;
+    border-radius: 6px !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #4e73df !important;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+    .select2-container--default .select2-selection--single {
+        padding: 15px !important;
+        background-color: #e3ebff !important;
+        border-width: 3px !important;
+    }
+    
+    .select2-search--dropdown .select2-search__field {
+        padding: 15px !important;
+        font-size: 16px !important;
+    }
+    
+    /* Make dropdown fixed position on mobile for better usability */
+    .select2-container--open .select2-dropdown {
+        position: fixed !important;
+        top: 20% !important;
+        left: 5% !important;
+        width: 90% !important;
+        z-index: 9999 !important;
+    }
+}
+
+/* Enhanced Select2 styling for better search experience */
+.select2-container--open .select2-dropdown--below {
+    border-top: none !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+}
+
+.select2-container--default .select2-results__option {
+    padding: 10px 15px !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.select2-container--default .select2-search--dropdown {
+    padding: 10px !important;
+}
+
+/* Focus states for better accessibility */
+.select2-container--default.select2-container--focus .select2-selection--single {
+    border-color: #7591e6 !important;
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25) !important;
+    outline: 0 !important;
+}
+
+/* Empty results state */
+.select2-results__message {
+    color: #6c757d !important;
+    padding: 10px 15px !important;
+    text-align: center !important;
+    font-style: italic !important;
+}
+
+#lastOrderInfo {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: #f8f9fa; /* Change this to your desired color */
+    border: none;
+    border-left: 6px solid #1e7e34;
+    padding: 15px;
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    border-radius: 8px;
+    animation: slideDown 0.5s ease-out;
+    margin-bottom: 20px;
+}
+
+#lastOrderInfo strong {
+    font-size: 1.2em;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+#lastOrderInfo .btn {
+    background-color: white;
+    color: #28a745;
+    border: none;
+    font-weight: 600;
+    padding: 5px 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+#lastOrderInfo .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background-color: #f8f9fa;
+}
+
+@keyframes slideDown {
+    from { 
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Toast customization */
+.toast-success {
+    background-color: #28a745 !important;
+}
+
+.toast-top-center {
+    top: 15px;
+}
+
+.animated.bounceIn {
+    animation-duration: 0.75s;
+    animation-name: bounceIn;
+}
+
+@keyframes bounceIn {
+    from, 20%, 40%, 60%, 80%, to {
+        animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+    }
+    0% {
+        opacity: 0;
+        transform: scale3d(0.3, 0.3, 0.3);
+    }
+    20% {
+        transform: scale3d(1.1, 1.1, 1.1);
+    }
+    40% {
+        transform: scale3d(0.9, 0.9, 0.9);
+    }
+    60% {
+        opacity: 1;
+        transform: scale3d(1.03, 1.03, 1.03);
+    }
+    80% {
+        transform: scale3d(0.97, 0.97, 0.97);
+    }
+    to {
+        opacity: 1;
+        transform: scale3d(1, 1, 1);
+    }
+}
+
+/* Duplicate Orders Modal Styling */
+.duplicate-orders-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.duplicate-orders-container .card {
+    transition: all 0.3s ease;
+    box-shadow: 0 0 5px rgba(255, 193, 7, 0.3);
+    margin-bottom: 15px;
+}
+
+.duplicate-orders-container .card:hover {
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
+    transform: translateY(-2px);
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function updateItemNumbers() {
-    document.querySelectorAll('.item-row').forEach((row, index) => {
-        let numberElement = row.querySelector('.item-number');
-        if (!numberElement) {
-            numberElement = document.createElement('div');
-            numberElement.className = 'item-number';
-            row.insertBefore(numberElement, row.firstChild);
+// Get and validate order number
+function initializeOrderNumberValidation() {
+    const orderNumberField = document.querySelector('[name="order_number"]');
+    if (orderNumberField) {
+        // Create feedback container
+        const orderNumberFeedbackContainer = document.createElement('div');
+        orderNumberFeedbackContainer.style.width = '100%';
+        
+        // Create feedback element
+        const orderNumberFeedback = document.createElement('div');
+        orderNumberFeedback.className = 'order-number-feedback';
+        orderNumberFeedback.innerHTML = '<strong>⚠️ WARNING:</strong> This order number already exists. Please use a different one.';
+        
+        // Add to DOM
+        orderNumberFeedbackContainer.appendChild(orderNumberFeedback);
+        orderNumberField.parentNode.insertBefore(orderNumberFeedbackContainer, orderNumberField.nextSibling);
+        
+        // Setup validation
+        const debounce = function(func, wait) {
+            let timeout;
+            return function(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        };
+        
+        // Define check function
+        const checkOrderNumber = debounce(function(orderNumber) {
+            if (!orderNumber) {
+                orderNumberField.classList.remove('is-invalid-order');
+                orderNumberFeedback.style.display = 'none';
+                return;
+            }
+            
+            fetch(`/orders/check-order-number/?order_number=${encodeURIComponent(orderNumber)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.exists) {
+                        orderNumberField.classList.add('is-invalid-order');
+                        orderNumberFeedback.style.display = 'block';
+                        
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('This order number already exists', 'Duplicate Order Number');
+                        }
+                    } else {
+                        orderNumberField.classList.remove('is-invalid-order');
+                        orderNumberFeedback.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking order number:', error);
+                    orderNumberField.classList.remove('is-invalid-order');
+                    orderNumberFeedback.style.display = 'none';
+                });
+        }, 300);
+        
+        // Add event listener
+        orderNumberField.addEventListener('input', function() {
+            checkOrderNumber(this.value);
+        });
+    }
+}
+
+// Initialize item management
+function initializeItemManagement() {
+    const itemsTable = document.getElementById('items-table');
+    
+    // Add new item row
+    const addItemBtn = document.getElementById('add-item');
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const tbody = itemsTable.querySelector('tbody');
+            const newRow = document.createElement('tr');
+            newRow.className = 'item-row';
+            newRow.innerHTML = `
+                <td>
+                    <input type="text" name="description[]" class="form-control" required>
+                </td>
+                <td>
+                    <input type="number" name="quantity[]" class="form-control quantity" min="1" value="1">
+                </td>
+                <td>
+                    <input type="number" name="selling_price[]" class="form-control selling-price" step="0.01" value="0.00">
+                </td>
+                <td>
+                    <input type="text" name="notes[]" class="form-control">
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                        <i class="feather icon-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+            
+            // Attach event handlers to the new row's remove button
+            attachRemoveItemHandlers();
+            
+            // Make sure there's always at least one item row
+            checkItemRows();
+        });
+    }
+    
+    // Initial setup for remove buttons
+    function attachRemoveItemHandlers() {
+        document.querySelectorAll('.remove-item').forEach(button => {
+            button.onclick = function() {
+                const row = this.closest('.item-row');
+                row.parentNode.removeChild(row);
+                
+                // Make sure there's always at least one item row
+                checkItemRows();
+            };
+        });
+    }
+    
+    // Make sure there's always at least one item row
+    function checkItemRows() {
+        const tbody = itemsTable.querySelector('tbody');
+        if (tbody.querySelectorAll('.item-row').length === 0) {
+            // Add an empty row if there are none
+            const emptyRow = document.createElement('tr');
+            emptyRow.className = 'item-row';
+            emptyRow.innerHTML = `
+                <td>
+                    <input type="text" name="description[]" class="form-control" required>
+                </td>
+                <td>
+                    <input type="number" name="quantity[]" class="form-control quantity" min="1" value="1">
+                </td>
+                <td>
+                    <input type="number" name="selling_price[]" class="form-control selling-price" step="0.01" value="0.00">
+                </td>
+                <td>
+                    <input type="text" name="notes[]" class="form-control">
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                        <i class="feather icon-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(emptyRow);
+            attachRemoveItemHandlers();
         }
-        numberElement.textContent = `Item ${index + 1}`;
+    }
+    
+    // Initial setup
+    attachRemoveItemHandlers();
+}
+
+// Initialize Select2 for company dropdown
+function initializeSelect2() {
+    if (typeof $.fn.select2 !== 'undefined') {
+        $('#id_company').select2({
+            placeholder: "Search for a company...",
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 2,
+            ajax: {
+                url: '/wfdash/api/companies/search/',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: function(data, params) {
+                    // Handle both response formats
+                    var results = [];
+                    if (data && Array.isArray(data)) {
+                        results = data;
+                    } else if (data && data.results && Array.isArray(data.results)) {
+                        results = data.results;
+                    }
+                    
+                    return {
+                        results: results,
+                        pagination: {
+                            more: false
+                        }
+                    };
+                },
+                cache: true
+            },
+            templateResult: formatCompanyResult,
+            templateSelection: formatCompanySelection
+        });
+    }
+    
+    function formatCompanyResult(company) {
+        if (!company.id) return company.text;
+        
+        return $('<div class="company-result">' +
+                '<div class="company-name">' + company.text + '</div>' +
+                (company.address ? '<div class="company-address">' + company.address + '</div>' : '') +
+                '</div>');
+    }
+    
+    function formatCompanySelection(company) {
+        return company.text || "Select a company";
+    }
+}
+
+// Check for potential duplicate orders
+function checkForDuplicates(callback) {
+    // Get form data
+    const form = document.getElementById('orderForm');
+    const formData = new FormData(form);
+    
+    // Create checking message
+    const checkingMsg = document.createElement('div');
+    checkingMsg.className = 'checking-duplicates';
+    checkingMsg.innerHTML = '<i class="feather icon-search spin"></i> Checking for potential duplicate orders...';
+    form.parentNode.insertBefore(checkingMsg, form);
+    
+    // Send request to check for duplicates
+    fetch('/orders/check-duplicates/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove checking message
+        checkingMsg.remove();
+        
+        if (data.duplicates && data.duplicates.length > 0) {
+            // Show duplicate warning modal
+            showDuplicateWarningModal(data.duplicates, callback);
+        } else {
+            // No duplicates found, proceed with callback
+            callback();
+        }
+    })
+    .catch(error => {
+        // Remove checking message
+        checkingMsg.remove();
+        console.error('Error checking for duplicates:', error);
+        
+        // Show error message
+        if (typeof toastr !== 'undefined') {
+            toastr.error('Error checking for duplicates. Proceeding with order creation.', 'Error');
+        }
+        
+        // Proceed with callback anyway
+        callback();
     });
 }
 
-function addItem() {
-    const template = `
-        <div class="item-row p-3">
-            <div class="item-number"></div>
-            <div class="item-content">
-                <div class="mb-2">
-                    <label>Description *</label>
-                    <input type="text" name="description[]" class="form-control" required>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-2">
-                            <label>Quantity</label>
-                            <input type="number" name="quantity[]" class="form-control" value="1" min="1">
-                        </div>
+// Show duplicate warning modal
+function showDuplicateWarningModal(duplicates, callback) {
+    // Get the modal element that's already in the DOM
+    const modalElement = document.getElementById('duplicateWarningModal');
+    
+    // Clear previous content
+    const container = modalElement.querySelector('.duplicate-orders-container');
+    container.innerHTML = '';
+    
+    // Add duplicate cards
+    duplicates.forEach(dup => {
+        const card = document.createElement('div');
+        card.className = 'card border-warning';
+        
+        // Format header with match percentage and days ago
+        const headerHtml = `
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-warning text-dark me-2">${Math.round(dup.score)}% Match</span>
+                        Order #${dup.order.order_number || 'Unknown'}
                     </div>
-                    <div class="col-md-6">
-                        <div class="mb-2">
-                            <label>Selling Price</label>
-                            <input type="number" name="selling_price[]" class="form-control" step="0.01" min="0.01" required>
-                        </div>
+                    <div class="text-muted small">
+                        Created ${dup.days_ago} ${dup.days_ago === 1 ? 'day' : 'days'} ago
                     </div>
-                </div>
-                <div class="mb-2">
-                    <label>Notes</label>
-                    <textarea name="notes[]" class="form-control" rows="2"></textarea>
-                </div>
-                <div class="text-end">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">
-                        <i class="feather icon-trash-2"></i> Remove
-                    </button>
                 </div>
             </div>
-        </div>
-    `;
-    document.getElementById('itemsList').insertAdjacentHTML('beforeend', template);
-    updateItemNumbers();
+        `;
+        
+        // Format items table
+        const itemsHtml = `
+            <div class="card-body">
+                <h6>Matching Items:</h6>
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr>
+                            <th>New Order</th>
+                            <th>Qty</th>
+                            <th>Existing Order</th>
+                            <th>Qty</th>
+                            <th>Match</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${dup.matching_items.map(item => `
+                            <tr>
+                                <td>${item.new_desc}</td>
+                                <td>${item.new_qty}</td>
+                                <td>${item.match_desc}</td>
+                                <td>${item.match_qty}</td>
+                                <td>${Math.round(item.similarity * 100)}%</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <a href="/orders/${dup.order.id}/" target="_blank" class="btn btn-sm btn-info">
+                    <i class="feather icon-external-link"></i> View Order
+                </a>
+            </div>
+        `;
+        
+        card.innerHTML = headerHtml + itemsHtml;
+        container.appendChild(card);
+    });
     
-    // Scroll to the new item
-    const newItem = document.querySelector('.item-row:last-child');
-    newItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Initialize the modal if bootstrap is available
+    if (typeof bootstrap !== 'undefined') {
+        const modal = new bootstrap.Modal(modalElement);
+        
+        // Show the modal
+        modal.show();
+        
+        // Handle the "Create Anyway" button
+        const proceedBtn = document.getElementById('proceedWithDuplicates');
+        
+        // Remove any existing event listeners
+        const newProceedBtn = proceedBtn.cloneNode(true);
+        proceedBtn.parentNode.replaceChild(newProceedBtn, proceedBtn);
+        
+        // Add fresh event listener
+        newProceedBtn.addEventListener('click', function() {
+            modal.hide();
+            callback();
+        });
+    } else {
+        // Fallback if bootstrap isn't available
+        console.error("Bootstrap Modal not available");
+        // Just proceed with the callback
+        callback();
+    }
 }
 
-function removeItem(button) {
-    const itemRow = button.closest('.item-row');
-    itemRow.style.opacity = '0';
-    itemRow.style.transform = 'translateX(20px)';
-    setTimeout(() => {
-        itemRow.remove();
-        updateItemNumbers();
-    }, 300);
+// Replace your entire submitForm function with this version
+function submitForm(form) {
+    // Show loading state
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="feather icon-loader spin"></i> Creating Order...';
+    
+    // Get all inputs directly from the DOM to ensure we have everything
+    const descriptions = [];
+    const quantities = [];
+    const sellingPrices = [];
+    const notes = [];
+    
+    // Collect all item data in correct order
+    document.querySelectorAll('.item-row').forEach(row => {
+        const descInput = row.querySelector('input[name="description[]"]');
+        const qtyInput = row.querySelector('input[name="quantity[]"]');
+        const priceInput = row.querySelector('input[name="selling_price[]"]');
+        const noteInput = row.querySelector('input[name="notes[]"]');
+        
+        if (descInput && descInput.value.trim()) {
+            descriptions.push(descInput.value);
+            quantities.push(qtyInput ? qtyInput.value || "1" : "1");
+            sellingPrices.push(priceInput ? priceInput.value || "0.00" : "0.00");
+            notes.push(noteInput ? noteInput.value || "" : "");
+        }
+    });
+    
+    console.log(`Submitting order with ${descriptions.length} items`);
+    console.log(`Selling prices: ${sellingPrices.join(', ')}`);
+    
+    // Create a new FormData from the form
+    const formData = new FormData(form);
+    
+    // Remove any existing array fields that might be incomplete
+    for (const pair of [...formData.entries()]) {
+        if (pair[0].includes('[]')) {
+            formData.delete(pair[0]);
+        }
+    }
+    
+    // Add each item field explicitly in the correct order
+    descriptions.forEach((desc, index) => {
+        formData.append('description[]', desc);
+        formData.append('quantity[]', quantities[index]);
+        formData.append('selling_price[]', sellingPrices[index]);
+        formData.append('notes[]', notes[index]);
+    });
+    
+    // Determine if this is edit mode
+    const isEditMode = !!document.querySelector('[name="order_id"]') || window.location.pathname.includes('/edit/');
+    
+    // CRITICAL FIX: Debug print all form data entries
+    console.log("FormData before submission:");
+    for (const pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+    }
+
+    // CRITICAL FIX: Ensure selling price values are explicitly added for each item
+    // This is a backup to make absolutely sure they're included
+    for (let i = 0; i < descriptions.length; i++) {
+        formData.append(`item_selling_price_${i}`, sellingPrices[i] || "0.00");
+        
+        // Also add all other item fields in indexed format
+        formData.append(`item_desc_${i}`, descriptions[i]);
+        formData.append(`item_qty_${i}`, quantities[i]);
+        formData.append(`item_notes_${i}`, notes[i] || "");
+    }
+
+    // Add the count and signal our approach
+    formData.append('item_count', descriptions.length);
+    formData.append('use_item_fields', 'true');
+    
+    // Send AJAX request
+    fetch(isEditMode ? window.location.pathname : '/orders/create/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            if (isEditMode) {
+                // Show success notification
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('Order updated successfully', 'Success');
+                }
+                
+                // Redirect to detail view after a short delay
+                setTimeout(() => {
+                    window.location.href = `/orders/${data.order_id}/`;
+                }, 1000);
+            } else {
+                // Reset form for create mode
+                form.reset();
+                
+                // Reset all items except the first one
+                const items = document.querySelectorAll('.item-row');
+                for (let i = 1; i < items.length; i++) {
+                    items[i].remove();
+                }
+                
+                // Clear the first item's input fields
+                const firstItem = document.querySelector('.item-row');
+                if (firstItem) {
+                    firstItem.querySelectorAll('input').forEach(input => {
+                        if (input.name.includes('description') || input.name.includes('notes')) {
+                            input.value = '';
+                        } else if (input.name.includes('quantity')) {
+                            input.value = '1';
+                        } else if (input.name.includes('selling_price')) {
+                            input.value = '0.00';
+                        }
+                    });
+                }
+                
+                // Reset Select2 fields if jQuery is available
+                if (typeof $.fn.select2 !== 'undefined') {
+                    $('#id_company').val(null).trigger('change');
+                }
+                
+                // Show last order info
+                document.getElementById('lastOrderNumber').textContent = data.order_number;
+                const viewLastOrderLink = document.getElementById('viewLastOrder');
+                viewLastOrderLink.href = `/orders/${data.order_id}/`;
+                document.getElementById('lastOrderInfo').classList.remove('d-none');
+                
+                // Scroll to top to show the alert
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                // Show success toast notification
+                if (typeof toastr !== 'undefined') {
+                    toastr.options = {
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: "toast-top-center",
+                        timeOut: 8000,
+                        extendedTimeOut: 2000,
+                        showEasing: "swing",
+                        hideEasing: "linear",
+                        showMethod: "fadeIn",
+                        hideMethod: "fadeOut",
+                        tapToDismiss: false,
+                        preventDuplicates: true
+                    };
+                    toastr.success(data.message || 'Order created successfully', 'Order Created', {
+                        iconClass: 'toast-success animated bounceIn'
+                    });
+                }
+            }
+        } else {
+            // Handle form validation errors
+            if (typeof toastr !== 'undefined') {
+                toastr.error('There was a problem creating the order', 'Form Error');
+            }
+            
+            // Display any error messages
+            if (data.errors) {
+                const errorMessages = Object.values(data.errors).flat().join('<br>');
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(errorMessages, 'Form Error');
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error submitting form:', error);
+        if (typeof toastr !== 'undefined') {
+            toastr.error(`There was a problem submitting the form: ${error.message}`, 'Error');
+        }
+    })
+    .finally(() => {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
+    });
 }
 
-// Initialize item numbers on page load
+// Main initialization
 document.addEventListener('DOMContentLoaded', function() {
-    updateItemNumbers();
-});
-
-// Prevent form submission if no items
-document.getElementById('orderForm').addEventListener('submit', function(e) {
-    const items = document.querySelectorAll('.item-row');
-    if (items.length === 0) {
-        e.preventDefault();
-        alert('Please add at least one item to the order.');
+    console.log('DOM loaded - initializing order form');
+    
+    // Initialize Select2 when jQuery is ready
+    if (typeof jQuery !== 'undefined') {
+        initializeSelect2();
+    } else {
+        // Try again in a moment if jQuery isn't ready
+        setTimeout(function() {
+            if (typeof jQuery !== 'undefined') {
+                initializeSelect2();
+            }
+        }, 500);
+    }
+    
+    // Initialize order number validation
+    initializeOrderNumberValidation();
+    
+    // Initialize item management
+    initializeItemManagement();
+    
+    // Set up form submission with duplicate checking
+    const orderForm = document.getElementById('orderForm');
+    if (orderForm) {
+        orderForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Check for any validation errors
+            const orderNumberField = document.querySelector('[name="order_number"]');
+            if (orderNumberField && orderNumberField.classList.contains('is-invalid-order')) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Please fix the order number issue before submitting', 'Form Error');
+                }
+                return false;
+            }
+            
+            // IMPORTANT FIX: Make sure all selling prices are properly set
+            // Get all description and selling price inputs
+            const descriptionInputs = document.querySelectorAll('input[name="description[]"]');
+            const sellingPriceInputs = document.querySelectorAll('input[name="selling_price[]"]');
+            
+            // Log counts for debugging
+            console.log(`Found ${descriptionInputs.length} descriptions and ${sellingPriceInputs.length} selling prices`);
+            
+            // Format all selling prices properly
+            sellingPriceInputs.forEach(input => {
+                if (input.value === "" || isNaN(parseFloat(input.value))) {
+                    input.value = "0.00";
+                } else {
+                    input.value = parseFloat(input.value).toFixed(2);
+                }
+            });
+            
+            // First check for duplicates, then submit if appropriate
+            checkForDuplicates(() => {
+                submitForm(orderForm);
+            });
+        });
     }
 });
+
+
+// Emergency fix for company dropdown
+(function() {
+    console.log('🚨 Emergency company dropdown fix running');
+    
+    // Wait for full page load
+    window.addEventListener('load', function() {
+        console.log('🌍 Window fully loaded - attempting to fix company dropdown');
+        setTimeout(fixCompanyDropdown, 500);
+    });
+    
+    function fixCompanyDropdown() {
+        try {
+            console.log('⚙️ Running company dropdown fix');
+            
+            // Find the company field
+            const companyField = document.getElementById('id_company');
+            if (!companyField) {
+                console.error('❌ Company field not found - element with ID "id_company" doesn\'t exist');
+                return false;
+            }
+            
+            // Make sure jQuery is available
+            if (typeof jQuery === 'undefined') {
+                console.error('❌ jQuery is not available on the page');
+                return false;
+            }
+            
+            // Make sure Select2 is available
+            if (typeof jQuery.fn.select2 === 'undefined') {
+                console.error('❌ Select2 is not available on the page');
+                
+                // Try to load Select2 dynamically
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js';
+                script.onload = function() {
+                    console.log('✅ Select2 loaded dynamically');
+                    setTimeout(fixCompanyDropdown, 100);
+                };
+                document.body.appendChild(script);
+                return false;
+            }
+            
+            // Now try to initialize (or re-initialize) the dropdown
+            console.log('🔄 Attempting to initialize Select2 for company dropdown');
+            
+            // Destroy any existing instance to avoid conflicts
+            try {
+                jQuery(companyField).select2('destroy');
+            } catch (e) {
+                console.log('Note: No previous Select2 instance to destroy');
+            }
+            
+            // Apply a simple Select2 first to ensure it works
+            jQuery(companyField).select2({
+                placeholder: "Search for a company...",
+                allowClear: true,
+                width: '100%'
+            });
+            
+            console.log('✅ Basic Select2 initialization successful');
+            
+            // Now apply the full configuration (AJAX, etc.)
+            setTimeout(function() {
+                try {
+                    jQuery(companyField).select2('destroy');
+                    
+                    jQuery(companyField).select2({
+                        placeholder: "Search for a company...",
+                        allowClear: true,
+                        width: '100%',
+                        minimumInputLength: 2,
+                        ajax: {
+                            url: '/wfdash/api/companies/search/',
+                            dataType: 'json',
+                            delay: 250,
+                            data: function(params) {
+                                return {
+                                    q: params.term || '',
+                                    page: params.page || 1
+                                };
+                            },
+                            processResults: function(data) {
+                                console.log('📊 Company search API response received');
+                                
+                                // Handle different response formats
+                                let results = [];
+                                if (data && Array.isArray(data)) {
+                                    results = data;
+                                } else if (data && data.results && Array.isArray(data.results)) {
+                                    results = data.results;
+                                }
+                                
+                                return {
+                                    results: results,
+                                    pagination: {
+                                        more: false
+                                    }
+                                };
+                            },
+                            cache: true
+                        },
+                        templateResult: formatCompanyResult,
+                        templateSelection: formatCompanySelection
+                    });
+                    
+                    console.log('✅ Full Select2 configuration applied successfully');
+                    
+                    // Force a refresh of the dropdown
+                    jQuery(companyField).trigger('change');
+                    
+                    // Add a visual indicator that the fix was applied
+                    const companyLabel = companyField.parentNode.querySelector('label');
+                    if (companyLabel) {
+                        companyLabel.innerHTML += ' <span style="color: #28a745;">(Fixed)</span>';
+                    }
+                } catch (err) {
+                    console.error('❌ Error applying full Select2 configuration:', err);
+                }
+            }, 1000);
+            
+            function formatCompanyResult(company) {
+                if (!company.id) return company.text;
+                
+                return jQuery('<div class="company-result">' +
+                        '<div class="company-name">' + company.text + '</div>' +
+                        (company.address ? '<div class="company-address">' + company.address + '</div>' : '') +
+                        '</div>');
+            }
+            
+            function formatCompanySelection(company) {
+                return company.text || "Select a company";
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('❌ Fatal error in company dropdown fix:', error);
+            return false;
+        }
+    }
+})();
+</script>
+<script>
+// Add a manual fix button in case automatic fix fails
+document.addEventListener('DOMContentLoaded', function() {
+    const companyField = document.getElementById('id_company');
+    if (companyField) {
+        const container = companyField.parentNode;
+        const fixButton = document.createElement('button');
+        fixButton.type = 'button';
+        fixButton.className = 'btn btn-sm btn-outline-primary mt-2';
+        fixButton.innerHTML = '<i class="fas fa-sync-alt"></i> Fix Company Dropdown';
+        fixButton.onclick = function(e) {
+            e.preventDefault();
+            
+            // Show loading indicator
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fixing...';
+            this.disabled = true;
+            
+            // Try to load jQuery if needed
+            if (typeof jQuery === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+                script.onload = loadSelect2;
+                document.body.appendChild(script);
+            } else if (typeof jQuery.fn.select2 === 'undefined') {
+                loadSelect2();
+            } else {
+                fixDropdown();
+            }
+            
+            function loadSelect2() {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js';
+                script.onload = fixDropdown;
+                document.body.appendChild(script);
+            }
+            
+            function fixDropdown() {
+                try {
+                    if (jQuery(companyField).hasClass('select2-hidden-accessible')) {
+                        jQuery(companyField).select2('destroy');
+                    }
+                    
+                    jQuery(companyField).select2({
+                        placeholder: "Search for a company...",
+                        allowClear: true,
+                        width: '100%',
+                        minimumInputLength: 2,
+                        ajax: {
+                            url: '/wfdash/api/companies/search/',
+                            dataType: 'json',
+                            delay: 250,
+                            data: function(params) {
+                                return {
+                                    q: params.term || '',
+                                    page: params.page || 1
+                                };
+                            },
+                            processResults: function(data) {
+                                let results = [];
+                                if (data && Array.isArray(data)) {
+                                    results = data;
+                                } else if (data && data.results && Array.isArray(data.results)) {
+                                    results = data.results;
+                                }
+                                
+                                return {
+                                    results: results,
+                                    pagination: {
+                                        more: false
+                                    }
+                                };
+                            }
+                        }
+                    });
+                    
+                    fixButton.innerHTML = '<i class="fas fa-check"></i> Fixed Successfully';
+                    fixButton.className = 'btn btn-sm btn-success mt-2';
+                    
+                    setTimeout(function() {
+                        fixButton.style.display = 'none';
+                    }, 3000);
+                } catch (e) {
+                    fixButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Fix Failed - Try Again';
+                    fixButton.className = 'btn btn-sm btn-danger mt-2';
+                    fixButton.disabled = false;
+                    console.error('Error fixing dropdown:', e);
+                }
+            }
+        };
+        container.appendChild(fixButton);
+    }
+});
+
+
+
+
+
 </script>
 {% endblock %}

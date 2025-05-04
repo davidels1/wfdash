@@ -1,0 +1,171 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Add Manual Collection{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>{{ page_title }}</h5>
+            <div>
+                <a href="{% url 'driver_list:collection_pool' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Back to Collection Pool
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form id="manual-collection-form" method="POST" action="{% url 'driver_list:add_manual_collection' %}">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="supplier" class="form-label">Supplier <span class="text-danger">*</span></label>
+                        <select name="supplier" id="supplier" class="form-control" required>
+                            <option value="">Select supplier</option>
+                            {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}">{{ supplier.suppliername }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="driver" class="form-label">Driver</label>
+                        <select name="driver" id="driver" class="form-control">
+                            <option value="">Select driver (optional)</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}" {% if "joachim" in user.get_full_name.lower or "joachim" in user.username.lower %}selected{% endif %}>
+                                    {{ user.get_full_name }}
+                                </option>
+                            {% endfor %}
+                            <!-- Ensure Joachim is always available -->
+                            {% if not joachim_found %}
+                                <option value="{{ default_driver_id }}" selected>Joachim</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="description" name="description" required>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="quantity" class="form-label">Quantity <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" step="0.01" required>
+                    </div>
+                    
+                    <!-- Unit field hidden (kept for compatibility) -->
+                    <input type="hidden" id="unit" name="unit" value="units">
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="planned_date" class="form-label">Planned Date</label>
+                        <input type="date" class="form-control" id="planned_date" name="planned_date" 
+                               value="{% now 'Y-m-d' %}">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Collection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('manual-collection-form');
+    
+    // Ensure Joachim is available as a driver option
+    const driverSelect = document.getElementById('driver');
+    let joachimFound = false;
+    
+    // Check if Joachim exists in the dropdown
+    for (let i = 0; i < driverSelect.options.length; i++) {
+        const optionText = driverSelect.options[i].text.toLowerCase();
+        if (optionText.includes('joachim')) {
+            joachimFound = true;
+            driverSelect.options[i].selected = true;
+            break;
+        }
+    }
+    
+    // If Joachim is not found, add him
+    if (!joachimFound) {
+        console.warn("Joachim not found in drivers list - would add him, but don't have his ID");
+    }
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        
+        try {
+            const formData = new FormData(form);
+            
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                toastr.success(data.message);
+                
+                // Decide where to redirect based on whether a driver was assigned
+                const driverId = formData.get('driver');
+                
+                setTimeout(() => {
+                    if (driverId) {
+                        window.location.href = "{% url 'driver_list:assigned_collections' %}";
+                    } else {
+                        window.location.href = "{% url 'driver_list:collection_pool' %}";
+                    }
+                }, 1000);
+            } else {
+                toastr.error(data.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add Collection';
+            }
+        } catch (err) {
+            toastr.error('An error occurred while processing your request');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add Collection';
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_head %}
+<!-- Add Toastr CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+{% endblock %}
+
+{% block extra_js_includes %}
+<!-- Add Toastr JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+{% endblock %}

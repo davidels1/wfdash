@@ -7,35 +7,295 @@
 <!-- [ Main Content ] start -->
 <div class="row">
     <!-- Welcome Card -->
-    <div class="col-md-12 col-xl-8 mx-auto">
-        <div class="card">
-            <div class="card-body text-center">
-                <img src="{% static 'assets/images/logo.png' %}" alt="Company Logo" class="img-fluid mb-4" style="max-height: 120px;">
-                <h2 class="mb-4">Welcome to WF Sales Dashboard</h2>
-                <p class="lead mb-4">Your complete solution for sales management and tracking</p>
-                
-                <!-- Add Company Profile Download Button -->
-                <div class="mt-4">
-                    <a href="{% static 'assets/docs/company_profile.pdf' %}" 
-                       class="btn btn-outline-info btn-lg" 
-                       target="_blank">
-                        <i class="feather icon-download me-2"></i>
-                        Download Company Profile
-                    </a>
+    <div class="col-md-12 col-xl-8 mx-auto mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body d-flex align-items-center">
+                <div class="welcome-left">
+                    <h2>Welcome back, {{ request.user.first_name|default:request.user.username }}!</h2>
+                    <p class="text-muted mb-0">{{ today|date:"l, F j, Y" }}</p>
                 </div>
-                
-                {% if not request.user.is_authenticated %}
-              <div class="mt-4">
-                    <a href="{% url 'account_login' %}" class="btn btn-primary btn-lg me-3">Sign In</a>
-                    <a href="{% url 'account_signup' %}" class="btn btn-outline-primary btn-lg">Register</a>
-                </div> -->
-                {% endif %}
+                <div class="ms-auto text-end">
+                    <img src="{% static 'assets/images/logo.png' %}" alt="Company Logo" class="img-fluid" style="max-height: 80px;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Quick Action Cards - Large Touch-Friendly Buttons -->
+    <div class="col-md-12 mb-4">
+        <div class="row justify-content-center">
+            <!-- Add Quote Card -->
+            <div class="col-6 col-md-4 mb-3">
+                <a href="{% url 'quotes:quote_create' %}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 quick-action-card border-start border-primary border-5">
+                        <div class="card-body text-center py-4">
+                            <div class="d-flex justify-content-center mb-3">
+                                <div class="avatar avatar-lg bg-primary-light rounded-circle">
+                                    <i class="feather icon-file-plus text-primary f-24"></i>
+                                </div>
+                            </div>
+                            <h4 class="mb-1">New Quote</h4>
+                            <p class="text-muted small mb-0">Create quote for customer</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Add Order Card -->
+            <div class="col-6 col-md-4 mb-3">
+                <a href="{% url 'orders:order_create' %}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 quick-action-card border-start border-success border-5">
+                        <div class="card-body text-center py-4">
+                            <div class="d-flex justify-content-center mb-3">
+                                <div class="avatar avatar-lg bg-success-light rounded-circle">
+                                    <i class="feather icon-shopping-cart text-success f-24"></i>
+                                </div>
+                            </div>
+                            <h4 class="mb-1">New Order</h4>
+                            <p class="text-muted small mb-0">Create customer order</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Collection Pool Card -->
+            <div class="col-6 col-md-4 mb-3">
+                <a href="{% url 'driver_list:collection_pool' %}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 quick-action-card border-start border-warning border-5">
+                        <div class="card-body text-center py-4">
+                            <div class="d-flex justify-content-center mb-3">
+                                <div class="avatar avatar-lg bg-warning-light rounded-circle">
+                                    <i class="feather icon-compass text-warning f-24"></i>
+                                </div>
+                            </div>
+                            <h4 class="mb-1">Collections</h4>
+                            <p class="text-muted small mb-0">View collection pool</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="col-12 mb-4">
+        <div class="row">
+            <!-- Pending Quotes -->
+            <div class="col-md-3 col-sm-6">
+                <div class="card bg-primary bg-opacity-10 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-primary bg-opacity-25 p-3 rounded">
+                                <i class="feather icon-file-text text-primary f-24"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="mb-0">{{ pending_quotes_count|default:"0" }}</h5>
+                                <p class="mb-0 text-muted">Pending Quotes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{% url 'quotes:quote_list' %}" class="stretched-link"></a>
+                </div>
+            </div>
+
+            <!-- Active Orders -->
+            <div class="col-md-3 col-sm-6">
+                <div class="card bg-success bg-opacity-10 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-success bg-opacity-25 p-3 rounded">
+                                <i class="feather icon-shopping-cart text-success f-24"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="mb-0">{{ active_orders_count|default:"0" }}</h5>
+                                <p class="mb-0 text-muted">Active Orders</p>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{% url 'orders:order_list' %}" class="stretched-link"></a>
+                </div>
+            </div>
+
+            <!-- Awaiting Collection -->
+            <div class="col-md-3 col-sm-6">
+                <div class="card bg-warning bg-opacity-10 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-warning bg-opacity-25 p-3 rounded">
+                                <i class="feather icon-truck text-warning f-24"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="mb-0">{{ awaiting_collection_count|default:"0" }}</h5>
+                                <p class="mb-0 text-muted">Awaiting Collection</p>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{% url 'driver_list:collection_pool' %}" class="stretched-link"></a>
+                </div>
+            </div>
+
+            <!-- Stock Items -->
+            <div class="col-md-3 col-sm-6">
+                <div class="card bg-info bg-opacity-10 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-info bg-opacity-25 p-3 rounded">
+                                <i class="feather icon-package text-info f-24"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="mb-0">{{ stock_count|default:"0" }}</h5>
+                                <p class="mb-0 text-muted">Stock Items</p>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{% url 'stock_management:stock_list' %}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Section -->
+    <div class="row">
+        <!-- Recent Orders/Quotes -->
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Activity</h5>
+                    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#orders-tab" role="tab">Orders</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#quotes-tab" role="tab">Quotes</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="orders-tab" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Customer</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in recent_orders|slice:":5" %}
+                                        <tr>
+                                            <td><a href="{% url 'orders:order_detail' order.id %}">{{ order.order_number }}</a></td>
+                                            <td>{{ order.customer.name }}</td>
+                                            <td><span class="badge {{ order.status_badge }}">{{ order.status }}</span></td>
+                                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center py-3">No recent orders</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                             <!-- Weather Widget
+                            <div class="text-end mt-2">
+                                <a href="{% url 'orders:order_list' %}" class="btn btn-sm btn-outline-primary">View All Orders</a>
+                            </div>-->
+                        </div>
+                        <div class="tab-pane fade" id="quotes-tab" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Quote #</th>
+                                            <th>Customer</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for quote in recent_quotes|slice:":5" %}
+                                        <tr>
+                                            <td><a href="{% url 'quotes:quote_detail' quote.id %}">{{ quote.quote_number }}</a></td>
+                                            <td>{{ quote.customer.name }}</td>
+                                            <td><span class="badge {{ quote.status_badge }}">{{ quote.status }}</span></td>
+                                            <td>{{ quote.created_at|date:"M d, Y" }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center py-3">No recent quotes</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                             <!-- Weather Widget
+                            <div class="text-end mt-2">
+                                <a href="{% url 'quotes:quote_list' %}" class="btn btn-sm btn-outline-primary">View All Quotes</a>
+                            </div>-->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks section removed - will be added later when task app is built -->
+    </div>
+
+    <!-- Weather and Calendar Row -->
+    <div class="row mt-4">
+        <!-- Weather Widget -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div id="weather-widget" class="text-center">
+                        <h5 class="card-title">Johannesburg Weather</h5>
+                        <div class="py-3 d-flex align-items-center justify-content-center">
+                            <div id="weather-icon" class="me-3">
+                                <i class="feather icon-cloud f-36"></i>
+                            </div>
+                            <div class="text-start">
+                                <h2 class="mb-0 fw-bold" id="temperature">--°C</h2>
+                                <p class="mb-0" id="weather-description">Loading...</p>
+                            </div>
+                        </div>
+                        <div class="row mt-3 text-center">
+                            <div class="col-4">
+                                <i class="feather icon-droplet"></i>
+                                <p class="small mb-0" id="humidity">--</p>
+                            </div>
+                            <div class="col-4">
+                                <i class="feather icon-wind"></i>
+                                <p class="small mb-0" id="wind">--</p>
+                            </div>
+                            <div class="col-4">
+                                <i class="feather icon-sunrise"></i>
+                                <p class="small mb-0" id="sunrise">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mini Calendar -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0">Company Calendar</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="mini-calendar" style="height: 250px;"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Features Section -->
-    <div class="col-12">
+    <div class="col-12 mt-4">
         <div class="row">
             <!-- Feature 1 -->
             <div class="col-md-4">
@@ -47,7 +307,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Feature 2 -->
             <div class="col-md-4">
                 <div class="card">
@@ -58,7 +318,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Feature 3 -->
             <div class="col-md-4">
                 <div class="card">
@@ -71,49 +331,225 @@
             </div>
         </div>
     </div>
-
-    <!-- Weather Widget -->
-    <!-- <div class="col-md-6 mx-auto">
-        <div class="card bg-primary text-white">
-            <div class="card-body text-center">
-                <h5 class="card-title text-white">Today's Weather</h5>
-                <div id="weather-widget" class="py-3">
-                    <div class="d-flex justify-content-center align-items-center">
-                        <i class="feather icon-sun f-36 me-3"></i>
-                        <div class="text-start">
-                            <h2 class="mb-0" id="temperature">Loading...</h2>
-                            <p class="mb-0" id="weather-description">Fetching weather data...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> -->
+</div>
 <!-- [ Main Content ] end -->
 {% endblock content %}
 
-{% block extra_js %}
-<script>
-// Simple weather widget using OpenWeatherMap API
-const getWeather = async () => {
-    try {
-        // Replace with your OpenWeatherMap API key and desired city
-        const city = 'Johannesburg';
-        const apiKey = 'YOUR_API_KEY';
-        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`);
-        const data = await response.json();
-
-        document.getElementById('temperature').textContent = `${Math.round(data.main.temp)}°C`;
-        document.getElementById('weather-description').textContent = data.weather[0].description;
-    } catch (error) {
-        console.error('Error fetching weather:', error);
-        document.getElementById('temperature').textContent = 'N/A';
-        document.getElementById('weather-description').textContent = 'Weather data unavailable';
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* Quick action cards with touch-friendly hover effects */
+    .quick-action-card {
+        transition: all 0.2s ease;
+        transform: translateY(0);
     }
-};
 
-// Load weather data when page loads
-document.addEventListener('DOMContentLoaded', getWeather);
+    .quick-action-card:hover,
+    .quick-action-card:focus {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+
+    /* Custom avatar sizes for quick action icons */
+    .avatar-lg {
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Light background colors for avatars */
+    .bg-primary-light {
+        background-color: rgba(64, 153, 255, 0.15);
+    }
+
+    .bg-success-light {
+        background-color: rgba(46, 216, 182, 0.15);
+    }
+
+    .bg-warning-light {
+        background-color: rgba(255, 183, 43, 0.15);
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+        .quick-action-card {
+            margin-bottom: 15px;
+        }
+
+        .quick-action-card .card-body {
+            padding: 1.25rem 0.75rem;
+        }
+
+        .avatar-lg {
+            width: 60px;
+            height: 60px;
+        }
+
+        .quick-action-card h4 {
+            font-size: 1.2rem;
+        }
+
+        .quick-action-card p {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Add fixed bottom action row for very small screens */
+    @media (max-width: 480px) {
+        .mobile-action-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 999;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .mobile-action-bar .btn {
+            padding: 10px 15px;
+            font-size: 1rem;
+        }
+
+        body {
+            padding-bottom: 70px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/main.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/main.min.css" rel="stylesheet">
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Weather widget
+    const getWeather = async () => {
+        try {
+            const city = 'Johannesburg';
+            const apiKey = '5d4075591a78d79773866ccab353144e'; // Replace with your actual API key
+            const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`);
+            const data = await response.json();
+
+            // Update main temperature and description
+            document.getElementById('temperature').textContent = `${Math.round(data.main.temp)}°C`;
+            document.getElementById('weather-description').textContent = data.weather[0].description;
+
+            // Update additional details
+            document.getElementById('humidity').textContent = `${data.main.humidity}% Humidity`;
+            document.getElementById('wind').textContent = `${Math.round(data.wind.speed * 3.6)} km/h`; // Convert m/s to km/h
+
+            // Format sunrise time
+            const sunriseTime = new Date(data.sys.sunrise * 1000);
+            document.getElementById('sunrise').textContent = `${sunriseTime.getHours()}:${String(sunriseTime.getMinutes()).padStart(2, '0')} AM`;
+
+            // Update weather icon based on condition code
+            const iconElement = document.getElementById('weather-icon');
+            const weatherIcon = data.weather[0].icon;
+
+            // Clear existing icon
+            iconElement.innerHTML = '';
+
+            // Add appropriate icon based on weather condition
+            if (weatherIcon.includes('01')) {
+                iconElement.innerHTML = '<i class="feather icon-sun text-warning f-36"></i>';
+            } else if (weatherIcon.includes('02') || weatherIcon.includes('03') || weatherIcon.includes('04')) {
+                iconElement.innerHTML = '<i class="feather icon-cloud text-info f-36"></i>';
+            } else if (weatherIcon.includes('09') || weatherIcon.includes('10')) {
+                iconElement.innerHTML = '<i class="feather icon-cloud-rain text-primary f-36"></i>';
+            } else if (weatherIcon.includes('11')) {
+                iconElement.innerHTML = '<i class="feather icon-cloud-lightning text-warning f-36"></i>';
+            } else if (weatherIcon.includes('13')) {
+                iconElement.innerHTML = '<i class="feather icon-cloud-snow text-info f-36"></i>';
+            } else {
+                iconElement.innerHTML = '<i class="feather icon-cloud text-secondary f-36"></i>';
+            }
+        } catch (error) {
+            console.error('Error fetching weather:', error);
+            document.getElementById('temperature').textContent = 'N/A';
+            document.getElementById('weather-description').textContent = 'Weather data unavailable';
+        }
+    };
+
+    // Calendar widget
+    const initCalendar = () => {
+        const calendarEl = document.getElementById('mini-calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: ''
+            },
+            height: 'auto',
+            events: [
+                // Sample events - replace with your actual events
+                {
+                    title: 'Dewald On Leave',
+                    start: '2025-03-05',
+                    backgroundColor: '#4099ff'
+                },
+                {
+                    title: 'Public Holiday',
+                    start: '2025-03-15',
+                    backgroundColor: '#2ed8b6'
+                },
+                {
+                    title: 'David Bday',
+                    start: '2025-03-21',
+                    backgroundColor: '#ff5370'
+                }
+            ],
+            eventClick: function(info) {
+                alert('Event: ' + info.event.title);
+            }
+        });
+        calendar.render();
+    };
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Initialize all components
+    getWeather();
+    initCalendar();
+    // Task-related functionality removed - will be added later when task app is built
+});
 </script>
 {% endblock extra_js %}
+
+<!-- Add mobile action bar for very small screens -->
+{% block fixed_plugin %}
+{{ block.super }}
+<div class="mobile-action-bar d-md-none">
+    <a href="{% url 'quotes:quote_create' %}" class="btn btn-primary">
+        <i class="feather icon-file-plus"></i> Quote
+    </a>
+    <a href="{% url 'orders:order_create' %}" class="btn btn-secondary">
+        <i class="feather icon-shopping-cart"></i> Order
+    </a>
+    <a href="{% url 'driver_list:collection_pool' %}" class="btn btn-warning">
+        <i class="feather icon-compass"></i> Collections
+    </a>
+</div>
+{% endblock %}

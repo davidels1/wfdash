@@ -1,0 +1,1533 @@
+{% extends "layouts/base.html" %}
+{% load delivery_filters %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Main Card -->
+            <div class="card">
+                <!-- Header with Title and Create Button -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Delivery Notes</h5>
+                    <a href="{% url 'delivery_notes:create' %}" class="btn btn-primary">
+                        <i class="feather icon-plus me-1"></i> New Delivery Note
+                    </a>
+                </div>
+
+                <!-- Search Form -->
+                <div class="card-body border-bottom pb-3">
+                    <form id="searchForm" method="GET" action="{% url 'delivery_notes:list' %}">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Search by delivery number, company or item description..." 
+                                   name="search" value="{{ request.GET.search|default:'' }}">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="feather icon-search"></i> Search
+                            </button>
+                            {% if request.GET.search %}
+                                <a href="{% url 'delivery_notes:list' %}" class="btn btn-outline-secondary">
+                                    <i class="feather icon-x"></i> Clear
+                                </a>
+                            {% endif %}
+                        </div>
+                        <div class="small text-muted mt-1">
+                            <i class="feather icon-info mr-1"></i> Search across delivery numbers, companies, and item descriptions
+                        </div>
+                    </form>
+                </div>
+
+                {% if request.GET.search %}
+                <div class="alert alert-light mt-3">
+                    <strong>Search results for "{{ request.GET.search }}":</strong> 
+                    Found {{ total_results }} delivery note(s)
+                    <a href="{% url 'delivery_notes:list' %}" class="float-end">
+                        <i class="feather icon-x-circle"></i> Clear Search
+                    </a>
+                </div>
+                {% endif %}
+
+                <!-- Card Body -->
+                <div class="card-body">
+                    <!-- Messages Section -->
+                    {% if messages %}
+                    <div class="messages mb-3">
+                        {% for message in messages %}
+                        <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'error' in message.tags %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Delivery Notes Tabs Section -->
+                    {% if delivery_notes_by_status %}
+                        <!-- Tab Navigation -->
+                        <ul class="nav nav-tabs mb-3" id="deliveryStatusTabs" role="tablist">
+                            {% for status, status_deliveries in delivery_notes_by_status.items %}
+                                {% with status_id=status|slugify %}
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {% if forloop.first %}active{% endif %}" id="tab-nav-{{ status_id }}" data-bs-toggle="tab"
+                                            data-bs-target="#tab-content-{{ status_id }}" type="button" role="tab" aria-controls="tab-content-{{ status_id }}"
+                                            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                                        <span class="badge
+                                            {% if status == 'Need Signature & Pricing' %}bg-danger
+                                            {% elif status == 'Need Signature' %}bg-warning
+                                            {% elif status == 'Need Pricing' %}bg-info
+                                            {% elif status == 'Generate Quote' %}bg-purple
+                                            {% elif status == 'Ready to Invoice' %}bg-success
+                                            {% elif status == 'Completed' %}bg-primary
+                                            {% else %}bg-secondary{% endif %} me-1">
+                                            <!-- Calculate total delivery notes in this status -->
+                                            {{ status_deliveries|calculate_total_deliveries }}
+                                        </span>
+                                        {{ status|title }}
+                                    </button>
+                                </li>
+                                {% endwith %}
+                            {% endfor %}
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="deliveryStatusTabContent">
+                            {% for status, status_deliveries in delivery_notes_by_status.items %}
+                                {% with status_id=status|slugify %}
+                                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="tab-content-{{ status_id }}" role="tabpanel"
+                                     aria-labelledby="tab-nav-{{ status_id }}">
+                                    {% if status_deliveries %}
+                                        {% for company, company_deliveries in status_deliveries.items %}
+                                            <div class="card mb-3">
+                                                <!-- Company Header -->
+                                                <div class="card-header company-header">
+                                                    <strong>{{ company }}</strong>
+                                                    <span class="badge bg-info rounded-pill float-end">{{ company_deliveries|length }}</span>
+                                                </div>
+
+                                                <!-- Delivery Notes Table -->
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th class="text-uppercase small py-2">Delivery #</th>
+                                                                <th class="text-uppercase small py-2">Date</th>
+                                                                <th class="text-uppercase small py-2">Items</th>
+                                                                <th class="text-uppercase small py-2">Created By</th>
+                                                                <th class="text-uppercase small py-2">Invoice #</th>
+                                                                <th class="text-uppercase small py-2">Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for delivery in company_deliveries %}
+                                                            <tr>
+                                                                <td class="py-2">{{ delivery.delivery_number }}</td>
+                                                                <td class="py-2">{{ delivery.delivery_date|date:"d M Y" }}</td>
+                                                                <td class="py-2">{{ delivery.items.count }}</td>
+                                                                <td class="py-2">{{ delivery.created_by.get_full_name|default:delivery.created_by.username }}</td>
+                                                                <td class="py-2">{{ delivery.invoice_number|default:"N/A" }}</td>
+                                                                <td class="py-2">
+                                                                    <div class="btn-group">
+                                                                        <!-- View Button -->
+                                                                        <a href="{% url 'delivery_notes:detail' delivery.pk %}" class="btn btn-sm btn-outline-primary" title="View Details">
+                                                                            <i class="feather icon-eye"></i> View
+                                                                        </a>
+
+                                                                        <!-- Signature/PDF Button -->
+                                                                        {% if delivery.is_signed %}
+                                                                            {% if delivery.signed_document %}
+                                                                            <a href="{{ delivery.signed_document.url }}" class="btn btn-sm btn-outline-secondary" target="_blank" title="View Signed Document">
+                                                                                <i class="feather icon-file-text"></i> Signed Doc
+                                                                            </a>
+                                                                            {% elif delivery.pdf_file %}
+                                                                            <a href="{{ delivery.pdf_file.url }}" class="btn btn-sm btn-outline-secondary" target="_blank" title="View PDF">
+                                                                                <i class="feather icon-file-text"></i> PDF
+                                                                            </a>
+                                                                            {% endif %}
+                                                                        {% else %}
+                                                                        <button type="button" class="btn btn-sm btn-outline-warning upload-signed-btn"
+                                                                                data-delivery-id="{{ delivery.pk }}" title="Upload Signed Document">
+                                                                            <i class="feather icon-upload"></i> Upload Signed
+                                                                        </button>
+                                                                        {% endif %}
+
+                                                                        <!-- Set Pricing Button -->
+                                                                        {% if not delivery.has_all_items_priced %}
+                                                                        <button type="button" class="btn btn-sm btn-outline-info set-pricing-list-btn" title="Set Pricing"
+                                                                                data-delivery-id="{{ delivery.pk }}" data-bs-toggle="modal" data-bs-target="#listPricingModal">
+                                                                            <i class="feather icon-dollar-sign"></i> Set Pricing
+                                                                        </button>
+                                                                        {% endif %}
+
+                                                                        <!-- Generate Quote Button -->
+                                                                        {% if delivery.can_generate_quote %}
+                                                                        <button type="button" class="btn btn-sm btn-outline-success generate-quote-btn" title="Generate Quote"
+                                                                                data-delivery-id="{{ delivery.pk }}" data-bs-toggle="modal" data-bs-target="#generateQuoteModal">
+                                                                            <i class="feather icon-file-plus"></i> Generate Quote
+                                                                        </button>
+                                                                        {% endif %}
+
+                                                                        <!-- Quote Link Button -->
+                                                                        {% if delivery.converted_to_quote %}
+                                                                            {% if delivery.converted_to_quote.pdf_file %}
+                                                                            <a href="{{ delivery.converted_to_quote.pdf_file.url }}" class="btn btn-sm btn-outline-primary" target="_blank" title="View Quote PDF">
+                                                                                <i class="feather icon-file-text"></i> Quote PDF
+                                                                            </a>
+                                                                            {% else %}
+                                                                            <a href="{% url 'quotes:quote_detail' pk=delivery.converted_to_quote.id %}" class="btn btn-sm btn-outline-primary" title="View Quote Details">
+                                                                                <i class="feather icon-file"></i> View Quote
+                                                                            </a>
+                                                                            {% endif %}
+                                                                        {% endif %}
+
+                                                                        <!-- Request Order Number Button/Badge -->
+                                                                        {% if delivery.converted_to_quote and delivery.is_signed and delivery.has_all_items_priced and not delivery.invoice_number %}
+                                                                            {% if delivery.order_requested %}
+                                                                                <span class="badge bg-info" data-bs-toggle="tooltip"
+                                                                                      title="Order requested by {{ delivery.order_requested_by.get_full_name|default:'N/A' }} on {{ delivery.order_requested_date|date:'d M Y H:i'|default:'N/A' }}">
+                                                                                    <i class="feather icon-mail"></i> Order Requested
+                                                                                </span>
+                                                                            {% else %}
+                                                                                <button type="button" class="btn btn-sm btn-outline-purple request-order-btn" title="Request Order #"
+                                                                                        data-delivery-id="{{ delivery.pk }}" data-bs-toggle="modal" data-bs-target="#requestOrderModal">
+                                                                                    <i class="feather icon-mail"></i> Request Order #
+                                                                                </button>
+                                                                            {% endif %}
+                                                                        {% endif %}
+
+                                                                        <!-- Add Invoice Number Button -->
+                                                                        {% if delivery.converted_to_quote and delivery.is_signed and delivery.has_all_items_priced and not delivery.invoice_number %}
+                                                                        <button type="button" class="btn btn-sm btn-outline-dark invoice-btn" title="Add Invoice #"
+                                                                                data-delivery-id="{{ delivery.pk }}" data-bs-toggle="modal" data-bs-target="#invoiceModal">
+                                                                            <i class="feather icon-tag"></i> Add Invoice #
+                                                                        </button>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        {% empty %}
+                                            <div class="alert alert-light text-center">No delivery notes found for this status.</div>
+                                        {% endfor %}
+                                    {% else %}
+                                         <div class="alert alert-light text-center">No delivery notes found for this status.</div>
+                                    {% endif %}
+                                </div>
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">No delivery notes found.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal fade" id="generateQuoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generate Quote</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Select your letterhead preference:</p>
+                <form id="quoteForm" action="" method="post">
+                    {% csrf_token %}
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="letterhead" id="cnlLetterhead" value="CNL" checked>
+                        <label class="form-check-label" for="cnlLetterhead">
+                            CNL Mining Supplies
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="letterhead" id="isherwoodLetterhead" value="ISHERWOOD">
+                        <label class="form-check-label" for="isherwoodLetterhead">
+                            Isherwood Mining Supplies
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Generate Quote</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="listPricingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Set Item Pricing</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center loading-spinner" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading items...</p>
+                </div>
+                <div id="itemsContainer"></div>
+                <div class="alert alert-success mt-3" id="pricingSuccess" style="display: none;">
+                    Pricing updated successfully!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Record Invoice Number</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="invoiceForm" action="" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="invoice_number" class="form-label">Invoice Number</label>
+                        <input type="text" class="form-control" id="invoice_number" name="invoice_number" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="requestOrderModal" tabindex="-1" aria-labelledby="requestOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="requestOrderModalLabel">Request Order Number</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="requestOrderForm" action="" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="email_to" class="form-label">To</label>
+                        <input type="email" class="form-control" id="email_to" name="email_to" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email_cc" class="form-label">CC</label>
+                        <input type="text" class="form-control" id="email_cc" name="email_cc"
+                               placeholder="Multiple emails separated by commas">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email_subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="email_subject" name="email_subject"
+                               value="Request for Order Number - Quote #" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email_body" class="form-label">Message</label>
+                        <textarea class="form-control" id="email_body" name="email_body" rows="5" required>Hello,
+
+Please find attached the signed delivery note and quotation. Kindly provide an order number so we can process the invoice.
+
+Send Order TO: orders@wfsales.co.za
+
+Thank you,
+</textarea>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="attach_delivery" name="attach_delivery" checked>
+                        <label class="form-check-label" for="attach_delivery">
+                            Attach Signed Delivery Note
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="attach_quote" name="attach_quote" checked>
+                        <label class="form-check-label" for="attach_quote">
+                            Attach Quote
+                        </label>
+                    </div>
+                    <div class="alert alert-success mt-3" id="emailSuccess" style="display: none;">
+                        Email sent successfully!
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="sendEmailBtn">Send Email</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this upload signed modal to the bottom of your page -->
+<div class="modal fade" id="uploadSignedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Signed Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadSignedForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="signed_document" class="form-label">Select Document</label>
+                        <input type="file" class="form-control" id="signed_document" name="signed_document" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="signed_by" class="form-label">Signed By (Optional)</label>
+                        <input type="text" class="form-control" id="signed_by" name="signed_by">
+                    </div>
+                    <div class="alert mt-3" id="uploadStatus" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="uploadSignedBtn">Upload</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+{{ block.super }}
+<style>
+    /* Remove Accordion-specific styles */
+    /*
+    .accordion-item.status-draft .accordion-button { ... }
+    .accordion-item.status-needs-signature .accordion-button { ... }
+    ... etc ...
+    .accordion-button:not(.collapsed) { ... }
+    .accordion-button::after { ... }
+    .accordion-button:not(.collapsed)::after { ... }
+    .accordion-collapse { ... }
+    */
+
+    /* Optional: Add some padding to tab content if needed */
+    .tab-pane {
+        padding-top: 1rem; /* Add space between tabs and content */
+    }
+
+    /* Keep other existing styles */
+    .card-header {
+        padding: 0.5rem 1rem;
+    }
+    .btn-outline-primary, .btn-outline-secondary {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    .btn-group .btn { margin-right: 2px; }
+    .dropdown-item { font-size: 0.875rem; padding: 0.25rem 1rem; }
+    .btn-outline-info { border-color: #17a2b8; color: #17a2b8; }
+    .btn-outline-success { border-color: #28a745; color: #28a745; }
+    .btn-outline-purple { border-color: #6f42c1; color: #6f42c1; }
+    .btn-outline-purple:hover { background-color: #6f42c1; color: #fff; }
+    .dropdown-menu { min-width: 10rem; z-index: 1021; }
+    td .dropdown-menu { transform: translate3d(0px, 38px, 0px) !important; }
+    td { position: relative; }
+    .alert-quote-generated { background-color: #28a745; color: white; font-weight: bold; animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .bg-purple { background-color: #6f42c1; color: #fff; }
+    .btn-outline-secondary.disabled { cursor: not-allowed; opacity: 0.65; }
+
+    /* Style for active tab */
+    .nav-tabs .nav-link.active {
+        /* Add custom active styles if desired, e.g., border color */
+        /* border-bottom: 2px solid #0d6efd; */
+    }
+
+    /* Company header styling */
+    .company-header {
+        background-color: #8c7c73; /* Subtle blue-gray background */
+        border-left: 4px solid var(--primary-color); /* Left border accent using your primary color */
+        padding: 0.75rem 1rem;
+        font-weight: 500;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .company-header strong {
+        font-size: 1.05rem;
+        color: #495057;
+    }
+
+    /* Add subtle hover effect to rows */
+    .table-hover tbody tr:hover {
+        background-color: rgba(0,0,0,0.02);
+    }
+
+    /* Add subtle zebra striping for better readability */
+    .table-hover tbody tr:nth-child(odd) {
+        background-color: rgba(0,0,0,0.01);
+    }
+
+    /* Custom styling for autocomplete */
+    .ui-autocomplete {
+        max-height: 300px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 9999 !important;
+    }
+
+    .ui-menu-item {
+        padding: 5px !important;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .ui-menu-item .ui-menu-item-wrapper.ui-state-active {
+        background-color: #f8f9fa !important;
+        border: none !important;
+        color: #333 !important;
+    }
+
+    .price-result-item {
+        padding: 8px;
+    }
+
+    .price-result-item .price {
+        font-weight: bold;
+        color: #28a745;
+    }
+
+    .price-result-item .source {
+        float: right;
+        background: #eee;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-size: 0.8em;
+    }
+
+    .price-result-item .company {
+        color: #6c757d;
+    }
+
+    .price-result-item .time {
+        font-size: 0.85em;
+        color: #6c757d;
+    }
+
+    .search-results-container {
+        max-height: 150px;
+        overflow-y: auto;
+        padding: 5px;
+    }
+
+    .result-card {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 8px;
+        margin-bottom: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .result-card:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Add to your existing CSS styles */
+    .item-description {
+        font-weight: bold;
+        color: #0d6efd;
+        margin-bottom: 4px;
+        font-size: 1.05em;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 3px;
+    }
+
+    .ui-menu-item .ui-menu-item-wrapper {
+        padding: 8px 5px !important;
+    }
+
+    .result-card {
+        border-left: 4px solid #0d6efd;
+    }
+
+    .result-card .badge {
+        font-size: 0.75em;
+    }
+
+    .supplier-info {
+        margin-top: 2px;
+        font-size: 0.9em;
+        color: #495057;
+        background-color: #f8f9fa;
+        padding: 2px 5px;
+        border-radius: 3px;
+        display: inline-block;
+    }
+
+    .text-danger {
+        color: #dc3545 !important;
+    }
+
+    /* Add this style for the green border */
+    .price-search-highlight {
+        border: 2px solid #198754; /* Bootstrap success green */
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25); /* Optional: Add a subtle glow */
+    }
+    .price-search-highlight:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- First load jQuery core (before UI) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Then load jQuery UI -->
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Make sure jQuery is loaded before using it
+    if (typeof jQuery === 'undefined') {
+        console.error('jQuery is not loaded! Loading from CDN...');
+        
+        // Dynamically add jQuery
+        var script = document.createElement('script');
+        script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+        document.head.appendChild(script);
+        
+        // Wait for it to load then add jQuery UI
+        script.onload = function() {
+            console.log('jQuery loaded dynamically');
+            var uiScript = document.createElement('script');
+            uiScript.src = 'https://code.jquery.com/ui/1.13.2/jquery-ui.min.js';
+            document.head.appendChild(uiScript);
+            
+            // Initialize after UI is loaded
+            uiScript.onload = function() {
+                console.log('jQuery UI loaded dynamically');
+                initializeAutocomplete();
+            };
+        };
+    } else if (typeof jQuery.ui === 'undefined' || typeof jQuery.ui.autocomplete === 'undefined') {
+        // jQuery exists but UI doesn't
+        console.error('jQuery UI is missing! Loading from CDN...');
+        var uiScript = document.createElement('script');
+        uiScript.src = 'https://code.jquery.com/ui/1.13.2/jquery-ui.min.js';
+        document.head.appendChild(uiScript);
+        
+        uiScript.onload = function() {
+            console.log('jQuery UI loaded dynamically');
+            initializeAutocomplete();
+        };
+    } else {
+        // Both jQuery and UI exist
+        initializeAutocomplete();
+    }
+    
+    // Rest of your existing code...
+    console.log('DOM fully loaded and parsed');
+    
+    // Move your autocomplete initialization to this function
+    function initializeAutocomplete() {
+        window.setupPriceSearch = function(container) {
+            // Show search info message
+            const searchInputs = container.querySelectorAll('.price-search');
+            
+            // Add search information above first search input
+            if (searchInputs.length > 0) {
+                const firstSearchContainer = searchInputs[0].closest('.col-12');
+                if (firstSearchContainer) {
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'alert alert-info p-2 mb-3';
+                    infoDiv.innerHTML = `
+                        <h6 class="mb-1"><i class="feather icon-info me-1"></i> Price Search Sources</h6>
+                        <p class="small mb-0">The price search looks through: <strong>Previous Deliveries</strong>, <strong>Quotes</strong>, <strong>Orders</strong>, and <strong>Stock Items</strong> to find matching prices.</p>
+                    `;
+                    firstSearchContainer.parentNode.insertBefore(infoDiv, firstSearchContainer.parentNode.firstChild);
+                }
+            }
+            
+            if (!jQuery.fn.autocomplete) {
+                console.error('jQuery UI autocomplete is still not available');
+                return;
+            }
+            
+            searchInputs.forEach(input => {
+                // Your existing autocomplete code...
+                jQuery(input).autocomplete({
+                    source: function(request, response) {
+                        // Show searching message
+                        const resultsContainer = input.closest('.col-12').querySelector('.search-results-container');
+                        resultsContainer.innerHTML = '<div class="text-muted"><i class="feather icon-search"></i> Searching for prices...</div>';
+                        
+                        // Call your item_search endpoint
+                        fetch(`/delivery/item-search/?term=${encodeURIComponent(request.term)}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                // If no results with prices, show message
+                                if (!data || data.length === 0) {
+                                    resultsContainer.innerHTML = '<div class="alert alert-warning p-2 small">No items with pricing found. Try a different search term.</div>';
+                                } else {
+                                    resultsContainer.innerHTML = ''; // Clear the searching message
+                                }
+                                
+                                // Process and format the results for display
+                                response(data.map(item => {
+                                    return {
+                                        label: item.label,
+                                        value: item.label,
+                                        item: item
+                                    };
+                                }));
+                            })
+                            .catch(err => {
+                                console.error("Error searching for items:", err);
+                                resultsContainer.innerHTML = '<div class="alert alert-danger p-2 small">Error searching for items</div>';
+                                response([]);
+                            });
+                    },
+                    // Replace the autocomplete._renderItem function with this improved version
+                }).autocomplete("instance")._renderItem = function(ul, item) {
+                    // Custom rendering of dropdown items
+                    const selectedItem = item.item;
+                    
+                    // Format price and other details
+                    const priceText = selectedItem.price ? `R${selectedItem.price.toFixed(2)}` : 'No price';
+                    const costText = selectedItem.cost_price ? `Cost: <span class="text-danger fw-bold">R${selectedItem.cost_price.toFixed(2)}</span>` : '';
+                    const markupText = selectedItem.markup ? `(${selectedItem.markup.toFixed(1)}% markup)` : '';
+                    
+                    // Get supplier info if available
+                    const supplierInfo = selectedItem.supplier_name ? 
+                        `<div class="supplier-info"><i class="feather icon-box"></i> Supplier: <strong>${selectedItem.supplier_name}</strong></div>` : '';
+                    
+                    return $("<li>")
+                        .append(`<div class='price-result-item'>
+                                   <div class="item-description"><strong>${selectedItem.full_description || selectedItem.value}</strong></div>
+                                   <div>
+                                     <span class='price'>${priceText}</span> 
+                                     <span class='markup'>${markupText}</span>
+                                     <span class='cost ms-2'>${costText}</span>
+                                     <span class='source badge bg-secondary float-end'>${selectedItem.source}</span>
+                                   </div>
+                                   <div class='company'>${selectedItem.company}</div>
+                                   ${supplierInfo}
+                                   <div class='time'>${selectedItem.time_text || ''}</div>
+                                 </div>`)
+                        .appendTo(ul);
+                };
+                
+                // Rest of your event handlers...
+            });
+        };
+    }
+
+    // --- Initialize Bootstrap Components ---
+    try {
+        if (typeof bootstrap !== 'undefined') {
+            // Initialize Modals
+            const modalElements = document.querySelectorAll('.modal');
+            console.log('Found modals:', modalElements.length);
+            modalElements.forEach(function(modalElement) {
+                try {
+                    if (!bootstrap.Modal.getInstance(modalElement)) {
+                        new bootstrap.Modal(modalElement);
+                        // console.log('Modal initialized:', modalElement.id); // Less verbose
+                    }
+                } catch (e) { console.error('Error initializing modal:', modalElement.id, e); }
+            });
+
+            // Initialize Tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            console.log('Found tooltips:', tooltipTriggerList.length);
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                try {
+                    if (!bootstrap.Tooltip.getInstance(tooltipTriggerEl)) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl);
+                    }
+                    return bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                } catch(e) { console.error('Error initializing tooltip:', tooltipTriggerEl, e); return null; }
+            });
+
+            // Initialize Tabs (Bootstrap handles via data attributes)
+            const tabTriggerList = [].slice.call(document.querySelectorAll('#deliveryStatusTabs button[data-bs-toggle="tab"]'));
+            console.log('Found tabs:', tabTriggerList.length);
+            tabTriggerList.forEach(function (tabTriggerEl) {
+                // Optional: Add listener if you need to do something *after* a tab is shown
+                // tabTriggerEl.addEventListener('shown.bs.tab', function (event) {
+                //   console.log('Tab shown:', event.target.id);
+                // });
+            });
+
+        } else { console.error('Bootstrap JavaScript library is not available!'); }
+    } catch (e) { console.error('Error initializing Bootstrap components:', e); }
+
+    // --- Update Delivery Status Function ---
+    // ... (Keep existing function as is) ...
+    window.updateDeliveryStatus = function(deliveryId, status) {
+        console.log(`Updating delivery ${deliveryId} to status: ${status}`);
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (!csrfToken) {
+            console.error('CSRF token not found!');
+            alert('Error: Missing security token. Please refresh the page.'); // User feedback
+            return;
+        }
+
+        fetch(`/delivery/${deliveryId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: `status=${encodeURIComponent(status)}`
+        })
+        .then(response => {
+            console.log('Status update response status:', response.status);
+            if (!response.ok) {
+                 return response.text().then(text => {
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+                 });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Status update response data:', data);
+            if (data.status !== 'success') {
+                console.error('Failed to update status:', data.message);
+                alert(`Failed to update status: ${data.message}`);
+            }
+            // Maybe reload here if status change affects which tab it's in
+            // window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error updating delivery status:', error);
+            alert(`Error updating status: ${error.message}`);
+        });
+    };
+
+    // --- Handle Set Pricing Buttons & Modal ---
+    // ... (Keep existing functions: loadDeliveryItems, setupPriceCalculations, setupSaveButtons, saveItemPricing, saveAllPricing) ...
+    const pricingButtons = document.querySelectorAll('.set-pricing-list-btn');
+    console.log('Found pricing buttons:', pricingButtons.length);
+    pricingButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const deliveryId = this.getAttribute('data-delivery-id');
+            console.log('Set pricing clicked for delivery:', deliveryId);
+            if (deliveryId) {
+                loadDeliveryItems(deliveryId);
+            }
+        });
+    });
+
+    function loadDeliveryItems(deliveryId) {
+        console.log('Loading items for delivery:', deliveryId);
+        const modalElement = document.getElementById('listPricingModal');
+        if (!modalElement) { console.error('Pricing modal element not found'); return; }
+        const spinner = modalElement.querySelector('.loading-spinner');
+        const itemsContainer = modalElement.querySelector('#itemsContainer');
+        const successAlert = modalElement.querySelector('#pricingSuccess');
+        if (!spinner || !itemsContainer || !successAlert) { console.error('Required DOM elements within pricing modal not found'); return; }
+
+        itemsContainer.innerHTML = '';
+        successAlert.style.display = 'none';
+        spinner.style.display = 'block';
+
+        fetch(`/delivery/${deliveryId}/items/json/`)
+            .then(response => {
+                if (!response.ok) { return response.text().then(text => { throw new Error(`HTTP error! status: ${response.status}, message: ${text}`); }); }
+                return response.json();
+            })
+            .then(data => {
+                spinner.style.display = 'none';
+                if (data.items && data.items.length > 0) {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                    let html = `<form id="bulkPricingForm"><input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}"><input type="hidden" name="delivery_id" value="${deliveryId}">`;
+                    data.items.forEach(item => {
+                        const costPrice = item.cost_price ? parseFloat(item.cost_price).toFixed(2) : '';
+                        const markup = item.markup ? parseFloat(item.markup).toFixed(2) : '';
+                        const price = item.price ? parseFloat(item.price).toFixed(2) : '';
+                        const notes = item.notes || ''; // Keep getting notes in case needed later
+                        html += `<div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <strong>${item.description}</strong>
+                                <span class="badge bg-info float-end">Qty: ${item.quantity}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <input type="hidden" name="item_ids[]" value="${item.id}">
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Cost Price (R)</label>
+                                        <input type="number" class="form-control cost-price" name="cost_price_${item.id}" value="${costPrice}" step="0.01" min="0" data-item-id="${item.id}">
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Markup (%)</label>
+                                        <input type="number" class="form-control markup" name="markup_${item.id}" value="${markup}" step="0.1" min="0" data-item-id="${item.id}">
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Selling Price (R)</label>
+                                        <input type="number" class="form-control selling-price" name="price_${item.id}" value="${price}" step="0.01" min="0" data-item-id="${item.id}">
+                                    </div>
+
+                                    <!-- Hide the Notes field -->
+                                    <div class="col-12" style="display: none;">
+                                        <label class="form-label">Notes</label>
+                                        <input type="text" class="form-control" name="notes_${item.id}" value="${notes}">
+                                    </div>
+
+                                    <!-- Add the new price search field with highlight class -->
+                                    <div class="col-12 mt-2">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="feather icon-search"></i></span>
+                                            <input type="text" class="form-control price-search price-search-highlight"
+                                                   placeholder="Search quotes, orders, stock & deliveries for pricing..."
+                                                   data-item-id="${item.id}">
+                                        </div>
+                                        <div class="search-results-container small text-muted mt-1"></div>
+                                    </div>
+
+                                    <div class="col-12 text-end">
+                                        <button type="button" class="btn btn-sm btn-primary save-item-btn" data-item-id="${item.id}">Save Item</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                    html += `<div class="d-grid gap-2 mt-3"><button type="button" id="saveAllPrices" class="btn btn-success">Save All Items</button></div></form>`;
+                    itemsContainer.innerHTML = html;
+                    setupPriceCalculations(itemsContainer);
+                    setupSaveButtons(itemsContainer);
+                    setupPriceSearch(itemsContainer); // Call setupPriceSearch
+                } else { itemsContainer.innerHTML = '<div class="alert alert-info">No items found for this delivery note.</div>'; }
+            })
+            .catch(error => {
+                console.error('Error loading items:', error);
+                spinner.style.display = 'none';
+                itemsContainer.innerHTML = `<div class="alert alert-danger">Error loading items: ${error.message}</div>`;
+            });
+    }
+
+    function setupPriceCalculations(container) {
+        container.querySelectorAll('.cost-price, .markup').forEach(input => {
+            input.addEventListener('input', function() {
+                const itemId = this.dataset.itemId;
+                const row = this.closest('.row'); if (!row) return;
+                const costInput = row.querySelector(`.cost-price[data-item-id="${itemId}"]`);
+                const markupInput = row.querySelector(`.markup[data-item-id="${itemId}"]`);
+                const sellingInput = row.querySelector(`.selling-price[data-item-id="${itemId}"]`);
+                if (costInput && markupInput && sellingInput) {
+                    const cost = parseFloat(costInput.value) || 0;
+                    const markup = parseFloat(markupInput.value);
+                    if (cost > 0 && !isNaN(markup) && markup >= 0) { sellingInput.value = (cost * (1 + (markup / 100))).toFixed(2); }
+                    else if (cost > 0 && (isNaN(markup) || markupInput.value === '')) { sellingInput.value = ''; }
+                    else if (cost <= 0) { sellingInput.value = ''; }
+                }
+            });
+        });
+        container.querySelectorAll('.selling-price').forEach(input => {
+            input.addEventListener('input', function() {
+                const itemId = this.dataset.itemId;
+                const row = this.closest('.row'); if (!row) return;
+                const costInput = row.querySelector(`.cost-price[data-item-id="${itemId}"]`);
+                const markupInput = row.querySelector(`.markup[data-item-id="${itemId}"]`);
+                if (costInput && markupInput) {
+                    const cost = parseFloat(costInput.value) || 0;
+                    const selling = parseFloat(this.value);
+                    if (cost > 0 && !isNaN(selling) && selling >= cost) { markupInput.value = (((selling - cost) / cost) * 100).toFixed(2); }
+                    else if (cost > 0 && (isNaN(selling) || selling < cost || this.value === '')) { markupInput.value = ''; }
+                    else if (cost <= 0) { markupInput.value = ''; }
+                }
+            });
+        });
+    }
+
+    function setupSaveButtons(container) {
+        container.querySelectorAll('.save-item-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                if (itemId) { saveItemPricing(itemId, this); }
+            });
+        });
+        const saveAllButton = container.querySelector('#saveAllPrices');
+        if (saveAllButton) { saveAllButton.addEventListener('click', function() { saveAllPricing(this); }); }
+        else { console.warn('#saveAllPrices button not found within the container after loading items.'); }
+    }
+
+    function saveItemPricing(itemId, buttonElement) {
+        const originalText = 'Save Item';
+        buttonElement.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...'; buttonElement.disabled = true;
+        const form = buttonElement.closest('form'); const cardBody = buttonElement.closest('.card-body');
+        if (!form || !cardBody) { console.error('Could not find form or card body for item', itemId); buttonElement.innerHTML = originalText; buttonElement.disabled = false; alert('Error: Could not find item form elements. Please refresh.'); return; }
+        const priceInput = cardBody.querySelector(`input[name="price_${itemId}"]`); const costPriceInput = cardBody.querySelector(`input[name="cost_price_${itemId}"]`); const markupInput = cardBody.querySelector(`input[name="markup_${itemId}"]`); const notesInput = cardBody.querySelector(`input[name="notes_${itemId}"]`); const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (!priceInput || !costPriceInput || !markupInput || !notesInput || !csrfToken) { console.error('Required inputs or CSRF token not found for item', itemId); buttonElement.innerHTML = originalText; buttonElement.disabled = false; alert('Error: Missing item data or security token. Please refresh.'); return; }
+        const price = Number(priceInput.value) || 0; const costPrice = Number(costPriceInput.value) || 0; const markup = Number(markupInput.value) || 0; const notes = notesInput.value || '';
+
+        fetch(`/delivery/item/${itemId}/update-price/`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }, body: `price=${price}&cost_price=${costPrice}&markup=${markup}&notes=${encodeURIComponent(notes)}` })
+        .then(response => response.json())
+        .then(data => {
+            buttonElement.disabled = false;
+            if (data.status === 'success') { buttonElement.innerHTML = '<i class="feather icon-check"></i> Saved'; setTimeout(() => { buttonElement.innerHTML = originalText; }, 2000); }
+            else { buttonElement.innerHTML = originalText; alert('Error saving item ' + itemId + ': ' + data.message); }
+        })
+        .catch(error => { buttonElement.innerHTML = originalText; buttonElement.disabled = false; alert('Network error saving item ' + itemId + ': ' + error.message); });
+    }
+
+    function saveAllPricing(buttonElement) {
+        const originalText = buttonElement.innerHTML;
+        buttonElement.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving All...'; buttonElement.disabled = true;
+        const form = buttonElement.closest('form');
+        if (!form) { console.error('Could not find form for save all'); buttonElement.innerHTML = originalText; buttonElement.disabled = false; alert('Error: Could not find pricing form. Please refresh.'); return; }
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]')?.value; const itemCards = form.querySelectorAll('.card'); let savedCount = 0; let errorCount = 0; const totalItems = itemCards.length;
+        if (totalItems === 0 || !csrfToken) { console.warn('No items found or CSRF token missing.'); buttonElement.innerHTML = originalText; buttonElement.disabled = false; return; }
+
+        const savePromises = Array.from(itemCards).map(card => {
+            const itemIdInput = card.querySelector('input[name="item_ids[]"]'); const itemSaveBtn = card.querySelector('.save-item-btn');
+            if (!itemIdInput || !itemSaveBtn) return Promise.resolve({ status: 'skipped', message: 'Missing item ID or button' });
+            const itemId = itemIdInput.value; const priceInput = card.querySelector(`input[name="price_${itemId}"]`); const costPriceInput = card.querySelector(`input[name="cost_price_${itemId}"]`); const markupInput = card.querySelector(`input[name="markup_${itemId}"]`); const notesInput = card.querySelector(`input[name="notes_${itemId}"]`);
+            if (!priceInput || !costPriceInput || !markupInput || !notesInput) { console.error('Missing elements for item', itemId); errorCount++; return Promise.resolve({ status: 'error', message: 'Missing elements' }); }
+            const price = Number(priceInput.value) || 0; const costPrice = Number(costPriceInput.value) || 0; const markup = Number(markupInput.value) || 0; const notes = notesInput.value || '';
+            if (!price || price <= 0) { return Promise.resolve({ status: 'skipped', message: 'No valid price set' }); }
+            itemSaveBtn.disabled = true;
+            return fetch(`/delivery/item/${itemId}/update-price/`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }, body: `price=${price}&cost_price=${costPrice}&markup=${markup}&notes=${encodeURIComponent(notes)}` })
+            .then(response => response.json())
+            .then(data => {
+                itemSaveBtn.disabled = false;
+                if (data.status === 'success') { savedCount++; itemSaveBtn.innerHTML = '<i class="feather icon-check"></i> Saved'; setTimeout(() => { itemSaveBtn.innerHTML = 'Save Item'; }, 2000); return { status: 'success' }; }
+                else { errorCount++; itemSaveBtn.innerHTML = 'Save Item'; console.error('Error saving item', itemId, data.message); return { status: 'error', message: data.message }; }
+            })
+            .catch(error => { errorCount++; itemSaveBtn.disabled = false; itemSaveBtn.innerHTML = 'Save Item'; console.error('Fetch error saving item', itemId, error); return { status: 'error', message: error.message }; });
+        });
+
+        Promise.all(savePromises).then(results => {
+            const modalBody = form.closest('.modal-body'); const successAlert = modalBody ? modalBody.querySelector('#pricingSuccess') : null;
+            if (successAlert) {
+                const skippedCount = results.filter(r => r.status === 'skipped').length;
+                if (errorCount === 0) { successAlert.className = 'alert alert-success mt-3'; successAlert.textContent = `Saved ${savedCount} items successfully!`; if (skippedCount > 0) { successAlert.textContent += ` (${skippedCount} items skipped due to missing price).`; } }
+                else { successAlert.className = 'alert alert-warning mt-3'; successAlert.textContent = `Saved ${savedCount} items. Failed/Skipped: ${errorCount + skippedCount}. Check console.`; }
+                successAlert.style.display = 'block';
+            } else { console.warn('Could not find pricing success alert element.'); }
+            buttonElement.innerHTML = originalText; buttonElement.disabled = false;
+            if (savedCount > 0) { 
+                // Instead of page reload, refresh content and close modal after delay
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('listPricingModal'));
+                    if (modal) modal.hide();
+                    refreshPageContent();
+                }, 1500);
+            }
+        });
+    }
+
+    function setupPriceSearch(container) {
+        const searchInputs = container.querySelectorAll('.price-search');
+        
+        searchInputs.forEach(input => {
+            const itemId = input.dataset.itemId;
+            const resultsContainer = input.closest('.col-12').querySelector('.search-results-container');
+            
+            // Initialize jQuery UI autocomplete
+            $(input).autocomplete({
+                source: function(request, response) {
+                    // Show searching message
+                    const resultsContainer = input.closest('.col-12').querySelector('.search-results-container');
+                    resultsContainer.innerHTML = '<div class="text-muted"><i class="feather icon-search"></i> Searching for prices...</div>';
+                    
+                    // Call your item_search endpoint
+                    fetch(`/delivery/item-search/?term=${encodeURIComponent(request.term)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            // If no results with prices, show message
+                            if (!data || data.length === 0) {
+                                resultsContainer.innerHTML = '<div class="alert alert-warning p-2 small">No items with pricing found. Try a different search term.</div>';
+                            } else {
+                                resultsContainer.innerHTML = ''; // Clear the searching message
+                            }
+                            
+                            // Process and format the results for display
+                            response(data.map(item => {
+                                return {
+                                    label: item.label,
+                                    value: item.label,
+                                    item: item
+                                };
+                            }));
+                        })
+                        .catch(err => {
+                            console.error("Error searching for items:", err);
+                            resultsContainer.innerHTML = '<div class="alert alert-danger p-2 small">Error searching for items</div>';
+                            response([]);
+                        });
+                },
+                minLength: 2,
+                select: function(event, ui) {
+                    const selectedItem = ui.item.item;
+                    const row = input.closest('.row');
+                    
+                    // Fill in the price fields if available
+                    if (selectedItem.price) {
+                        const priceInput = row.querySelector(`.selling-price[data-item-id="${itemId}"]`);
+                        if (priceInput) priceInput.value = selectedItem.price.toFixed(2);
+                    }
+                    
+                    if (selectedItem.cost_price) {
+                        const costInput = row.querySelector(`.cost-price[data-item-id="${itemId}"]`);
+                        if (costInput) costInput.value = selectedItem.cost_price.toFixed(2);
+                    }
+                    
+                    if (selectedItem.markup) {
+                        const markupInput = row.querySelector(`.markup[data-item-id="${itemId}"]`);
+                        if (markupInput) markupInput.value = selectedItem.markup.toFixed(2);
+                    }
+                    
+                    // Trigger calculation to ensure all fields are synchronized
+                    const costInput = row.querySelector(`.cost-price[data-item-id="${itemId}"]`);
+                    if (costInput) {
+                        const event = new Event('input', { bubbles: true });
+                        costInput.dispatchEvent(event);
+                    }
+                    
+                    // Show detailed results in the container below the search
+                    displaySearchResults(selectedItem, resultsContainer);
+                    
+                    return false; // Prevent default behavior
+                }
+            }).autocomplete("instance")._renderItem = function(ul, item) {
+                // Custom rendering of dropdown items
+                const selectedItem = item.item;
+                
+                // Format price and other details
+                const priceText = selectedItem.price ? `R${selectedItem.price.toFixed(2)}` : 'No price';
+                const costText = selectedItem.cost_price ? `Cost: <span class="text-danger fw-bold">R${selectedItem.cost_price.toFixed(2)}</span>` : 'No cost';
+                const markupText = selectedItem.markup ? `(${selectedItem.markup.toFixed(1)}% markup)` : '';
+                
+                // Get supplier info if available
+                const supplierInfo = selectedItem.supplier_name ? 
+                    `<div><i class="feather icon-box"></i> Supplier: <strong>${selectedItem.supplier_name}</strong></div>` : '';
+                
+                return $("<li>")
+                    .append(`<div class='price-result-item'>
+                               <div class="item-description"><strong>${selectedItem.full_description || selectedItem.value}</strong></div>
+                               <div>
+                                 <span class='price'>${priceText}</span> 
+                                 <span class='markup'>${markupText}</span>
+                                 <span class='cost text-secondary ms-2'>${costText}</span>
+                                 <span class='source badge bg-secondary float-end'>${selectedItem.source}</span>
+                               </div>
+                               <div class='company'>${selectedItem.company}</div>
+                               <div class='time'>${selectedItem.time_text || ''}</div>
+                             </div>`)
+                    .appendTo(ul);
+            };
+            
+            // Also add manual search functionality when user presses Enter
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const searchTerm = this.value;
+                    if (searchTerm.length >= 2) {
+                        fetch(`/delivery/item-search/?term=${encodeURIComponent(searchTerm)}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                // Display multiple results in the container
+                                displayMultipleResults(data, resultsContainer, itemId);
+                            })
+                            .catch(err => {
+                                console.error("Error searching for items:", err);
+                                resultsContainer.innerHTML = `<div class="alert alert-danger p-1 small">Error searching for items</div>`;
+                            });
+                    }
+                }
+            });
+        });
+        
+        // Helper function to display multiple search results
+        function displayMultipleResults(results, container, itemId) {
+            // Filter out items with no price and no cost price
+            const validResults = results.filter(item => 
+                (item.price && item.price > 0) || (item.cost_price && item.cost_price > 0)
+            );
+            
+            if (!validResults || validResults.length === 0) {
+                container.innerHTML = `<div class="alert alert-info p-2 small">No items with valid pricing found</div>`;
+                return;
+            }
+            
+            let html = `<div class="small mb-2 text-muted">${validResults.length} similar items found. Click to apply:</div>`;
+            
+            validResults.forEach(item => {
+                const priceText = item.price ? `R${item.price.toFixed(2)}` : 'No price';
+                const markupText = item.markup ? `(${item.markup.toFixed(1)}% markup)` : '';
+                const costText = item.cost_price ? `Cost: <span class="text-danger fw-bold">R${item.cost_price.toFixed(2)}</span>` : 'No cost';
+                
+                // Get supplier info if available
+                const supplierInfo = item.supplier_name ? 
+                    `<div><i class="feather icon-box"></i> Supplier: <strong>${item.supplier_name}</strong></div>` : '';
+                
+                html += `<div class="result-card" data-item-id="${itemId}" data-price="${item.price || ''}" data-cost="${item.cost_price || ''}" data-markup="${item.markup || ''}">
+                    <div class="fw-bold text-primary mb-1">
+                        ${item.full_description || item.value}
+                    </div>
+                    <div>
+                        <span class="text-success fw-bold">${priceText}</span>
+                        <span class="text-muted ms-2">${markupText}</span>
+                        <span class="ms-2">${costText}</span>
+                        <span class="badge bg-secondary float-end">${item.source}</span>
+                    </div>
+                    ${supplierInfo}
+                    <div class="small text-muted">
+                        ${item.company} · ${item.time_text || ''}
+                        ${item.quote_number ? ` · Quote #${item.quote_number}` : ''}
+                        ${item.order_number ? ` · Order #${item.order_number}` : ''}
+                    </div>
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add click handlers to result cards
+            container.querySelectorAll('.result-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const cardItemId = this.dataset.itemId;
+                    const price = this.dataset.price;
+                    const costPrice = this.dataset.cost;
+                    const markup = this.dataset.markup;
+                    const row = this.closest('.row');
+                    
+                    // Fill price fields
+                    if (price) {
+                        const priceInput = row.querySelector(`.selling-price[data-item-id="${cardItemId}"]`);
+                        if (priceInput) priceInput.value = parseFloat(price).toFixed(2);
+                    }
+                    
+                    if (costPrice) {
+                        const costInput = row.querySelector(`.cost-price[data-item-id="${cardItemId}"]`);
+                        if (costInput) costInput.value = parseFloat(costPrice).toFixed(2);
+                    }
+                    
+                    if (markup) {
+                        const markupInput = row.querySelector(`.markup[data-item-id="${cardItemId}"]`);
+                        if (markupInput) markupInput.value = parseFloat(markup).toFixed(2);
+                    }
+                    
+                    // Trigger calculation
+                    const costInput = row.querySelector(`.cost-price[data-item-id="${cardItemId}"]`);
+                    if (costInput) {
+                        const event = new Event('input', { bubbles: true });
+                        costInput.dispatchEvent(event);
+                    }
+                    
+                    // Update the results display with persistent message
+                    container.innerHTML = `
+                        <div class="alert alert-success p-2">
+                            <div class="d-flex justify-content-between">
+                                <strong>Price applied!</strong>
+                                <button type="button" class="btn-close btn-sm clear-search-result" aria-label="Close"></button>
+                            </div>
+                            <div class="mt-1"><strong>${this.querySelector('.fw-bold').textContent.trim()}</strong></div>
+                            <div>${this.querySelector('div:nth-child(2)').innerHTML}</div>
+                            <div class="small text-muted">${this.querySelector('.small').textContent.trim()}</div>
+                        </div>
+                    `;
+                    
+                    // Add event listener for the close button
+                    const closeButton = container.querySelector('.clear-search-result');
+                    if (closeButton) {
+                        closeButton.addEventListener('click', function() {
+                            container.innerHTML = '';
+                        });
+                    }
+                });
+            });
+        }
+        
+        // Helper function to display a single selected result
+        function displaySearchResults(item, container) {
+            const priceText = item.price ? `R${item.price.toFixed(2)}` : 'No price';
+            const costText = item.cost_price ? `Cost: <span class="text-danger fw-bold">R${item.cost_price.toFixed(2)}</span>` : 'No cost';
+            const markupText = item.markup ? `(${item.markup.toFixed(1)}% markup)` : '';
+            
+            // Get supplier info if available
+            const supplierInfo = item.supplier_name ? 
+                `<div><i class="feather icon-box"></i> Supplier: <strong>${item.supplier_name}</strong></div>` : '';
+            
+            container.innerHTML = `
+                <div class="alert alert-success p-2">
+                    <div class="d-flex justify-content-between">
+                        <strong>Price applied from:</strong>
+                        <button type="button" class="btn-close btn-sm clear-search-result" aria-label="Close"></button>
+                    </div>
+                    <div class="mt-1"><strong>${item.value}</strong></div>
+                    <div>
+                        <span class="text-success fw-bold">${priceText}</span>
+                        <span class="text-muted ms-2">${markupText}</span>
+                        <span class="ms-2">${costText}</span>
+                    </div>
+                    ${supplierInfo}
+                    <div class="small text-muted">${item.company} · ${item.source} · ${item.time_text || ''}</div>
+                </div>
+            `;
+            
+            // Add event listener for the close button
+            const closeButton = container.querySelector('.clear-search-result');
+            if (closeButton) {
+                closeButton.addEventListener('click', function() {
+                    container.innerHTML = '';
+                });
+            }
+        }
+    }
+
+    // --- Handle Generate Quote Buttons & Modal ---
+    // ... (Keep existing code) ...
+    const quoteButtons = document.querySelectorAll('.generate-quote-btn');
+    console.log('Found quote buttons:', quoteButtons.length);
+    quoteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const deliveryId = this.getAttribute('data-delivery-id');
+            console.log('Generate quote clicked for delivery:', deliveryId);
+            if (deliveryId) {
+                const quoteForm = document.getElementById('quoteForm');
+                if (quoteForm) { quoteForm.action = `/delivery/${deliveryId}/generate-quote/`; console.log('Quote form action set to:', quoteForm.action); }
+                else { console.error('Quote form not found!'); }
+            }
+        });
+    });
+
+    // --- Handle Invoice Buttons & Modal ---
+    // ... (Keep existing code) ...
+    const invoiceButtons = document.querySelectorAll('.invoice-btn');
+    console.log('Found invoice buttons:', invoiceButtons.length);
+    invoiceButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const deliveryId = this.getAttribute('data-delivery-id');
+            console.log('Invoice button clicked for delivery:', deliveryId);
+            if (deliveryId) {
+                const invoiceForm = document.getElementById('invoiceForm');
+                if (invoiceForm) {
+                    invoiceForm.action = `/delivery/${deliveryId}/record-invoice/`;
+                    const invoiceInput = document.getElementById('invoice_number');
+                    if (invoiceInput) { invoiceInput.value = ''; }
+                    console.log('Invoice form action set to:', invoiceForm.action);
+                } else { console.error('Invoice form not found!'); }
+            }
+        });
+    });
+    const invoiceForm = document.getElementById('invoiceForm');
+    if (invoiceForm) {
+        invoiceForm.addEventListener('submit', function(e) {
+            console.log('Invoice form submitting...');
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton) { submitButton.disabled = true; submitButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...'; }
+        });
+    } else { console.warn('Invoice form element not found.'); }
+
+    // --- Handle Request Order Buttons & Modal ---
+    // ... (Keep existing code) ...
+    const requestOrderButtons = document.querySelectorAll('.request-order-btn');
+    console.log('Found request order buttons:', requestOrderButtons.length);
+    requestOrderButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const deliveryId = this.getAttribute('data-delivery-id');
+            console.log('Request order clicked for delivery:', deliveryId);
+            if (deliveryId) {
+                const requestForm = document.getElementById('requestOrderForm');
+                if (requestForm) {
+                    requestForm.action = `/delivery/${deliveryId}/request-order/`; console.log('Request order form action set to:', requestForm.action);
+                    const successAlert = document.getElementById('emailSuccess'); if(successAlert) successAlert.style.display = 'none';
+                    fetch(`/delivery/${deliveryId}/info/`)
+                        .then(response => response.ok ? response.json() : Promise.reject('Failed to fetch info'))
+                        .then(data => {
+                            const emailSubject = document.getElementById('email_subject'); if (emailSubject && data.quote_number) { emailSubject.value = `Request for Order Number - Quote #${data.quote_number}`; }
+                            const emailTo = document.getElementById('email_to'); if (emailTo && data.company_email) { emailTo.value = data.company_email; }
+                        })
+                        .catch(error => { console.error('Error fetching delivery info for request order:', error); });
+                } else { console.error('Request order form not found!'); }
+            }
+        });
+    });
+    const sendEmailBtn = document.getElementById('sendEmailBtn');
+    if (sendEmailBtn) {
+        sendEmailBtn.addEventListener('click', function() {
+            const form = document.getElementById('requestOrderForm'); const successAlert = document.getElementById('emailSuccess');
+            if (!form || !successAlert) { console.error('Request order form or success alert not found!'); alert('Error: Cannot find email form elements. Please refresh.'); return; }
+            const emailToInput = form.querySelector('#email_to');
+            if (!emailToInput || !emailToInput.value || !emailToInput.checkValidity()) { alert('Please enter a valid "To" email address.'); emailToInput?.focus(); return; }
+            this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...'; successAlert.style.display = 'none';
+            const formData = new FormData(form);
+            fetch(form.action, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) { return response.json().then(data => ({ ok: response.ok, status: response.status, data })); }
+                else { return response.text().then(text => { throw new Error(`Unexpected response: ${text}`); }); }
+            })
+            .then(result => {
+                const { ok, status, data } = result; this.disabled = false; this.innerHTML = 'Send Email';
+                if (ok && data.status === 'success') {
+                    successAlert.className = 'alert alert-success mt-3'; successAlert.textContent = data.message || 'Email sent successfully!'; successAlert.style.display = 'block';
+                    setTimeout(() => {
+                        try { const modalElement = document.getElementById('requestOrderModal'); const modal = bootstrap.Modal.getInstance(modalElement); if (modal) { modal.hide(); } setTimeout(() => window.location.reload(), 300); }
+                        catch (err) { console.error('Error closing request order modal:', err); window.location.reload(); }
+                    }, 2000);
+                } else {
+                    const errorMessage = data?.message || `HTTP Error ${status}`; successAlert.className = 'alert alert-danger mt-3'; successAlert.textContent = `Error sending email: ${errorMessage}`; successAlert.style.display = 'block'; console.error('Email sending failed:', data || `HTTP Status ${status}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending request order email:', error); this.disabled = false; this.innerHTML = 'Send Email'; successAlert.className = 'alert alert-danger mt-3'; successAlert.textContent = 'Network error sending email: ' + error.message; successAlert.style.display = 'block';
+            });
+        });
+    } else { console.warn('Send Email button not found.'); }
+
+    // --- Handle Upload Signed Document --- 
+    let uploadSignedModal = null;
+    const uploadSignedModalElement = document.getElementById('uploadSignedModal');
+    if (uploadSignedModalElement) {
+        uploadSignedModal = new bootstrap.Modal(uploadSignedModalElement);
+    }
+    
+    const uploadButtons = document.querySelectorAll('.upload-signed-btn');
+    if (uploadButtons.length > 0) {
+        console.log('Found upload buttons:', uploadButtons.length);
+        
+        uploadButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const deliveryId = this.getAttribute('data-delivery-id');
+                console.log('Upload button clicked for delivery:', deliveryId);
+                
+                const form = document.getElementById('uploadSignedForm');
+                const statusDiv = document.getElementById('uploadStatus');
+                
+                if (form && statusDiv) {
+                    form.reset();
+                    statusDiv.style.display = 'none';
+                    
+                    const deliveryIdInput = document.createElement('input');
+                    deliveryIdInput.type = 'hidden';
+                    deliveryIdInput.name = 'delivery_id';
+                    deliveryIdInput.value = deliveryId;
+                    
+                    const existingInput = form.querySelector('input[name="delivery_id"]');
+                    if (existingInput) {
+                        form.removeChild(existingInput);
+                    }
+                    
+                    form.appendChild(deliveryIdInput);
+                    
+                    if (uploadSignedModal) {
+                        uploadSignedModal.show();
+                    } else {
+                        console.error('Modal not found or not initialized');
+                    }
+                } else {
+                    console.error('Form or status div not found');
+                }
+            });
+        });
+    } else {
+        console.log('No upload buttons found');
+    }
+    
+    const uploadButton = document.getElementById('uploadSignedBtn');
+    if (uploadButton) {
+        uploadButton.addEventListener('click', function() {
+            const form = document.getElementById('uploadSignedForm');
+            const statusDiv = document.getElementById('uploadStatus');
+            const fileInput = document.getElementById('signed_document');
+            const deliveryIdInput = form.querySelector('input[name="delivery_id"]');
+            
+            if (!form || !statusDiv || !fileInput || !deliveryIdInput) {
+                console.error('Required form elements not found');
+                return;
+            }
+            
+            const deliveryId = deliveryIdInput.value;
+            
+            if (fileInput.files.length === 0) {
+                statusDiv.className = 'alert alert-danger mt-3';
+                statusDiv.textContent = 'Please select a file to upload';
+                statusDiv.style.display = 'block';
+                return;
+            }
+            
+            uploadButton.disabled = true;
+            uploadButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Uploading...';
+            
+            const formData = new FormData(form);
+            
+            fetch(`/delivery/${deliveryId}/upload-signed/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                // Check content type before trying to parse as JSON
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json().then(data => ({ ok: response.ok, type: 'json', data }));
+                } else {
+                    // If not JSON, just return the success status without parsing
+                    return { ok: response.ok, type: 'html' };
+                }
+            })
+            .then(result => {
+                // Show success message regardless of response type
+                statusDiv.className = 'alert alert-success mt-3';
+                
+                if (result.type === 'json' && result.data && result.data.message) {
+                    statusDiv.textContent = result.data.message;
+                } else {
+                    statusDiv.textContent = 'Document uploaded successfully';
+                }
+                
+                statusDiv.style.display = 'block';
+                
+                uploadButton.disabled = false;
+                uploadButton.innerHTML = 'Upload';
+                
+                setTimeout(() => {
+                    if (uploadSignedModal) {
+                        uploadSignedModal.hide();
+                    }
+                    
+                    refreshPageContent();
+                }, 1500);
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+                
+                uploadButton.disabled = false;
+                uploadButton.innerHTML = 'Upload';
+                
+                statusDiv.className = 'alert alert-danger mt-3';
+                statusDiv.textContent = error.message || 'An error occurred during upload';
+                statusDiv.style.display = 'block';
+            });
+        });
+    }
+    
+    if (typeof window.refreshPageContent !== 'function') {
+        window.refreshPageContent = function() {
+            // Show a loading message
+            const loadingHTML = `<div class="d-flex justify-content-center my-4"><div class="spinner-border text-primary" role="status"></div><span class="ms-2">Refreshing...</span></div>`;
+            const tabContent = document.getElementById('deliveryStatusTabContent');
+            if (tabContent) {
+                tabContent.insertAdjacentHTML('beforebegin', loadingHTML);
+            }
+            
+            // Simply reload the page for now
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        };
+    }
+});
+// Add this at the very end of your script block to ensure proper closure
+
+</script>
+{% endblock %}

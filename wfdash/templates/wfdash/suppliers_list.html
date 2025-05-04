@@ -5,52 +5,239 @@
 <link rel="stylesheet" href="{% static 'assets/css/plugins/dataTables.bootstrap5.min.css' %}">
 <link rel="stylesheet" href="{% static 'assets/css/plugins/buttons.bootstrap5.min.css' %}">
 <link rel="stylesheet" href="{% static 'assets/css/plugins/responsive.bootstrap5.min.css' %}">
+<style>
+    /* Custom filter styles */
+    .filters-card {
+        margin-bottom: 1rem;
+        border-left: 4px solid #4099ff;
+    }
+    
+    .btn-filter {
+        background-color: #4099ff;
+        color: white;
+        border: none;
+    }
+    
+    .btn-filter:hover {
+        background-color: #3679c7;
+        color: white;
+    }
+    
+    .filters-row {
+        align-items: flex-end;
+    }
+    
+    .search-highlight {
+        background-color: rgba(64, 153, 255, 0.2);
+        padding: 2px;
+        border-radius: 2px;
+    }
+    
+    /* Pagination styling */
+    .pagination {
+        justify-content: center;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: #4099ff;
+        border-color: #4099ff;
+    }
+    
+    .pagination .page-link {
+        color: #4099ff;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        color: #ccc;
+        margin-bottom: 1rem;
+    }
+    
+    /* Badge for supply tags */
+    .supply-tag {
+        display: inline-block;
+        background-color: #e9ecef;
+        color: #495057;
+        padding: 0.25rem 0.5rem;
+        margin: 0.1rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
+{% csrf_token %}
+
+<!-- Search and Filter Section -->
+<div class="card filters-card mb-4">
+    <div class="card-body">
+        <form id="supplier-filter-form" method="get">
+            <div class="row filters-row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Search Suppliers</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="feather icon-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Search by name, address or tags..." 
+                               value="{{ request.GET.search|default:'' }}">
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Filter by Tags</label>
+                    <select name="tag" class="form-select">
+                        <option value="">All Tags</option>
+                        {% for tag in unique_tags %}
+                            <option value="{{ tag }}" {% if request.GET.tag == tag %}selected{% endif %}>
+                                {{ tag }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-filter me-2">
+                        <i class="feather icon-filter me-1"></i> Filter
+                    </button>
+                    {% if request.GET.search or request.GET.tag %}
+                        <a href="{% url 'wfdash:suppliers_list' %}" class="btn btn-light">
+                            <i class="feather icon-x me-1"></i> Clear
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Desktop View -->
 <div class="d-none d-md-block">
     <div class="row">
         <div class="col-sm-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>Suppliers List</h5>
-                    <a href="{% url 'wfdash:suppliers' %}" class="btn btn-primary">Add New Supplier</a>
+                    <h5>Suppliers List ({{ suppliers.paginator.count }} found)</h5>
+                    <a href="{% url 'wfdash:suppliers' %}" class="btn btn-primary">
+                        <i class="feather icon-plus me-1"></i> Add New Supplier
+                    </a>
                 </div>
                 <div class="card-body">
-                    <div class="dt-responsive table-responsive">
-                        <table id="suppliers-table" class="table table-striped table-bordered dt-responsive nowrap">
+                    {% if suppliers %}
+                    <div class="table-responsive">
+                        <table id="suppliers-table" class="table table-striped table-bordered nowrap">
                             <thead>
                                 <tr>
                                     <th>Supplier Name</th>
                                     <th>Contact Number</th>
                                     <th>Address</th>
-                                    <th>Coordinates</th>
                                     <th>Closing Time</th>
+                                    <th>Tags</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for supplier in suppliers %}
-                                <tr>
+                                <tr data-supplier-id="{{ supplier.id }}">
                                     <td>{{ supplier.suppliername }}</td>
                                     <td>{{ supplier.suppliernumber }}</td>
                                     <td>{{ supplier.supplieraddress }}</td>
-                                    <td>{{ supplier.coordinates }}</td>
                                     <td>{{ supplier.closingtime }}</td>
                                     <td>
-                                        <a href="{% url 'wfdash:supplier_edit' supplier.id %}" class="btn btn-info btn-sm">
-                                            <i class="feather icon-edit"></i> Edit
-                                        </a>
-                                        <button onclick="deleteSupplier({{ supplier.id }})" class="btn btn-danger btn-sm">
-                                            <i class="feather icon-trash"></i> Delete
-                                        </button>
+                                        {% if supplier.supply_tags %}
+                                            {% for tag in supplier.supply_tags.split|slice:":3" %}
+                                                <span class="supply-tag">{{ tag }}</span>
+                                            {% endfor %}
+                                            {% if supplier.supply_tags.split|length > 3 %}
+                                                <span class="supply-tag">+{{ supplier.supply_tags.split|length|add:"-3" }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">No tags</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'wfdash:supplier_edit' supplier.id %}" class="btn btn-info btn-sm">
+                                                <i class="feather icon-edit"></i> Edit
+                                            </a>
+                                            <button onclick="deleteSupplier({{ supplier.id }})" class="btn btn-danger btn-sm">
+                                                <i class="feather icon-trash-2"></i> Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- Pagination -->
+                    <div class="mt-3">
+                        <nav>
+                            <ul class="pagination">
+                                {% if suppliers.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tag %}&tag={{ request.GET.tag }}{% endif %}" aria-label="First">
+                                        <i class="feather icon-chevrons-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ suppliers.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tag %}&tag={{ request.GET.tag }}{% endif %}" aria-label="Previous">
+                                        <i class="feather icon-chevron-left"></i>
+                                    </a>
+                                </li>
+                                {% endif %}
+                                
+                                {% for i in suppliers.paginator.page_range %}
+                                    {% if suppliers.number == i %}
+                                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                                    {% elif i > suppliers.number|add:"-3" and i < suppliers.number|add:"3" %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ i }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tag %}&tag={{ request.GET.tag }}{% endif %}">{{ i }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if suppliers.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ suppliers.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tag %}&tag={{ request.GET.tag }}{% endif %}" aria-label="Next">
+                                        <i class="feather icon-chevron-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ suppliers.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tag %}&tag={{ request.GET.tag }}{% endif %}" aria-label="Last">
+                                        <i class="feather icon-chevrons-right"></i>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        <div class="text-center text-muted small">
+                            Showing {{ suppliers.start_index }} to {{ suppliers.end_index }} of {{ suppliers.paginator.count }} entries
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Empty State -->
+                    <div class="empty-state">
+                        <i class="feather icon-briefcase"></i>
+                        <h3>No Suppliers Found</h3>
+                        <p>There are no suppliers matching your search criteria.</p>
+                        {% if request.GET.search or request.GET.tag %}
+                            <a href="{% url 'wfdash:suppliers_list' %}" class="btn btn-outline-primary">
+                                <i class="feather icon-refresh-cw me-1"></i> Clear Search
+                            </a>
+                        {% else %}
+                            <a href="{% url 'wfdash:suppliers' %}" class="btn btn-primary">
+                                <i class="feather icon-plus me-1"></i> Add Your First Supplier
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -66,21 +253,12 @@
                 <i class="feather icon-plus"></i> Add
             </a>
         </div>
-
-        <div class="card-header border-bottom">
-            <div class="input-group">
-                <span class="input-group-text">
-                    <i class="feather icon-search"></i>
-                </span>
-                <input type="text" class="form-control" id="supplierSearch" 
-                       placeholder="Search suppliers...">
-            </div>
-        </div>
-
+        
+        {% if suppliers %}
         <div class="card-body p-0">
             <div class="accordion" id="supplierAccordion">
                 {% for supplier in suppliers %}
-                <div class="accordion-item border-0">
+                <div class="accordion-item border-0" data-supplier-id="{{ supplier.id }}">
                     <h2 class="accordion-header" id="heading{{ supplier.id }}">
                         <button class="accordion-button collapsed p-3" type="button" 
                                 data-bs-toggle="collapse" 
@@ -91,26 +269,29 @@
                             </div>
                         </button>
                     </h2>
-                    <div id="collapse{{ supplier.id }}" 
-                         class="accordion-collapse collapse" 
+                    <div id="collapse{{ supplier.id }}" class="accordion-collapse collapse" 
                          data-bs-parent="#supplierAccordion">
                         <div class="accordion-body">
-                            <div class="mb-2">
-                                <i class="feather icon-phone me-2"></i>{{ supplier.suppliernumber }}
-                            </div>
-                            <div class="mb-2">
-                                <i class="feather icon-navigation me-2"></i>{{ supplier.coordinates }}
-                            </div>
                             <div class="mb-3">
-                                <i class="feather icon-clock me-2"></i>{{ supplier.closingtime }}
+                                <p><i class="feather icon-phone me-2"></i> {{ supplier.suppliernumber }}</p>
+                                <p><i class="feather icon-clock me-2"></i> {{ supplier.closingtime }}</p>
+                                {% if supplier.coordinates %}
+                                <p><i class="feather icon-navigation me-2"></i> {{ supplier.coordinates }}</p>
+                                {% endif %}
+                                {% if supplier.supply_tags %}
+                                <div>
+                                    <i class="feather icon-tag me-2"></i> 
+                                    {% for tag in supplier.supply_tags.split %}
+                                        <span class="supply-tag">{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
                             </div>
                             <div class="d-flex gap-2">
-                                <a href="{% url 'wfdash:supplier_edit' supplier.id %}" 
-                                   class="btn btn-info btn-sm flex-grow-1">
+                                <a href="{% url 'wfdash:supplier_edit' supplier.id %}" class="btn btn-info btn-sm flex-grow-1">
                                     <i class="feather icon-edit"></i> Edit
                                 </a>
-                                <button onclick="deleteSupplier({{ supplier.id }})" 
-                                        class="btn btn-danger btn-sm flex-grow-1">
+                                <button onclick="deleteSupplier({{ supplier.id }})" class="btn btn-danger btn-sm flex-grow-1">
                                     <i class="feather icon-trash"></i> Delete
                                 </button>
                             </div>
@@ -119,64 +300,125 @@
                 </div>
                 {% endfor %}
             </div>
+            
+            <!-- Mobile Pagination -->
+            <div class="p-3 border-top">
+                <nav>
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        {% if suppliers.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ suppliers.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tag %}&tag={{ request.GET.tag }}{% endif %}" aria-label="Previous">
+                                <i class="feather icon-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                Page {{ suppliers.number }} of {{ suppliers.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if suppliers.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ suppliers.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tag %}&tag={{ request.GET.tag }}{% endif %}" aria-label="Next">
+                                <i class="feather icon-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
         </div>
+        {% else %}
+        <div class="card-body">
+            <div class="empty-state">
+                <i class="feather icon-briefcase"></i>
+                <h5>No Suppliers Found</h5>
+                <p class="mb-3">There are no suppliers matching your search criteria.</p>
+                {% if request.GET.search or request.GET.tag %}
+                    <a href="{% url 'wfdash:suppliers_list' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="feather icon-refresh-cw me-1"></i> Clear Search
+                    </a>
+                {% else %}
+                    <a href="{% url 'wfdash:suppliers' %}" class="btn btn-primary btn-sm">
+                        <i class="feather icon-plus me-1"></i> Add Your First Supplier
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock content %}
 
 {% block extra_js %}
-<!-- Core JavaScript -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="{% static 'assets/js/plugins/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'assets/js/plugins/dataTables.bootstrap5.min.js' %}"></script>
-<script src="{% static 'assets/js/plugins/dataTables.buttons.min.js' %}"></script>
-<script src="{% static 'assets/js/plugins/notifier.js' %}"></script>
-
 <script>
-$(document).ready(function() {
-    if ($(window).width() >= 768) {
-        var dataTable = $('#suppliers-table').DataTable({
-            dom: '<"top"Bf>rt<"bottom"lip>',
-            responsive: true,
-            pageLength: 10,
-            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-            language: {
-                search: "Filter records:"
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter form functionality
+    const supplierFilterForm = document.getElementById('supplier-filter-form');
+    if (supplierFilterForm) {
+        // Submit search form when the select changes
+        document.querySelector('select[name="tag"]')?.addEventListener('change', function() {
+            if (this.value) {
+                supplierFilterForm.submit();
             }
         });
     }
-
-    $("#supplierSearch").on("keyup", function() {
-        var searchTerm = $(this).val().toLowerCase();
-        $("#supplierAccordion .accordion-item").each(function() {
-            var itemText = $(this).text().toLowerCase();
-            var tags = $(this).find(".supply-tags").text().toLowerCase();
-            $(this).toggle(itemText.indexOf(searchTerm) > -1 || tags.indexOf(searchTerm) > -1);
+    
+    // Mobile search functionality
+    const supplierSearch = document.getElementById('supplierSearch');
+    if (supplierSearch) {
+        supplierSearch.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            document.querySelectorAll('#supplierAccordion .accordion-item').forEach(item => {
+                const itemText = item.textContent.toLowerCase();
+                item.style.display = itemText.includes(searchTerm) ? '' : 'none';
+            });
         });
-    });
+    }
 });
 
+// Define deleteSupplier function
 function deleteSupplier(id) {
     if (confirm('Are you sure you want to delete this supplier?')) {
-        $.ajax({
-            url: `/wfdash/supplier/delete/${id}/`,
-            type: 'POST',
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        fetch(`/wfdash/supplier/delete/${id}/`, {
+            method: 'POST',
             headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            success: function(response) {
-                if (response.status === 'success') {
-                    notifier.show('Success!', 'Supplier deleted successfully', 'success', 'img/notification/ok.png', 4000);
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1000);
-                }
-            },
-            error: function() {
-                notifier.show('Error!', 'Failed to delete supplier', 'error', 'img/notification/error.png', 4000);
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
             }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success message with toastr
+                toastr.success('Supplier deleted successfully!');
+                
+                // Remove the supplier from the table/list without refreshing
+                const supplierRow = document.querySelector(`tr[data-supplier-id="${id}"]`);
+                if (supplierRow) {
+                    supplierRow.remove();
+                }
+                
+                const supplierAccordionItem = document.querySelector(`.accordion-item[data-supplier-id="${id}"]`);
+                if (supplierAccordionItem) {
+                    supplierAccordionItem.remove();
+                }
+                
+                // Refresh page after a short delay
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                toastr.error('Error deleting supplier: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            toastr.error('Error deleting supplier');
         });
     }
 }
 </script>
-{% endblock extra_js %}
+{% endblock %}

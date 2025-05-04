@@ -1,0 +1,27 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5>Delete Delivery Note</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h4>Warning!</h4>
+                <p>Are you sure you want to delete delivery note <strong>{{ delivery.delivery_number }}</strong>?</p>
+                <p>This action cannot be undone.</p>
+                
+                <div class="mt-3">
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                        <a href="{% url 'delivery_notes:detail' delivery.pk %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -5,21 +5,108 @@
 <link rel="stylesheet" href="{% static 'assets/css/plugins/dataTables.bootstrap5.min.css' %}">
 <link rel="stylesheet" href="{% static 'assets/css/plugins/buttons.bootstrap5.min.css' %}">
 <link rel="stylesheet" href="{% static 'assets/css/plugins/responsive.bootstrap5.min.css' %}">
+<style>
+    /* Custom filter styles */
+    .filters-card {
+        margin-bottom: 1rem;
+        border-left: 4px solid #4099ff;
+    }
+    
+    .btn-filter {
+        background-color: #4099ff;
+        color: white;
+        border: none;
+    }
+    
+    .btn-filter:hover {
+        background-color: #3679c7;
+        color: white;
+    }
+    
+    .filters-row {
+        align-items: flex-end;
+    }
+    
+    .search-highlight {
+        background-color: rgba(64, 153, 255, 0.2);
+        padding: 2px;
+        border-radius: 2px;
+    }
+    
+    /* Pagination styling */
+    .pagination {
+        justify-content: center;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: #4099ff;
+        border-color: #4099ff;
+    }
+    
+    .pagination .page-link {
+        color: #4099ff;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        color: #ccc;
+        margin-bottom: 1rem;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
+{% csrf_token %}
+
+<!-- Search and Filter Section -->
+<div class="card filters-card mb-4">
+    <div class="card-body">
+        <form id="company-filter-form" method="get">
+            <div class="row filters-row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Search Companies</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="feather icon-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Search by name or address..." 
+                               value="{{ request.GET.search|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-filter me-2">
+                        <i class="feather icon-filter me-1"></i> Filter
+                    </button>
+                    {% if request.GET.search or request.GET.status %}
+                        <a href="{% url 'wfdash:company_list' %}" class="btn btn-light">
+                            <i class="feather icon-x me-1"></i> Clear
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Desktop View -->
 <div class="d-none d-md-block">
     <div class="row">
         <div class="col-sm-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>Companies List</h5>
-                    <a href="{% url 'wfdash:company' %}" class="btn btn-primary">Add New Company</a>
+                    <h5>Companies List ({{ companies.count }} found)</h5>
+                    <a href="{% url 'wfdash:company' %}" class="btn btn-primary">
+                        <i class="feather icon-plus me-1"></i> Add New Company
+                    </a>
                 </div>
                 <div class="card-body">
-                    <div class="dt-responsive table-responsive">
-                        <table id="companies-table" class="table table-striped table-bordered dt-responsive nowrap">
+                    {% if companies %}
+                    <div class="table-responsive">
+                        <table id="companies-table" class="table table-striped table-bordered nowrap">
                             <thead>
                                 <tr>
                                     <th>Company Name</th>
@@ -30,21 +117,91 @@
                             <tbody>
                                 {% for company in companies %}
                                 <tr>
-                                    <td>{{ company.company }}</td>
+                                    <td>
+                                        {{ company.company }}
+                                        {% if company.vendor %}
+                                            <span class="badge bg-info">Vendor: {{ company.vendor }}</span>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ company.address }}</td>
                                     <td>
-                                        <a href="{% url 'wfdash:company_edit' company.id %}" class="btn btn-info btn-sm">
-                                            <i class="feather icon-edit"></i> Edit
-                                        </a>
-                                        <button onclick="deleteCompany({{ company.id }})" class="btn btn-danger btn-sm">
-                                            <i class="feather icon-trash"></i> Delete
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'wfdash:company_edit' company.id %}" class="btn btn-info btn-sm">
+                                                <i class="feather icon-edit"></i> Edit
+                                            </a>
+                                            <button onclick="deleteCompany({{ company.id }})" class="btn btn-danger btn-sm">
+                                                <i class="feather icon-trash-2"></i> Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- Pagination -->
+                    <div class="mt-3">
+                        <nav>
+                            <ul class="pagination">
+                                {% if companies.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="First">
+                                        <i class="feather icon-chevrons-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ companies.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Previous">
+                                        <i class="feather icon-chevron-left"></i>
+                                    </a>
+                                </li>
+                                {% endif %}
+                                
+                                {% for i in companies.paginator.page_range %}
+                                    {% if companies.number == i %}
+                                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                                    {% elif i > companies.number|add:"-3" and i < companies.number|add:"3" %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ i }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ i }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if companies.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ companies.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Next">
+                                        <i class="feather icon-chevron-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ companies.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Last">
+                                        <i class="feather icon-chevrons-right"></i>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        <div class="text-center text-muted small">
+                            Showing {{ companies.start_index }} to {{ companies.end_index }} of {{ companies.paginator.count }} entries
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Empty State -->
+                    <div class="empty-state">
+                        <i class="feather icon-info"></i>
+                        <h3>No Companies Found</h3>
+                        <p>There are no companies matching your search criteria.</p>
+                        {% if request.GET.search %}
+                            <a href="{% url 'wfdash:company_list' %}" class="btn btn-outline-primary">
+                                <i class="feather icon-refresh-cw me-1"></i> Clear Search
+                            </a>
+                        {% else %}
+                            <a href="{% url 'wfdash:company' %}" class="btn btn-primary">
+                                <i class="feather icon-plus me-1"></i> Add Your First Company
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -60,14 +217,8 @@
                 <i class="feather icon-plus"></i> Add
             </a>
         </div>
-        <div class="card-header border-bottom">
-            <div class="input-group">
-                <span class="input-group-text">
-                    <i class="feather icon-search"></i>
-                </span>
-                <input type="text" class="form-control" id="companySearch" placeholder="Search companies...">
-            </div>
-        </div>
+        
+        {% if companies %}
         <div class="card-body p-0">
             <div class="accordion" id="companyAccordion">
                 {% for company in companies %}
@@ -98,55 +249,119 @@
                 </div>
                 {% endfor %}
             </div>
+            
+            <!-- Mobile Pagination -->
+            <div class="p-3 border-top">
+                <nav>
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        {% if companies.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ companies.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Previous">
+                                <i class="feather icon-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                Page {{ companies.number }} of {{ companies.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if companies.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ companies.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Next">
+                                <i class="feather icon-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
         </div>
+        {% else %}
+        <div class="card-body">
+            <div class="empty-state">
+                <i class="feather icon-info"></i>
+                <h5>No Companies Found</h5>
+                <p class="mb-3">There are no companies matching your search criteria.</p>
+                {% if request.GET.search %}
+                    <a href="{% url 'wfdash:company_list' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="feather icon-refresh-cw me-1"></i> Clear Search
+                    </a>
+                {% else %}
+                    <a href="{% url 'wfdash:company' %}" class="btn btn-primary btn-sm">
+                        <i class="feather icon-plus me-1"></i> Add Your First Company
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock content %}
 
 {% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- Add DataTables JS -->
 <script src="{% static 'assets/js/plugins/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'assets/js/plugins/dataTables.bootstrap5.min.js' %}"></script>
-<script src="{% static 'assets/js/plugins/notifier.js' %}"></script>
+<script src="{% static 'assets/js/plugins/dataTables.responsive.min.js' %}"></script>
 
 <script>
-$(document).ready(function() {
-    if ($(window).width() >= 768) {
-        var dataTable = $('#companies-table').DataTable({
-            dom: '<"top"Bf>rt<"bottom"lip>',
-            responsive: true,
-            pageLength: 10,
-            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-            language: { search: "Filter records:" }
-        });
-    }
-
-    $("#companySearch").on("keyup", function() {
-        var searchTerm = $(this).val().toLowerCase();
-        $("#companyAccordion .accordion-item").each(function() {
-            var itemText = $(this).text().toLowerCase();
-            $(this).toggle(itemText.indexOf(searchTerm) > -1);
-        });
-    });
-});
-
-function deleteCompany(id) {
-    if (confirm('Are you sure you want to delete this company?')) {
-        $.ajax({
-            url: `/wfdash/company/delete/${id}/`,  // Make sure this matches your URL pattern
-            type: 'POST',
-            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
-            success: function(response) {
-                if (response.status === 'success') {
-                    notifier.show('Success!', 'Company deleted successfully', 'success', 'img/notification/ok.png', 4000);
-                    setTimeout(function() { location.reload(); }, 1000);
+    // Define deleteCompany function
+    function deleteCompany(id) {
+        if (confirm('Are you sure you want to delete this company?')) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch(`/wfdash/company/delete/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
                 }
-            },
-            error: function() {
-                notifier.show('Error!', 'Failed to delete company', 'error', 'img/notification/error.png', 4000);
-            }
-        });
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Show success message with toastr
+                    toastr.success('Company deleted successfully!');
+                    
+                    // Remove the company from the table/list without refreshing
+                    const companyRow = document.querySelector(`tr[data-company-id="${id}"]`);
+                    if (companyRow) {
+                        companyRow.remove();
+                    }
+                    
+                    const companyAccordionItem = document.querySelector(`.accordion-item[data-company-id="${id}"]`);
+                    if (companyAccordionItem) {
+                        companyAccordionItem.remove();
+                    }
+                    
+                    // Refresh page after a short delay
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    toastr.error('Error deleting company');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                toastr.error('Error deleting company');
+            });
+        }
     }
-}
+
+    // Mobile search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const companySearchInput = document.getElementById('companySearch');
+        if (companySearchInput) {
+            companySearchInput.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+                document.querySelectorAll('#companyAccordion .accordion-item').forEach(item => {
+                    const companyText = item.textContent.toLowerCase();
+                    item.style.display = companyText.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        }
+    });
 </script>
-{% endblock extra_js %}
+{% endblock %}

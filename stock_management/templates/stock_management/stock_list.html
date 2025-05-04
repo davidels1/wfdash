@@ -1,39 +1,325 @@
 {% extends "layouts/base.html" %}
+{% load static %}
+{% load stock_tags %}
+{% load order_tags %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5>Current Stock</h5>
+            <div>
+                <!-- View toggle buttons -->
+                <div class="btn-group me-2">
+                    <button id="cardViewBtn" class="btn btn-sm btn-outline-primary active">
+                        <i class="fas fa-th"></i> Card
+                    </button>
+                    <button id="tableViewBtn" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-table"></i> Table
+                    </button>
+                </div>
+                <!-- Bulk invoice button -->
+                <button type="button" class="btn btn-primary" id="bulkInvoiceBtn" disabled>
+                    <i class="fas fa-file-invoice me-1"></i> Bulk Update Invoice
+                </button>
+                <!-- Add Bulk Delivery Note button -->
+                <form id="bulkDeliveryForm" action="{% url 'stock_management:create_bulk_delivery_note' %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="item_ids" id="bulkDeliveryItemIds" value="">
+                    <button type="button" class="btn btn-success" id="bulkDeliveryNoteBtn" disabled 
+                            onclick="submitBulkDelivery()">
+                        <i class="fas fa-file me-1"></i> Bulk Delivery Note
+                    </button>
+                </form>
+            </div>
         </div>
         <div class="card-body">
-            {% if grouped_items %}
-                {% for order_number, items in grouped_items.items %}
-                <div class="mb-4">
-                    <h6 class="border-bottom pb-2">Order #{{ order_number }}</h6>
-                    <div class="row">
-                        {% for item in items %}
-                        <div class="col-12 col-md-6 col-lg-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h6 class="card-subtitle mb-2 text-muted">{{ item.order_item.description }}</h6>
-                                    <p class="mb-1"><strong>Quantity:</strong> {{ item.received_qty }}</p>
-                                    <p class="mb-2"><strong>Supplier:</strong> {{ item.collection.supplier.suppliername }}</p>
-                                    <button type="button" 
-                                            class="btn btn-primary w-100 invoice-btn"
-                                            data-item-id="{{ item.id }}">
-                                        Add Invoice
-                                    </button>
+            <!-- Search and filter section -->
+            <div class="row mb-3">
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <input type="text" id="stockFilter" class="form-control" placeholder="Search items...">
+                </div>
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="verified">Verified</option>
+                        <option value="invoiced">Invoiced</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button id="clearFilter" class="btn btn-outline-secondary w-100">
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Add this legend right after your filter section 
+            <div class="alert alert-light border p-2 mb-3">
+                <h6 class="mb-1"><i class="fas fa-info-circle me-1"></i> Quantity Guide:</h6>
+                <div class="d-flex flex-wrap gap-3">
+                    <span><strong>12/12</strong> = Received/Ordered (exact match)</span>
+                    <span><strong>15/10</strong> <span class="badge bg-warning">+5</span> = Excess (will go to office stock)</span>
+                    <span><strong>8/10</strong> <span class="badge bg-info">-2</span> = Short (less than ordered)</span>
+                </div>
+            </div>-->
+
+            <!-- Card View (initially visible) -->
+            <div id="cardView" class="view-container">
+                {% if grouped_items %}
+                    {% for order_number, items in grouped_items.items %}
+                    <div class="order-section mb-4 filter-container">
+                        <h6 class="border-bottom pb-2 d-flex justify-content-between align-items-center">
+                            <!-- Header content -->
+                        </h6>
+                        <div class="row">
+                            {% for item in items %}
+                            <div class="col-12 col-md-6 col-lg-4 mb-3 stock-item" 
+                                 data-description="{{ item.order_item.description|lower }}"
+                                 data-supplier="{{ item.collection.supplier.suppliername|default:'no supplier'|lower }}"
+                                 data-po="{{ item.order_item.purchase_order.po_number|default:'no po'|lower }}"
+                                 data-status="{{ item.status|default:'unknown' }}">
+                                <div class="card h-100 {% if item.order_item.order.order_number and 'breakdown' in item.order_item.order.order_number|lower %}breakdown-order{% endif %}">
+                                    <div class="card-header">
+                                        {% if item.order_item.order.order_number and 'breakdown' in item.order_item.order.order_number|lower %}
+                                        <span class="breakdown-badge"><i class="fas fa-tools"></i> BREAKDOWN</span>
+                                        {% endif %}
+                                        {{ item.order_item.description }}
+                                    </div>
+                                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-2">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input item-select" 
+                                                   data-id="{{ item.id }}" 
+                                                   data-order="{{ order_number }}">
+                                        </div>
+                                        <span class="badge {% if item.collection.supplier.suppliername %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ item.collection.supplier.suppliername|default:"No Supplier" }}
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">{{ item.order_item.description }}</h6>
+                                        <p class="mb-1">
+                                            <strong>Quantity:</strong> 
+                                            <div class="quantity-comparison p-1 mt-1 {% if item.received_qty > item.order_item.quantity %}bg-warning-subtle{% elif item.received_qty < item.order_item.quantity %}bg-info-subtle{% else %}bg-success-subtle{% endif %} rounded">
+                                                <span class="fw-bold">{{ item.received_qty }}</span>
+                                                <span class="mx-1 text-muted">/</span>
+                                                <span class="order-qty">{{ item.order_item.quantity }}</span>
+                                                
+                                                {% if item.received_qty > item.order_item.quantity %}
+                                                    <span class="ms-2 badge bg-warning" data-bs-toggle="tooltip" 
+                                                         title="Excess: {{ item.received_qty|sub:item.order_item.quantity }} will be moved to office stock">
+                                                        +{{ item.received_qty|sub:item.order_item.quantity }}
+                                                    </span>
+                                                {% elif item.received_qty < item.order_item.quantity %}
+                                                    <span class="ms-2 badge bg-info" data-bs-toggle="tooltip" 
+                                                         title="Short: {{ item.order_item.quantity|sub:item.received_qty }} less than ordered">
+                                                        -{{ item.order_item.quantity|sub:item.received_qty }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="ms-2 badge bg-success" data-bs-toggle="tooltip" title="Exact match">
+                                                        ✓
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </p>
+                                        
+                                        <p class="mb-1">
+                                            <strong>Price:</strong> 
+                                            <span class="d-flex align-items-center gap-2 mt-1">
+                                                {% if item.order_item.cost_price %}
+                                                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Cost Price">
+                                                        C: R{{ item.order_item.cost_price|floatformat:2 }}
+                                                    </span>
+                                                {% endif %}
+                                                
+                                                {% if item.order_item.selling_price %}
+                                                    <span class="badge bg-info" data-bs-toggle="tooltip" title="Selling Price">
+                                                        S: R{{ item.order_item.selling_price|floatformat:2 }}
+                                                    </span>
+                                                {% endif %}
+                                            </span>
+                                        </p>
+                                        
+                                        {% if item.invoice_number %}
+                                            <p class="mb-2 text-success">
+                                                <strong>Invoice:</strong> {{ item.invoice_number }}
+                                                <br>
+                                                <small>{{ item.invoice_date }}</small>
+                                            </p>
+                                        {% endif %}
+                                        
+                                        <div class="mt-3">
+                                            {% if not item.invoice_number %}
+                                                <button type="button" class="btn btn-sm btn-primary invoice-btn" 
+                                                        data-item-id="{{ item.id }}">
+                                                    <i class="feather icon-file-text"></i> Add Invoice
+                                                </button>
+                                            {% else %}
+                                                <span class="badge bg-success">Invoiced</span>
+                                            {% endif %}
+                                            
+                                            <!-- Add Delivery Note button -->
+                                            <a href="{% url 'stock_management:create_delivery_note_from_stock' item.id %}" class="btn btn-sm btn-success">
+                                                <i class="feather icon-file"></i> Delivery Note
+                                            </a>
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-sm btn-info change-company-btn" 
+                                                        data-item-id="{{ item.id }}">
+                                                    <i class="feather icon-briefcase"></i> Change Company
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-center">No stock items found</p>
-            {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center">No stock items found</p>
+                {% endif %}
+            </div>
+
+            <!-- Table View (initially hidden) -->
+            <div id="tableView" class="view-container" style="display:none;">
+                {% if grouped_items %}
+                    {% for order_number, items in grouped_items.items %}
+                    <div class="order-table-section mb-4 filter-container">
+                        <h6 class="border-bottom pb-2 d-flex justify-content-between align-items-center">
+                            <span class="order-number">
+                                Order #{{ order_number }} - 
+                                <span class="company-name" data-company-id="{{ items.0.order_item.order.company.id }}">
+                                    {% if items.0.order_item.order.company %}
+                                        {{ items.0.order_item.order.company.company }}
+                                    {% else %}
+                                        Unknown Company
+                                    {% endif %}
+                                </span>
+                                <span class="badge bg-primary item-count">{{ items|length }} items</span>
+                            </span>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input select-all-order-table" 
+                                       data-order="{{ order_number }}" id="tableSelectAll{{ order_number }}">
+                                <label class="form-check-label" for="tableSelectAll{{ order_number }}">
+                                    Select All
+                                </label>
+                            </div>
+                        </h6>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="invisible">
+                                            </div>
+                                        </th>
+                                        <th class="sortable">Description</th>
+                                        <th class="sortable numeric">
+                                            Quantity
+                                            <small class="d-block text-muted" style="font-weight: normal">Received/Ordered</small>
+                                        </th>
+                                        <th class="sortable numeric">Cost Price</th>
+                                        <th class="sortable numeric">Selling Price</th>
+
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in items %}
+                                    <tr class="{% if item.verified_quantity != item.order_item.quantity %}order-conflict{% endif %} stock-item
+                                               {% if item.order_item.order.order_number and 'breakdown' in item.order_item.order.order_number|lower %}breakdown-order{% endif %}"
+                                        data-description="{{ item.order_item.description }}" 
+                                        data-status="{{ item.status }}"
+                                        data-order-number="{{ item.order_item.order.order_number|default:'' }}">
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input select-item" 
+                                                       data-item-id="{{ item.id }}" 
+                                                       id="selectItem{{ item.id }}"
+                                                       {% if item.invoice_number %}disabled{% endif %}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if item.order_item.order.order_number and 'breakdown' in item.order_item.order.order_number|lower %}
+                                            <span class="breakdown-badge"><i class="fas fa-tools"></i> BREAKDOWN</span>
+                                            {% endif %}
+                                            <span class="description-text" data-bs-toggle="tooltip" title="{{ item.order_item.description }}">
+                                                {{ item.order_item.description }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="quantity-comparison p-1 {% if item.received_qty > item.order_item.quantity %}bg-warning-subtle{% elif item.received_qty < item.order_item.quantity %}bg-info-subtle{% else %}bg-success-subtle{% endif %} rounded">
+                                                    <span class="fw-bold fs-6">{{ item.received_qty }}</span>
+                                                    <span class="mx-1 text-muted">/</span>
+                                                    <span class="order-qty">{{ item.order_item.quantity }}</span>
+                                                    
+                                                    {% if item.received_qty > item.order_item.quantity %}
+                                                        <span class="ms-2 badge bg-warning" data-bs-toggle="tooltip" 
+                                                             title="Excess: {{ item.received_qty|sub:item.order_item.quantity }} units will go to office stock">
+                                                            +{{ item.received_qty|sub:item.order_item.quantity }}
+                                                        </span>
+                                                    {% elif item.received_qty < item.order_item.quantity %}
+                                                        <span class="ms-2 badge bg-info" data-bs-toggle="tooltip" 
+                                                             title="Short: {{ item.order_item.quantity|sub:item.received_qty }} units less than ordered">
+                                                            -{{ item.order_item.quantity|sub:item.received_qty }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="ms-2 badge bg-success" data-bs-toggle="tooltip" title="Exact match">
+                                                            ✓
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if item.order_item.cost_price %}
+                                                R{{ item.order_item.cost_price|floatformat:2 }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.order_item.selling_price %}
+                                                R{{ item.order_item.selling_price|floatformat:2 }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                {% if not item.invoice_number %}
+                                                    <button type="button" class="btn btn-sm btn-primary invoice-btn w-110px" 
+                                                            data-item-id="{{ item.id }}">
+                                                        <i class="feather icon-file-text"></i> Invoice
+                                                    </button>
+                                                {% else %}
+                                                    <span class="btn btn-sm btn-outline-secondary disabled w-110px">
+                                                        <i class="feather icon-check"></i> Invoiced
+                                                    </span>
+                                                {% endif %}
+                                                
+                                                <!-- Add Delivery Note button with fixed width -->
+                                                <a href="{% url 'stock_management:create_delivery_note_from_stock' item.id %}" 
+                                                   class="btn btn-sm btn-success w-110px">
+                                                    <i class="feather icon-file"></i> Delivery Note
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center">No stock items found</p>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
@@ -49,25 +335,132 @@
             <div class="modal-body">
                 <form id="invoiceForm">
                     {% csrf_token %}
+                    <input type="hidden" id="itemId" name="itemId">
                     <div class="mb-3">
-                        <label class="form-label">Invoice Number *</label>
-                        <input type="text" class="form-control" id="invoice_number" required>
+                        <label for="invoice_number" class="form-label">Invoice Number</label>
+                        <input type="text" class="form-control" id="invoice_number" name="invoice_number" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Invoice Date *</label>
-                        <input type="date" class="form-control" id="invoice_date" required>
+                        <label for="invoice_date" class="form-label">Invoice Date</label>
+                        <input type="date" class="form-control" id="invoice_date" name="invoice_date" required>
                     </div>
-                    <input type="hidden" id="itemId">
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveInvoiceBtn">Save</button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Bulk Invoice Modal -->
+<div class="modal fade" id="bulkInvoiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Update Invoice Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="orderValidationAlert" class="alert alert-success order-validation-message">
+                    <i class="feather icon-check-circle me-1"></i> All selected items are from the same order
+                    <span id="selectedItemsCount" style="display:none;"></span>
+                </div>
+                <form id="bulkInvoiceForm">
+                    {% csrf_token %}
+                    <div id="order-conflict-alert" class="alert alert-warning d-none">
+                        Items from different orders selected. All items must be from the same order.
+                    </div>
+                    <div class="mb-3">
+                        <label for="bulk_invoice_number" class="form-label">Invoice Number</label>
+                        <input type="text" class="form-control" id="bulk_invoice_number" name="bulk_invoice_number" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bulk_invoice_date" class="form-label">Invoice Date</label>
+                        <input type="date" class="form-control" id="bulk_invoice_date" name="bulk_invoice_date" required>
+                    </div>
+                    <div class="overflow-auto" style="max-height: 200px">
+                        <ul class="list-group" id="selectedItemsList"></ul>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="bulkSaveBtn">Save All</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this below your existing modals -->
+<div class="modal fade" id="confirmOrderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmTitle">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmMessage">
+                Are you sure you want to proceed?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this modal to your stock_list.html template -->
+<div class="modal fade" id="generateDeliveryNoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generate Delivery Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'delivery_notes:create_from_stock' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="selectedItemIds" name="item_ids">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Select Company</label>
+                        <select name="company_id" class="form-select" required>
+                            <option value="">-- Select Company --</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}">{{ company.company }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Contact Person (optional)</label>
+                        <input type="text" name="contact_person" class="form-control">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Contact Email (optional)</label>
+                        <input type="email" name="contact_email" class="form-control">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Contact Phone (optional)</label>
+                        <input type="text" name="contact_phone" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Delivery Note</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
+
 
 {% block extra_css %}
 <style>
@@ -102,33 +495,386 @@
         padding: 0.75rem;
         font-size: 1rem;
     }
+    
+    /* Checkbox styling */
+    .form-check-input {
+        cursor: pointer;
+        width: 1.2em;
+        height: 1.2em;
+    }
+    
+    /* Selected items */
+    .card.selected {
+        border: 2px solid #4e73df;
+        box-shadow: 0 0 10px rgba(78, 115, 223, 0.3);
+    }
+    
+    /* Bulk button visibility */
+    #bulkInvoiceBtn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+    
+    /* Selected items list */
+    #selectedItemsList {
+        margin-top: 10px;
+    }
+    #selectedItemsList li {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    /* Toast custom colors */
+    .colored-toast.toast-success {
+        background-color: #1cc88a !important;
+    }
+    .colored-toast.toast-error {
+        background-color: #e74a3b !important;
+    }
+
+    /* Card Selection Style */
+    .card.selected {
+        border: 2px solid #4e73df !important;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    
+    /* Table Row Selection Style */
+    .table-row-selected {
+        background-color: rgba(78, 115, 223, 0.15) !important;
+    }
+    
+    /* View Container Transitions */
+    .view-container {
+        transition: opacity 0.2s ease-in-out;
+    }
+    
+    /* Table Styling */
+    .table {
+        font-size: 0.9rem;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    /* View Toggle Button Styling */
+    .btn-group .btn.active {
+        background-color: #4e73df;
+        color: white;
+    }
+    
+    /* Sortable Columns */
+    .sortable {
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .sortable:hover {
+        background-color: #f8f9fc;
+    }
+    
+    .sortable::after {
+        content: '⇅';
+        position: absolute;
+        right: 8px;
+        opacity: 0.3;
+        content: '↓';
+        opacity: 1;
+    }
+    
+    /* Empty results message */
+    .empty-results {
+        display: none;
+        padding: 2rem;
+        text-align: center;
+        font-style: italic;
+        color: #6c757d;
+    }
+
+    /* Order conflict highlighting */
+    .card.order-conflict {
+        box-shadow: 0 0 8px rgba(0,0,0,0.2);
+        transition: border-color 0.3s ease;
+    }
+
+    tr.order-conflict {
+        transition: border-left 0.3s ease;
+    }
+
+    /* Validation message in bulk modal */
+    .order-validation-message {
+        margin-bottom: 15px;
+    }
+
+    #order-conflict-alert {
+        animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .order-number .company-name {
+        color:rgb(223, 148, 78);
+        font-weight: 500;
+    }
+
+    /* Add this to your existing CSS */
+    .item-count {
+        margin-left: 8px;
+        font-size: 0.8rem;
+        vertical-align: middle;
+        background-color:rgb(117, 78, 223);
+    }
+
+    /* Optional: make the count smaller on mobile */
+    @media (max-width: 576px) {
+        .item-count {
+            font-size: 0.7rem;
+        }
+    }
+
+    /* Quantity comparison styling */
+    .quantity-comparison {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 4px;
+        padding: 2px 6px;
+        background-color: rgba(0,0,0,0.03);
+    }
+    
+    .received-qty {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    
+    .order-qty {
+        color: #7b8a8b;
+    }
+    
+    /* Tooltip enhancements */
+    [data-bs-toggle="tooltip"] {
+        cursor: help;
+    }
+
+    /* Enhanced quantity comparison styling */
+    .quantity-comparison {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 4px;
+        background-color: rgba(0,0,0,0.03);
+        min-width: 100px;
+    }
+
+    .received-qty {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .order-qty {
+        color: #6c757d;
+    }
+
+    /* Tooltip enhancements */
+    [data-bs-toggle="tooltip"] {
+        cursor: help;
+    }
+
+    /* Background colors for quantity comparisons */
+    .bg-warning-subtle {
+        background-color: rgba(255, 193, 7, 0.18);
+    }
+
+    .bg-info-subtle {
+        background-color: rgba(13, 202, 240, 0.18);  
+    }
+
+    .bg-success-subtle {
+        background-color: rgba(25, 135, 84, 0.18);
+    }
+
+    /* Fixed width buttons */
+    .w-110px {
+        width: 110px;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Button group styling */
+    .btn-group-even-width .btn {
+        flex: 1;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    /* Ensure buttons display well on mobile */
+    @media (max-width: 576px) {
+        .d-flex.flex-wrap.gap-2 {
+            gap: 0.25rem !important;
+        }
+        
+        .w-110px {
+            width: 100px;
+        }
+    }
+
+    /* Add this to your CSS section */
+    .order-section:nth-child(odd), 
+    .order-table-section:nth-child(odd) {
+        background-color: #f8f9fc;
+    }
+
+    .order-section:nth-child(even), 
+    .order-table-section:nth-child(even) {
+        background-color: #ffffff;
+    }
+
+    .order-section, .order-table-section {
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 25px;
+        border: 1px solid #e3e6f0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    /* Add this to your CSS section */
+    .order-section, .order-table-section {
+        position: relative;
+        border-left: 5px solid;
+    }
+
+    /* Automatically assign different colors to orders */
+    .order-section:nth-child(7n+1), .order-table-section:nth-child(7n+1) { border-left-color: #4e73df; }
+    .order-section:nth-child(7n+2), .order-table-section:nth-child(7n+2) { border-left-color: #1cc88a; }
+    .order-section:nth-child(7n+3), .order-table-section:nth-child(7n+3) { border-left-color: #36b9cc; }
+    .order-section:nth-child(7n+4), .order-table-section:nth-child(7n+4) { border-left-color: #f6c23e; }
+    .order-section:nth-child(7n+5), .order-table-section:nth-child(7n+5) { border-left-color: #e74a3b; }
+    .order-section:nth-child(7n+6), .order-table-section:nth-child(7n+6) { border-left-color: #6f42c1; }
+    .order-section:nth-child(7n+7), .order-table-section:nth-child(7n+7) { border-left-color: #5a5c69; }
+
+    /* Fixed width columns for table view */
+    .table th:nth-child(2),
+    .table td:nth-child(2) {
+        width: 30%;
+        max-width: 300px;
+    }
+
+    /* Truncate long text with ellipsis and add tooltip */
+    .table td:nth-child(2) span.description-text {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    /* Keep other columns at specific widths */
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+        width: 15%;
+    }
+
+    .table th:nth-child(4),
+    .table td:nth-child(4),
+    .table th:nth-child(5),
+    .table td:nth-child(5) {
+        width: 12%;
+    }
+
+    .table th:nth-child(6),
+    .table td:nth-child(6) {
+        width: 25%;
+    }
+
+    /* Fixed height rows in table view */
+    .table tbody tr {
+        height: 60px;
+    }
+
+    /* Multi-line text for description in table when expanded */
+    .table td:nth-child(2) .description-expanded {
+        white-space: normal;
+        overflow: visible;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        line-height: 1.3;
+    }
 </style>
 {% endblock %}
 
 {% block extra_js %}
+<!-- Make sure this is loaded -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// Add this at the top of your script, before document.addEventListener
+// Make selectedItems a global variable
+const selectedItems = new Set();
+
 document.addEventListener('DOMContentLoaded', function() {
-    const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+    // Initialize modals
+    const invoiceModal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+    const bulkInvoiceModal = new bootstrap.Modal(document.getElementById('bulkInvoiceModal'));
     const invoiceForm = document.getElementById('invoiceForm');
+    const bulkInvoiceForm = document.getElementById('bulkInvoiceForm');
+    const bulkInvoiceBtn = document.getElementById('bulkInvoiceBtn');
     
-    // Set today's date as default
+    // Set today's date as default for both forms
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('invoice_date').value = today;
+    document.getElementById('bulk_invoice_date').value = today;
     
-    // Handle invoice button clicks
+    // Initialize invoice-order mapping
+    let invoiceOrderMap = {};
+    
+    // Try to load existing invoice-order mapping from localStorage
+    try {
+        const savedMap = localStorage.getItem('invoiceOrderMap');
+        if (savedMap) {
+            invoiceOrderMap = JSON.parse(savedMap);
+            
+            // Clean up old entries (older than 24 hours)
+            const now = new Date().getTime();
+            for (const invoice in invoiceOrderMap) {
+                if (now - invoiceOrderMap[invoice].timestamp > 24 * 60 * 60 * 1000) {
+                    delete invoiceOrderMap[invoice];
+                }
+            }
+            // Save cleaned map back
+            localStorage.setItem('invoiceOrderMap', JSON.stringify(invoiceOrderMap));
+        }
+    } catch (e) {
+        console.error("Error loading invoice-order map from localStorage:", e);
+        invoiceOrderMap = {};
+    }
+    
+    // Handle individual invoice button clicks
     document.querySelectorAll('.invoice-btn').forEach(button => {
         button.addEventListener('click', function() {
             const itemId = this.dataset.itemId;
             document.getElementById('itemId').value = itemId;
             document.getElementById('invoice_number').value = '';
             
+            // Get order number for this item
+            const orderContainer = this.closest('.order-section') || this.closest('.order-table-section');
+            const orderNumber = orderContainer.querySelector('.order-number').textContent.replace('Order #', '').trim().split(' -')[0];
+            
+            // Store order number for validation during submission
+            document.getElementById('itemId').setAttribute('data-order', orderNumber);
+            
             // Show modal with slight delay for better mobile response
-            setTimeout(() => modal.show(), 50);
+            setTimeout(() => invoiceModal.show(), 50);
         });
     });
     
-    // Handle form submission
-    document.getElementById('saveInvoiceBtn').addEventListener('click', async function() {
+    // Individual form submission with order validation
+    document.getElementById('saveInvoiceBtn').addEventListener('click', function(event) {
+        // Store reference to the button
+        const saveButton = this;
+        
         try {
             if (!invoiceForm.checkValidity()) {
                 invoiceForm.reportValidity();
@@ -136,16 +882,47 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const itemId = document.getElementById('itemId').value;
+            const orderNumber = document.getElementById('itemId').getAttribute('data-order');
+            const invoiceNumber = document.getElementById('invoice_number').value.trim();
+            
+            // Check if this invoice number is already used for a different order
+            if (invoiceOrderMap[invoiceNumber] && 
+                invoiceOrderMap[invoiceNumber].orderNumber !== orderNumber) {
+                
+                // Show warning and ask for confirmation using your modal with cancelOnly=true
+                const confirmMsg = `<p>Invoice #<strong>${invoiceNumber}</strong> is already used for Order #<strong>${invoiceOrderMap[invoiceNumber].orderNumber}</strong>.</p>
+                                  <p>You are trying to assign it to Order #<strong>${orderNumber}</strong>.</p>
+                                  <p class="alert alert-warning"><i class="feather icon-alert-triangle me-1"></i> Please use a different invoice number.</p>`;
+                
+                showConfirmationModal(
+                    'Invoice Number Conflict', 
+                    confirmMsg, 
+                    null,  // No callback needed since we're not allowing confirmation
+                    true   // Set cancelOnly to true to show only OK button
+                );
+            } else {
+                // No conflict, proceed with saving
+                saveInvoiceData(saveButton, itemId, invoiceNumber, orderNumber);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toastr.error(error.message || 'An unexpected error occurred', 'Error');
+            this.disabled = false;
+            this.textContent = 'Save';
+        }
+    });
+
+    // Helper function for saving invoice data
+    async function saveInvoiceData(button, itemId, invoiceNumber, orderNumber) {
+        try {
             const formData = new FormData();
-            
-            formData.append('invoice_number', document.getElementById('invoice_number').value);
+            formData.append('invoice_number', invoiceNumber);
             formData.append('invoice_date', document.getElementById('invoice_date').value);
-            
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             
             // Disable button and show loading state
-            this.disabled = true;
-            this.textContent = 'Saving...';
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
             
             const response = await fetch(`/stock/update-invoice/${itemId}/`, {
                 method: 'POST',
@@ -156,7 +933,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
 
-            // Check if response is JSON
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 const textContent = await response.text();
@@ -171,35 +947,1009 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (data.status === 'success') {
-                window.location.reload();
+                // Save the invoice-order mapping
+                invoiceOrderMap[invoiceNumber] = {
+                    orderNumber: orderNumber,
+                    timestamp: new Date().getTime()
+                };
+                
+                // Save to localStorage
+                try {
+                    localStorage.setItem('invoiceOrderMap', JSON.stringify(invoiceOrderMap));
+                } catch (e) {
+                    console.warn("Could not save to localStorage:", e);
+                }
+                
+                // Show success notification
+                toastr.success('Invoice details updated successfully', 'Success');
+                // Reload after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1800);
             } else {
                 throw new Error(data.message || 'Failed to update invoice');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error updating invoice: ' + error.message);
+            toastr.error(error.message || 'An unexpected error occurred', 'Error');
         } finally {
+            button.disabled = false;
+            button.textContent = 'Save';
+            invoiceModal.hide();
+        }
+    }
+
+    // Bulk invoice form submission with order validation
+    document.getElementById('bulkSaveBtn').addEventListener('click', function() {
+        // Store reference to the button
+        const bulkSaveButton = this;
+        
+        try {
+            if (!bulkInvoiceForm.checkValidity()) {
+                bulkInvoiceForm.reportValidity();
+                return;
+            }
+            
+            const itemIds = Array.from(selectedItems);
+            if (itemIds.length === 0) {
+                toastr.warning('No items selected', 'Warning');
+                return;
+            }
+            
+            const invoiceNumber = document.getElementById('bulk_invoice_number').value.trim();
+            const invoiceDate = document.getElementById('bulk_invoice_date').value;
+            
+            // Get the order number from the validation
+            const validation = validateSingleOrderSelection();
+            if (!validation.valid) {
+                toastr.error(validation.message, 'Cannot proceed');
+                return;
+            }
+            
+            // Check if this invoice is already used for a different order
+            if (invoiceOrderMap[invoiceNumber] && 
+                invoiceOrderMap[invoiceNumber].orderNumber !== validation.order) {
+                
+                // Show warning with only OK button (no override option)
+                const confirmMsg = `<p>Invoice #<strong>${invoiceNumber}</strong> is already used for Order #<strong>${invoiceOrderMap[invoiceNumber].orderNumber}</strong>.</p>
+                                 <p>You are trying to assign it to Order #<strong>${validation.order}</strong>.</p>
+                                 <p class="alert alert-warning"><i class="feather icon-alert-triangle me-1"></i> Please use a different invoice number.</p>`;
+                
+                showConfirmationModal(
+                    'Invoice Number Conflict', 
+                    confirmMsg, 
+                    null,  // No callback needed
+                    true   // Set cancelOnly to true
+                );
+            } else {
+                // No conflict, proceed with saving
+                saveBulkInvoiceData(bulkSaveButton, itemIds, invoiceNumber, invoiceDate, validation.order);
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            toastr.error(error.message || 'An unexpected error occurred', 'Error');
             this.disabled = false;
-            this.textContent = 'Save';
-            modal.hide();
+            this.innerHTML = 'Save All';
         }
     });
 
+    // Helper function for bulk save
+    async function saveBulkInvoiceData(button, itemIds, invoiceNumber, invoiceDate, orderNumber) {
+        try {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Disable button and show loading state
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+            
+            // Show info toast to indicate processing has started
+            toastr.info(`Processing ${itemIds.length} items...`, 'Please wait');
+            
+            const response = await fetch('/stock/bulk-update-invoice/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    item_ids: itemIds,
+                    invoice_number: invoiceNumber,
+                    invoice_date: invoiceDate
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || `Error: ${response.status}`);
+            }
+            
+            if (data.status === 'success' || data.status === 'partial') {
+                // Save the invoice-order mapping
+                invoiceOrderMap[invoiceNumber] = {
+                    orderNumber: orderNumber,
+                    timestamp: new Date().getTime()
+                };
+                
+                // Save to localStorage
+                try {
+                    localStorage.setItem('invoiceOrderMap', JSON.stringify(invoiceOrderMap));
+                } catch (e) {
+                    console.warn("Could not save to localStorage:", e);
+                }
+                
+                if (data.status === 'success') {
+                    // Show success notification
+                    toastr.success(`${itemIds.length} items updated successfully`, 'Success');
+                } else {
+                    toastr.warning(`${data.success_count} items updated. ${data.error_count} failed.`, 'Partial Success');
+                }
+                
+                // Reload after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1800);
+            } else {
+                throw new Error(data.message || 'Failed to update invoices');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toastr.error(error.message || 'An unexpected error occurred', 'Error');
+        } finally {
+            button.disabled = false;
+            button.innerHTML = 'Save All';
+            bulkInvoiceModal.hide();
+        }
+    }
+
     // Handle modal events for iOS
-    const modalElement = document.getElementById('invoiceModal');
-    modalElement.addEventListener('shown.bs.modal', function() {
-        // Fix body scrolling on iOS
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${window.scrollY}px`;
+    const modalElements = document.querySelectorAll('.modal');
+    modalElements.forEach(modalElement => {
+        modalElement.addEventListener('shown.bs.modal', function() {
+            // Fix body scrolling on iOS
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${window.scrollY}px`;
+        });
+    
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            // Restore body scrolling on iOS
+            const scrollY = document.body.style.top;
+            document.body.style.position = '';
+            document.body.style.top = '';
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        });
     });
 
-    modalElement.addEventListener('hidden.bs.modal', function() {
-        // Restore body scrolling on iOS
-        const scrollY = document.body.style.top;
-        document.body.style.position = '';
-        document.body.style.top = '';
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    // ==============================
+    // View Toggling
+    // ==============================
+    const cardViewBtn = document.getElementById('cardViewBtn');
+    const tableViewBtn = document.getElementById('tableViewBtn');
+    const cardView = document.getElementById('cardView');
+    const tableView = document.getElementById('tableView');
+    
+    // View toggling
+    cardViewBtn.addEventListener('click', function() {
+        cardView.style.display = 'block';
+        tableView.style.display = 'none';
+        cardViewBtn.classList.add('active');
+        tableViewBtn.classList.remove('active');
+        localStorage.setItem('stockViewPreference', 'card');
     });
+    
+    tableViewBtn.addEventListener('click', function() {
+        cardView.style.display = 'none';
+        tableView.style.display = 'block';
+        tableViewBtn.classList.add('active');
+        cardViewBtn.classList.remove('active');
+        localStorage.setItem('stockViewPreference', 'table');
+    });
+    
+    // Load user's preference if available
+    const storedPreference = localStorage.getItem('stockViewPreference');
+    if (storedPreference === 'table') {
+        tableViewBtn.click();
+    } else {
+        cardViewBtn.click(); // Default to card view
+    }
+    
+    // ==============================
+    // Item Selection
+    // ==============================
+    // Update bulk button state based on selections
+    function updateBulkButton() {
+        const bulkInvoiceBtn = document.getElementById('bulkInvoiceBtn');
+        const bulkDeliveryNoteBtn = document.getElementById('bulkDeliveryNoteBtn');
+        
+        if (selectedItems.size > 0) {
+            bulkInvoiceBtn.disabled = false;
+            bulkDeliveryNoteBtn.disabled = false;
+        } else {
+            bulkInvoiceBtn.disabled = true;
+            bulkDeliveryNoteBtn.disabled = true;
+        }
+    }
+    
+    // Update visual indicator for selected items
+    function updateSelectionVisuals() {
+        // Update card highlighting
+        document.querySelectorAll('.item-select').forEach(checkbox => {
+            const card = checkbox.closest('.card');
+            if (card && selectedItems.has(checkbox.dataset.id)) {
+                card.classList.add('selected');
+            } else if (card) {
+                card.classList.remove('selected');
+            }
+        });
+        
+        // Update table row highlighting - handle both class types
+        document.querySelectorAll('.item-select-table').forEach(checkbox => {
+            const row = checkbox.closest('tr');
+            if (row && selectedItems.has(checkbox.dataset.id)) {
+                row.classList.add('table-row-selected');
+            } else if (row) {
+                row.classList.remove('table-row-selected');
+            }
+        });
+        
+        // Also handle select-item class for table
+        document.querySelectorAll('.select-item').forEach(checkbox => {
+            const row = checkbox.closest('tr');
+            if (row && selectedItems.has(checkbox.dataset.itemId)) {
+                row.classList.add('table-row-selected');
+            } else if (row) {
+                row.classList.remove('table-row-selected');
+            }
+        });
+        
+        // Keep checkboxes in sync between views
+        document.querySelectorAll('.item-select').forEach(checkbox => {
+            checkbox.checked = selectedItems.has(checkbox.dataset.id);
+        });
+        
+        document.querySelectorAll('.select-item').forEach(checkbox => {
+            checkbox.checked = selectedItems.has(checkbox.dataset.itemId);
+        });
+    }
+    
+    // ==============================
+    // Search and Filtering
+    // ==============================
+    const stockFilter = document.getElementById('stockFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const clearFilterBtn = document.getElementById('clearFilter');
+    
+    function filterItems() {
+        const searchValue = stockFilter.value.toLowerCase();
+        const statusValue = statusFilter.value;
+        
+        // Track if any results are found for each order section
+        let orderVisibility = {};
+        let totalVisibleItems = 0;
+        
+        // Filter function that works for both views
+        document.querySelectorAll('.stock-item').forEach(item => {
+            const description = item.dataset.description;
+            const supplier = item.dataset.supplier;
+            const po = item.dataset.po;
+            const status = item.dataset.status;
+            const orderSection = item.closest('.filter-container');
+            const orderNumber = orderSection.querySelector('.order-number').textContent.trim();
+            
+            // Initialize order visibility
+            if (!orderVisibility[orderNumber]) {
+                orderVisibility[orderNumber] = 0;
+            }
+            
+            // Check if item matches search
+            const matchesSearch = !searchValue || 
+                description.includes(searchValue) || 
+                supplier.includes(searchValue) || 
+                po.includes(searchValue);
+            
+            // Check if item matches status filter
+            const matchesStatus = statusValue === 'all' || status === statusValue;
+            
+            // Show/hide item based on filters
+            if (matchesSearch && matchesStatus) {
+                item.style.display = '';
+                orderVisibility[orderNumber]++;
+                totalVisibleItems++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Show/hide order sections based on their visible items
+        document.querySelectorAll('.filter-container').forEach(container => {
+            const orderNumber = container.querySelector('.order-number').textContent.trim();
+            container.style.display = orderVisibility[orderNumber] > 0 ? '' : 'none';
+        });
+        
+        // Show empty results message if needed
+        const emptyMessage = document.querySelector('.empty-results');
+        if (emptyMessage) {
+            emptyMessage.style.display = totalVisibleItems === 0 ? 'block' : 'none';
+        }
+    }
+    
+    // Add filter event listeners
+    stockFilter.addEventListener('input', filterItems);
+    statusFilter.addEventListener('change', filterItems);
+    
+    // Clear filter button
+    clearFilterBtn.addEventListener('click', function() {
+        stockFilter.value = '';
+        statusFilter.value = 'all';
+        filterItems();
+    });
+    
+    // ==============================
+    // Table Sorting
+    // ==============================
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', function() {
+            const table = this.closest('table');
+            const index = Array.from(this.parentNode.children).indexOf(this);
+            const isNumeric = this.classList.contains('numeric');
+            const isAscending = !this.classList.contains('sort-asc');
+            
+            // Update sort indicators
+            document.querySelectorAll('.sortable').forEach(h => {
+                h.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            this.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            
+            // Get all order sections and sort within each
+            document.querySelectorAll('.order-table-section').forEach(orderSection => {
+                const tbody = orderSection.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                rows.sort((a, b) => {
+                    let aValue = a.children[index].textContent.trim();
+                    let bValue = b.children[index].textContent.trim();
+                    
+                    if (isNumeric) {
+                        return isAscending 
+                            ? parseFloat(aValue) - parseFloat(bValue) 
+                            : parseFloat(bValue) - parseFloat(aValue);
+                    } else {
+                        return isAscending 
+                            ? aValue.localeCompare(bValue) 
+                            : bValue.localeCompare(aValue);
+                    }
+                });
+                
+                // Remove rows and re-add in sorted order
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+    });
+
+    // ==============================
+    // Order Validation Functions
+    // ==============================
+    
+    // Track orders of selected items
+    function getSelectedItemOrders() {
+        const orderGroups = {};
+        
+        selectedItems.forEach(itemId => {
+            // Try to find the checkbox in either view
+            const cardCheckbox = document.querySelector(`.item-select[data-id="${itemId}"]`);
+            const tableCheckbox = document.querySelector(`.select-item[data-item-id="${itemId}"]`);
+            
+            let orderNumber = null;
+            
+            // Try to get the order number from either checkbox
+            if (cardCheckbox) {
+                orderNumber = cardCheckbox.dataset.order;
+            } else if (tableCheckbox) {
+                orderNumber = tableCheckbox.dataset.order;
+            }
+            
+            if (orderNumber) {
+                if (!orderGroups[orderNumber]) {
+                    orderGroups[orderNumber] = [];
+                }
+                orderGroups[orderNumber].push(itemId);
+            }
+        });
+        
+        return orderGroups;
+    }
+
+    // Check if all selected items belong to the same order
+    function validateSingleOrderSelection() {
+        const orderGroups = getSelectedItemOrders();
+        const orders = Object.keys(orderGroups);
+        
+        // If no items or multiple orders selected
+        if (orders.length === 0) {
+            return { valid: false, message: 'No items selected' };
+        } else if (orders.length > 1) {
+            return { 
+                valid: false, 
+                message: `Items from ${orders.length} different orders selected. Please select items from only one order.`,
+                orders: orderGroups
+            };
+        }
+        
+        // Valid - all items from the same order
+        return { 
+            valid: true, 
+            order: orders[0],
+            items: orderGroups[orders[0]]
+        };
+    }
+
+    // Visual feedback for order conflicts
+    function highlightOrderConflicts(orderGroups) {
+        // First reset all highlights
+        document.querySelectorAll('.card.order-conflict').forEach(card => {
+            card.classList.remove('order-conflict');
+            card.style.borderColor = '';
+        });
+        document.querySelectorAll('tr.order-conflict').forEach(row => {
+            row.classList.remove('order-conflict');
+            row.style.borderColor = '';
+        });
+        
+        // Generate a color for each order
+        const colors = ['#f6c23e', '#36b9cc', '#1cc88a', '#e74a3b', '#4e73df'];
+        
+        // Apply color borders to items by order
+        let colorIndex = 0;
+        for (const [orderNumber, itemIds] of Object.entries(orderGroups)) {
+            const color = colors[colorIndex % colors.length];
+            colorIndex++;
+            
+            // Apply to each item in this order
+            itemIds.forEach(itemId => {
+                // Try to highlight in card view
+                const cardCheckbox = document.querySelector(`.item-select[data-id="${itemId}"]`);
+                if (cardCheckbox) {
+                    const card = cardCheckbox.closest('.card');
+                    if (card) {
+                        card.classList.add('order-conflict');
+                        card.style.borderColor = color;
+                    }
+                }
+                
+                // Try to highlight in table view (for both checkbox types)
+                const tableCheckbox = document.querySelector(`.select-item[data-item-id="${itemId}"]`) || 
+                                     document.querySelector(`.item-select-table[data-id="${itemId}"]`);
+                if (tableCheckbox) {
+                    const row = tableCheckbox.closest('tr');
+                    if (row) {
+                        row.classList.add('order-conflict');
+                        row.style.borderColor = color;
+                    }
+                }
+            });
+        }
+        
+        // Show toast message about the conflict
+        const ordersList = Object.keys(orderGroups).map(order => `Order #${order}`).join(', ');
+        toastr.warning(`Please select items from a single order for bulk operations. Currently selected: ${ordersList}`, 'Multiple Orders Detected');
+    }
+
+    // Add these event handlers for item selection
+    // Card view checkboxes
+    document.querySelectorAll('.item-select').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                selectedItems.add(this.dataset.id);
+            } else {
+                selectedItems.delete(this.dataset.id);
+            }
+            updateBulkButton();
+            updateSelectionVisuals();
+        });
+    });
+
+    // Table view checkboxes - support both checkbox types
+    document.querySelectorAll('.item-select-table').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                selectedItems.add(this.dataset.id);
+            } else {
+                selectedItems.delete(this.dataset.id);
+            }
+            updateBulkButton();
+            updateSelectionVisuals();
+        });
+    });
+    
+    // Table view checkboxes with select-item class
+    document.querySelectorAll('.select-item').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                selectedItems.add(this.dataset.itemId);
+            } else {
+                selectedItems.delete(this.dataset.itemId);
+            }
+            updateBulkButton();
+            updateSelectionVisuals();
+        });
+        
+        // Add order number data attribute to table checkboxes if not already set
+        if (!checkbox.dataset.order) {
+            const orderSection = checkbox.closest('.order-table-section');
+            if (orderSection) {
+                const orderNumberEl = orderSection.querySelector('.order-number');
+                if (orderNumberEl) {
+                    const orderText = orderNumberEl.textContent;
+                    const orderNumber = orderText.replace('Order #', '').split(' -')[0].trim();
+                    checkbox.setAttribute('data-order', orderNumber);
+                }
+            }
+        }
+    });
+
+    // Handle "Select All" checkboxes in card view
+    document.querySelectorAll('.select-all-order').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const orderNumber = this.dataset.order;
+            const itemCheckboxes = document.querySelectorAll(`.item-select[data-order="${orderNumber}"]`);
+            
+            itemCheckboxes.forEach(itemCheckbox => {
+                itemCheckbox.checked = this.checked;
+                if (this.checked) {
+                    selectedItems.add(itemCheckbox.dataset.id);
+                } else {
+                    selectedItems.delete(itemCheckbox.dataset.id);
+                }
+            });
+            
+            updateBulkButton();
+            updateSelectionVisuals();
+        });
+    });
+
+    // Handle "Select All" checkboxes in table view
+    document.querySelectorAll('.select-all-order-table').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const orderNumber = this.dataset.order;
+            const itemCheckboxes = document.querySelectorAll(`.select-item[data-order="${orderNumber}"]:not([disabled])`);
+            
+            itemCheckboxes.forEach(itemCheckbox => {
+                itemCheckbox.checked = this.checked;
+                if (this.checked) {
+                    selectedItems.add(itemCheckbox.dataset.itemId);
+                } else {
+                    selectedItems.delete(itemCheckbox.dataset.itemId);
+                }
+            });
+            
+            updateBulkButton();
+            updateSelectionVisuals();
+        });
+    });
+
+    // Handle bulk invoice button click
+    bulkInvoiceBtn.addEventListener('click', function() {
+        const validation = validateSingleOrderSelection();
+        
+        if (!validation.valid) {
+            toastr.warning(validation.message, 'Cannot Bulk Update');
+            
+            if (validation.orders) {
+                highlightOrderConflicts(validation.orders);
+            }
+            return;
+        }
+        
+        // Populate the selected items list in the modal
+        const listElement = document.getElementById('selectedItemsList');
+        listElement.innerHTML = '';
+        
+        // Add selected items to the list
+        selectedItems.forEach(itemId => {
+            // Try to find item in either card or table view
+            const cardItem = document.querySelector(`.item-select[data-id="${itemId}"]`);
+            const tableItem = document.querySelector(`.select-item[data-item-id="${itemId}"]`);
+            
+            let description = '';
+            
+            // Get description from card view
+            if (cardItem) {
+                const card = cardItem.closest('.card');
+                if (card) {
+                    const subtitle = card.querySelector('.card-subtitle');
+                    if (subtitle) {
+                        description = subtitle.textContent;
+                    }
+                }
+            } 
+            // Or from table view
+            else if (tableItem) {
+                const row = tableItem.closest('tr');
+                if (row) {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > 1) {
+                        description = cells[1].textContent;
+                    }
+                }
+            }
+            
+            if (description) {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item';
+                listItem.textContent = description;
+                listElement.appendChild(listItem);
+            }
+        });
+        
+        // Show count of selected items
+        document.getElementById('selectedItemsCount').textContent = 
+            `(${selectedItems.size} items selected)`;
+        document.getElementById('selectedItemsCount').style.display = 'inline';
+        
+        // Show the modal
+        bulkInvoiceModal.show();
+    });
+
+    // Initialize modals
+    const deliveryNoteModal = new bootstrap.Modal(document.getElementById('generateDeliveryNoteModal'));
+    
+    // Handle individual delivery note button clicks
+    document.querySelectorAll('.delivery-note-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            document.getElementById('selectedItemIds').value = itemId;
+            
+            // Find company ID from the order/item relationship
+            const stockItem = this.closest('.stock-item');
+            let companyId = null;
+            
+            if (stockItem) {
+                // Try to get company ID from the data attributes (add this to your HTML)
+                const orderContainer = stockItem.closest('.order-section') || stockItem.closest('.order-table-section');
+                if (orderContainer) {
+                    const companyElem = orderContainer.querySelector('.company-name');
+                    if (companyElem && companyElem.dataset.companyId) {
+                        companyId = companyElem.dataset.companyId;
+                    }
+                }
+            }
+            
+            // Set the company in the dropdown if found
+            if (companyId) {
+                const companySelect = document.querySelector('select[name="company_id"]');
+                if (companySelect) {
+                    companySelect.value = companyId;
+                }
+            }
+            
+            // Show modal
+            deliveryNoteModal.show();
+        });
+    });
+    
+    // Handle bulk delivery note button click
+    document.getElementById('bulkDeliveryNoteBtn').addEventListener('click', function() {
+        const validation = validateSingleOrderSelection();
+        
+        if (!validation.valid) {
+            toastr.warning(validation.message, 'Cannot Create Bulk Delivery Note');
+            
+            if (validation.orders) {
+                highlightOrderConflicts(validation.orders);
+            }
+            return;
+        }
+        
+        // Set the selected item IDs
+        const itemIds = Array.from(selectedItems).join(',');
+        document.getElementById('selectedItemIds').value = itemIds;
+        
+        // Get the order number from validation
+        const orderNumber = validation.order;
+        
+        // Find company by looping through order sections rather than using :contains selector
+        const orderSections = document.querySelectorAll('.order-section h6, .order-table-section h6');
+        let companyElement = null;
+        
+        for (const section of orderSections) {
+            if (section.textContent.includes(`Order #${orderNumber}`)) {
+                const orderContainer = section.closest('.order-section') || section.closest('.order-table-section');
+                if (orderContainer) {
+                    companyElement = orderContainer.querySelector('.company-name');
+                    break;
+                }
+            }
+        }
+        
+        if (companyElement && companyElement.dataset.companyId) {
+            const companyId = companyElement.dataset.companyId;
+            const companySelect = document.querySelector('select[name="company_id"]');
+            if (companySelect) {
+                companySelect.value = companyId;
+            }
+        }
+        
+        // Show the delivery note modal
+        deliveryNoteModal.show();
+    });
+    
+    // Update the updateBulkButton function to also update the bulk delivery note button
+    function updateBulkButton() {
+        const bulkInvoiceBtn = document.getElementById('bulkInvoiceBtn');
+        const bulkDeliveryNoteBtn = document.getElementById('bulkDeliveryNoteBtn');
+        
+        if (selectedItems.size > 0) {
+            bulkInvoiceBtn.disabled = false;
+            bulkDeliveryNoteBtn.disabled = false;
+        } else {
+            bulkInvoiceBtn.disabled = true;
+            bulkDeliveryNoteBtn.disabled = true;
+        }
+    }
+    
+    // Rest of your existing code...
 });
+
+
+// ==============================
+// Confirmation Dialog Function
+// ==============================
+function showConfirmationModal(title, message, confirmCallback, cancelOnly = false) {
+    // Remove any existing confirmation modal to avoid conflicts
+    const existingModal = document.getElementById('confirmOrderModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Create a fresh modal element
+    const modalElement = document.createElement('div');
+    modalElement.className = 'modal fade';
+    modalElement.id = 'confirmOrderModal';
+    modalElement.setAttribute('tabindex', '-1');
+    modalElement.setAttribute('aria-hidden', 'true');
+    
+    // Create modal content
+    const modalHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="feather icon-alert-triangle me-2"></i>${title}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    ${message}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelOrderBtn" data-bs-dismiss="modal">
+                        ${cancelOnly ? 'OK' : 'Cancel'}
+                    </button>
+                    ${cancelOnly ? '' : `
+                        <button type="button" class="btn btn-danger" id="confirmOrderBtn">
+                            Continue
+                        </button>
+                    `}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add the modal HTML to the element
+    modalElement.innerHTML = modalHTML;
+    
+    // Append to body
+    document.body.appendChild(modalElement);
+    
+    // Initialize Bootstrap modal
+    const modal = new bootstrap.Modal(modalElement);
+    
+    // Add confirm button event listener if needed
+    if (!cancelOnly) {
+        const confirmBtn = document.getElementById('confirmOrderBtn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function() {
+                modal.hide();
+                // Clean up the modal after closing
+                setTimeout(() => {
+                    modalElement.remove();
+                }, 300);
+                
+                if (typeof confirmCallback === 'function') {
+                    confirmCallback();
+                }
+            });
+        }
+    }
+    
+    // Add an event listener for modal hidden event to clean up
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        // Remove the modal element from the DOM after it's hidden
+        setTimeout(() => {
+            modalElement.remove();
+        }, 300);
+    });
+    
+    // Show the modal
+    modal.show();
+    
+    return modal;
+}
+
+// Add this before the submitBulkDelivery function
+function validateSingleOrderSelection() {
+    const orderGroups = getSelectedItemOrders();
+    const orders = Object.keys(orderGroups);
+    
+    if (orders.length === 0) {
+        return { valid: false, message: 'No items selected' };
+    } else if (orders.length > 1) {
+        return { 
+            valid: false, 
+            message: `Items from ${orders.length} different orders selected. Please select items from only one order.`,
+            orders: orderGroups
+        };
+    }
+    
+    // Valid - all items from the same order
+    return { 
+        valid: true, 
+        order: orders[0],
+        items: orderGroups[orders[0]]
+    };
+}
+
+// Add this helper function to get selected items' orders
+function getSelectedItemOrders() {
+    const orderGroups = {};
+    
+    selectedItems.forEach(itemId => {
+        // Find the checkbox in either card or table view
+        const cardCheckbox = document.querySelector(`.item-select[data-id="${itemId}"]`);
+        const tableCheckbox = document.querySelector(`.select-item[data-item-id="${itemId}"]`);
+        
+        let orderNumber = null;
+        
+        if (cardCheckbox) {
+            orderNumber = cardCheckbox.dataset.order;
+        } else if (tableCheckbox) {
+            orderNumber = tableCheckbox.dataset.order;
+        }
+        
+        if (orderNumber) {
+            if (!orderGroups[orderNumber]) {
+                orderGroups[orderNumber] = [];
+            }
+            orderGroups[orderNumber].push(itemId);
+        }
+    });
+    
+    return orderGroups;
+}
+
+// Add this JavaScript to handle the button clicks
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle clicking the Generate Delivery Note button
+    const generateDeliveryBtn = document.querySelector('.generate-delivery-note');
+    if (generateDeliveryBtn) {
+        generateDeliveryBtn.addEventListener('click', function() {
+            const itemIds = this.dataset.itemIds;
+            document.getElementById('selectedItemIds').value = itemIds;
+        });
+    }
+    
+    // Handle checking items in the table
+    const selectAllCheckbox = document.getElementById('select-all-items');
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            itemCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateGenerateButton();
+        });
+    }
+    
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateGenerateButton();
+        });
+    });
+    
+    function updateGenerateButton() {
+        const selectedIds = Array.from(itemCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+            
+        if (selectedIds.length > 0) {
+            generateDeliveryBtn.dataset.itemIds = selectedIds.join(',');
+            generateDeliveryBtn.removeAttribute('disabled');
+        } else {
+            generateDeliveryBtn.setAttribute('disabled', 'disabled');
+        }
+    }
+});
+
+// Add this JavaScript at the end of your script block
+function submitBulkDelivery() {
+    try {
+        console.log("submitBulkDelivery called with items:", selectedItems);
+        const validation = validateSingleOrderSelection();
+        
+        if (!validation.valid) {
+            toastr.warning(validation.message, 'Cannot Create Bulk Delivery Note');
+            return;
+        }
+        
+        // Set the selected item IDs
+        const itemIdsArray = Array.from(selectedItems);
+        console.log("Selected items:", itemIdsArray);
+        document.getElementById('bulkDeliveryItemIds').value = itemIdsArray.join(',');
+        
+        // Get the company directly from the first selected item
+        const itemId = itemIdsArray[0];
+        let orderSection = null;
+        
+        // Find the order section for the selected item
+        const cardItem = document.querySelector(`.item-select[data-id="${itemId}"]`);
+        if (cardItem) {
+            orderSection = cardItem.closest('.order-section');
+        } else {
+            const tableItem = document.querySelector(`.select-item[data-item-id="${itemId}"]`);
+            if (tableItem) {
+                orderSection = tableItem.closest('.order-table-section');
+            }
+        }
+        
+        // If we found the order section, try to get the company
+        if (orderSection) {
+            const companyElement = orderSection.querySelector('.company-name');
+            if (companyElement && companyElement.dataset.companyId) {
+                const companyId = companyElement.dataset.companyId;
+                const companySelect = document.querySelector('select[name="company_id"]');
+                if (companySelect) {
+                    companySelect.value = companyId;
+                }
+                console.log("Set company ID to:", companyId);
+            }
+        }
+        
+        console.log("Submitting form with items:", document.getElementById('bulkDeliveryItemIds').value);
+        // Submit the form
+        document.getElementById('bulkDeliveryForm').submit();
+    } catch (error) {
+        console.error("Error in submitBulkDelivery:", error);
+        toastr.error("An error occurred. Please try again.");
+    }
+}
+
+// Initialize tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+
+
+// Initialize Toastr notifications
+toastr.options = {
+    "closeButton": true,
+    "debug": false,
+    "newestOnTop": true,
+    "progressBar": true,
+    "positionClass": "toast-top-right",
+    "preventDuplicates": false,
+    "showDuration": "300",
+    "hideDuration": "1000",
+    "timeOut": "5000",
+    "extendedTimeOut": "1000",
+    "showEasing": "swing",
+    "hideEasing": "linear",
+    "showMethod": "fadeIn",
+    "hideMethod": "fadeOut"
+};
 </script>
 {% endblock %}

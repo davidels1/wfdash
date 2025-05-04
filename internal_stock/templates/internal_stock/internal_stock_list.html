@@ -1,0 +1,107 @@
+{# filepath: c:\###PYTHONANY_WORKING\WFDASH\internal_stock\templates\internal_stock\internal_stock_list.html #}
+{% extends "layouts/base.html" %}
+
+{% block title %} Internal Stock List {% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Internal Stock Items</h5>
+                    <a href="{% url 'internal_stock:create' %}" class="btn btn-primary">
+                        <i class="feather icon-plus me-1"></i> Add New Item
+                    </a>
+                </div>
+                <div class="card-body border-bottom pb-3">
+                    <form method="GET" action="{% url 'internal_stock:list' %}">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Search by part number, description, or brand..."
+                                   name="search" value="{{ search_query|default:'' }}">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="feather icon-search"></i> Search
+                            </button>
+                            {% if search_query %}
+                                <a href="{% url 'internal_stock:list' %}" class="btn btn-outline-secondary">
+                                    <i class="feather icon-x"></i> Clear
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Part Number</th>
+                                    <th>Brand</th>
+                                    <th>Description</th>
+                                    <th>Supplier</th>
+                                    <th>Cost</th>
+                                    <th>Markup %</th>
+                                    <th>Selling</th>
+                                    <th>Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>{{ item.part_number }}</td>
+                                    <td>{{ item.brand|default:"-" }}</td>
+                                    <td>{{ item.description|truncatechars:60 }}</td>
+                                    <td>{{ item.supplier.suppliername|default:"-" }}</td>
+                                    <td>{{ item.cost_price|default:"-" }}</td>
+                                    <td>{{ item.markup|default:"-" }}</td>
+                                    <td>{{ item.selling_price|default:"-" }}</td>
+                                    <td>{{ item.updated_at|date:"Y-m-d H:i" }}</td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'internal_stock:edit_stock_item' item.id %}" class="btn btn-outline-primary">
+                                                <i class="feather icon-edit"></i> Edit
+                                            </a>
+                                            {% if request.user.is_staff or request.user.is_superuser %}
+                                                <button type="button" class="btn btn-outline-danger" 
+                                                        data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.id }}">
+                                                    <i class="feather icon-trash-2"></i> Delete
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% if request.user.is_staff or request.user.is_superuser %}
+                                    <div class="modal fade" id="deleteModal{{ item.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title">Confirm Delete</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Are you sure you want to delete "{{ item.part_number }} - {{ item.description|truncatechars:50 }}"?</p>
+                                                    <p class="text-danger"><strong>Warning:</strong> This action cannot be undone.</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <a href="{% url 'internal_stock:delete_stock_item' item.id %}" class="btn btn-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                {% empty %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">No internal stock items found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

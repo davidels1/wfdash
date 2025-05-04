@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Delivery Note: {{ delivery.delivery_number }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #333;
+        }
+        .header {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .logo {
+            max-width: 200px;
+            max-height: 80px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin: 5px 0 0;
+        }
+        .delivery-info {
+            margin-bottom: 20px;
+        }
+        .info-box {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .info-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .notes {
+            font-style: italic;
+            margin: 20px 0;
+        }
+        .signature-section {
+            margin-top: 40px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .signature-box {
+            border: 1px solid #ddd;
+            height: 100px;
+            margin: 10px 0;
+        }
+        .signature-label {
+            font-weight: bold;
+        }
+        .signature-img {
+            max-height: 100px;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <table style="border: none; width: 100%;">
+            <tr style="border: none;">
+                <td style="border: none; width: 50%;">
+                    <img src="{{ logo_url }}" alt="Company Logo" class="logo">
+                </td>
+                <td style="border: none; text-align: right;">
+                    <h1 class="title">DELIVERY NOTE</h1>
+                    <p class="subtitle">{{ delivery.delivery_number }}</p>
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="delivery-info">
+        <table style="border: none;">
+            <tr style="border: none;">
+                <td style="border: none; width: 50%; vertical-align: top;">
+                    <div class="info-box">
+                        <div class="info-title">DELIVER TO:</div>
+                        <strong>{{ delivery.company.company }}</strong><br>
+                        {% if delivery.contact_person %}
+                        Contact: {{ delivery.contact_person }}<br>
+                        {% endif %}
+                        {% if delivery.contact_phone %}
+                        Phone: {{ delivery.contact_phone }}<br>
+                        {% endif %}
+                        {% if delivery.contact_email %}
+                        Email: {{ delivery.contact_email }}
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="border: none; width: 50%; vertical-align: top;">
+                    <div class="info-box">
+                        <div class="info-title">DELIVERY INFORMATION:</div>
+                        <strong>Date:</strong> {{ delivery.delivery_date|date:"F d, Y" }}<br>
+                        <strong>Created By:</strong> {{ delivery.created_by.first_name }} {{ delivery.created_by.last_name }}<br>
+                        <strong>Created:</strong> {{ delivery.created_at|date:"F d, Y" }}
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <h2>Items</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: {% if has_prices %}40%{% else %}60%{% endif %};">Description</th>
+                <th style="width: 10%;">Quantity</th>
+                {% if has_prices %}
+                <th style="width: 15%;">Price</th>
+                <th style="width: 15%;">Total</th>
+                {% endif %}
+                <th style="width: {% if has_prices %}20%{% else %}30%{% endif %};">Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in delivery.items.all %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td>{{ item.quantity }}</td>
+                {% if has_prices %}
+                <td>{% if item.price %}R{{ item.price }}{% else %}-{% endif %}</td>
+                <td>{% if item.price %}R{{ item.item_total }}{% else %}-{% endif %}</td>
+                {% endif %}
+                <td>{{ item.notes }}</td>
+            </tr>
+            {% endfor %}
+            
+            {% if has_prices %}
+            <tr>
+                <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
+                <td><strong>R{{ total_price }}</strong></td>
+                <td></td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    
+    {% if delivery.notes %}
+    <div class="notes">
+        <strong>Notes:</strong> {{ delivery.notes }}
+    </div>
+    {% endif %}
+    
+    <div class="signature-section">
+        <table style="border: none;">
+            <tr style="border: none;">
+                <td style="border: none; width: 50%;">
+                    <p class="signature-label">Delivered By:</p>
+                    <p>{{ delivery.created_by.first_name }} {{ delivery.created_by.last_name }}</p>
+                </td>
+                <td style="border: none; width: 50%;">
+                    <p class="signature-label">Received By:</p>
+                    {% if delivery.is_signed %}
+                        <p>{{ delivery.signed_by }} on {{ delivery.signature_date|date:"F d, Y H:i" }}</p>
+                        {% if delivery.digital_signature %}
+                        <img src="{{ delivery.digital_signature }}" alt="Signature" class="signature-img">
+                        {% endif %}
+                    {% else %}
+                        <div class="signature-box"></div>
+                        <p>Name: _______________________________</p>
+                        <p>Date: _______________________________</p>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="footer">
+        <p>This delivery note was generated on {{ now|date:"F d, Y H:i" }}</p>
+    </div>
+</body>
+</html>

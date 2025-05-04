@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+{% load static %}
+
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#edae41">
+    <title>{% block title %}WF Sales Portal{% endblock %}</title>
+    
+    <!-- PWA Specific Meta Tags -->
+    <!-- Add this near the top of <head> section -->
+    <!-- Remove any existing manifest from the main site -->
+    <script>
+        // Remove any existing manifest link
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('link[rel="manifest"]').forEach(el => el.remove());
+        });
+    </script>
+
+    <!-- Then add your portal-specific manifest link -->
+    <link rel="manifest" href="{% static 'customer_portal/portal-manifest.json' %}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WF Portal">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="{% static 'customer_portal/img/icon-192x192.png' %}">
+    <link rel="icon" href="{% static 'customer_portal/img/favicon.ico' %}" type="image/x-icon">
+    
+    <!-- Prevent links to main app from opening in the PWA -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Stylesheets -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'customer_portal/css/portal.css' %}">
+    
+    {% block extra_css %}
+    <style>
+    :root {
+        --primary-color: #edae41;
+        --primary-light: #f9e9c5;
+        --alternative-color: #e53238;
+        --primary-dark: #c7901e;
+        --grey: #73888c;
+        --secondary-color: #40bfaa;
+        --light-color: #f8f9fa;
+        --dark-color: #343a40;
+        --success-color: rgb(64,191,169);
+        --error-color: #dc3545;
+        --body-bg: #f8f9fa;
+        --card-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        --transition: all 0.3s ease;
+    }
+    
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        background-color: var(--body-bg);
+        color: var(--dark-color);
+        line-height: 1.6;
+        min-height: 100vh;
+    }
+    
+    .portal-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        padding-top: env(safe-area-inset-top);
+    }
+    
+    header {
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1rem;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    
+    .logo {
+        max-height: 50px;
+    }
+    
+    .portal-logo {
+        max-height: 60px;
+    }
+    
+    .container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    
+    main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    footer {
+        margin-top: auto;
+        padding: 0.5rem 0;
+        font-size: 0.8rem;
+        color: #adb5bd;
+    }
+    
+    /* Welcome screen styles */
+    .welcome-container {
+        text-align: center;
+        padding: 2rem 1rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin: 2rem auto;
+        max-width: 320px;
+    }
+    
+    /* Button styles */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--border-radius);
+        border: none;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+    
+    .btn-large {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+    }
+    
+    .btn i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Add to home screen button */
+    .add-to-home {
+        background-color: var(--light-color);
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius);
+        font-weight: 600;
+        margin-top: 2rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .add-to-home i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Form styles */
+    form {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    input, textarea, select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    
+    /* Success page */
+    .success-container {
+        text-align: center;
+        background-color: white;
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        box-shadow: var(--box-shadow);
+        margin: 2rem auto;
+        max-width: 500px;
+    }
+    
+    .success-icon {
+        font-size: 4rem;
+        color: var(--success-color);
+        margin-bottom: 1rem;
+    }
+    
+    .reference-number {
+        background-color: var(--light-color);
+        padding: 0.5rem;
+        border-radius: var(--border-radius);
+        font-weight: bold;
+        margin: 1rem 0;
+    }
+    
+    /* Media Queries */
+    @media (min-width: 768px) {
+        .action-buttons {
+            flex-direction: row;
+            max-width: 600px;
+        }
+        
+        .btn-large {
+            padding: 1.25rem 2.5rem;
+            font-size: 1.25rem;
+        }
+    }
+    
+    /* Offline page styles */
+    .offline-container {
+        text-align: center;
+        padding: 2rem 1rem;
+    }
+    
+    .offline-icon {
+        font-size: 4rem;
+        color: var(--secondary-color);
+        margin-bottom: 1rem;
+    }
+    
+    /* IMPROVED BUTTON STYLING */
+    .option-card {
+        border-radius: 16px;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .option-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+    }
+    
+    .option-card .card-body {
+        padding: 2rem;
+        border-bottom: 5px solid transparent;
+    }
+    
+    /* First option - Quote Request */
+    .col-md-5:first-child .option-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%);
+    }
+    
+    .col-md-5:first-child .option-card .card-body {
+        border-bottom-color: var(--primary-color);
+    }
+    
+    .col-md-5:first-child .option-card i {
+        color: var(--primary-color);
+    }
+    
+    /* Second option - Place Order */
+    .col-md-5:last-child .option-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%);
+    }
+    
+    .col-md-5:last-child .option-card .card-body {
+        border-bottom-color: var(--secondary-color);
+    }
+    
+    .col-md-5:last-child .option-card i {
+        color: var(--secondary-color);
+    }
+    
+    .option-card h3 {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .option-card p {
+        color: #6c757d;
+    }
+    
+    .option-card i {
+        font-size: 3.5rem;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .option-card:hover i {
+        transform: scale(1.1);
+    }
+    
+    /* Install banner */
+    .install-banner {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: white;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        padding: 1rem;
+        z-index: 1000;
+    }
+    
+    .install-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .install-text {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .install-text strong {
+        font-size: 1.1rem;
+    }
+    
+    .install-text span {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    #install-button {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+    }
+    
+    /* Media queries */
+    @media (max-width: 768px) {
+        .container {
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+        
+        .option-card {
+            margin-bottom: 1rem;
+        }
+        
+        .option-card .card-body {
+            padding: 1.5rem;
+        }
+    }
+    
+    /* Add touch hint for mobile */
+    @media (max-width: 767px) {
+        .option-card::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            opacity: 0.7;
+        }
+    }
+    
+    /* PWA installed styles */
+    .pwa-installed header {
+        padding-top: env(safe-area-inset-top);
+    }
+    
+    .pwa-installed footer {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    /* Welcome section */
+    .portal-welcome {
+        text-align: center;
+        padding: 2rem 0 3rem;
+    }
+    
+    .welcome-heading {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--grey-color);
+    }
+    
+    .brand-highlight {
+        color: var(--alternative-color);
+    }
+    
+    .welcome-subtext {
+        font-size: 1.25rem;
+        color: #6c757d;
+        font-weight: 300;
+    }
+    
+    /* Action cards */
+    .action-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+    
+    .action-card {
+        display: flex;
+        align-items: center;
+        background-color: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: var(--card-shadow);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .action-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 8px;
+        height: 100%;
+        transition: var(--transition);
+    }
+    
+    .quote-card::before {
+        background-color: var(--primary-color);
+    }
+    
+    .order-card::before {
+        background-color: var(--secondary-color);
+    }
+    
+    .action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+    
+    .card-icon {
+        font-size: 2.5rem;
+        margin-right: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    
+    .quote-card .card-icon {
+        color: var(--primary-color);
+        background-color: var(--primary-light);
+    }
+    
+    .order-card .card-icon {
+        color: var(--secondary-color);
+        background-color: rgba(44, 62, 80, 0.1);
+    }
+    
+    .card-text {
+        flex: 1;
+    }
+    
+    .card-text h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .card-text p {
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    .card-arrow {
+        margin-left: 1rem;
+        color: #ced4da;
+        transition: var(--transition);
+    }
+    
+    .action-card:hover .card-arrow {
+        transform: translateX(5px);
+        color: var(--primary-color);
+    }
+    
+    /* Contact info */
+    .contact-info {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: auto;
+        padding: 1.5rem 0;
+    }
+    
+    .contact-item {
+        display: flex;
+        align-items: center;
+        color: #6c757d;
+    }
+    
+    .contact-item i {
+        margin-right: 0.5rem;
+        color: var(--primary-color);
+    }
+    
+    /* Media queries */
+    @media (min-width: 768px) {
+        .action-cards {
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .action-card {
+            padding: 2rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .contact-info {
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .welcome-heading {
+            font-size: 2rem;
+        }
+        
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 2rem;
+        }
+    }
+    
+    /* PWA installed styles */
+    .pwa-installed .portal-container {
+        padding-top: env(safe-area-inset-top);
+    }
+    
+    .pwa-installed footer {
+        padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+    }   
+    </style>
+    {% endblock %}
+</head>
+<body>
+    <div class="portal-container">
+        
+        <main class="container py-5">
+            {% block content %}{% endblock %}
+        </main>
+        
+        <div class="py-4"></div>
+    </div>
+    
+    <!-- PWA Installation Banner -->
+    <div id="install-banner" class="install-banner" style="display: none;">
+        <div class="install-content">
+            <div class="install-text">
+                <strong>Add to Home Screen</strong>
+                <span>For quick access</span>
+            </div>
+            <button id="install-button" class="btn btn-sm btn-primary">Install</button>
+            <button id="close-install-banner" class="btn-close"></button>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- PWA Registration Script -->
+    <script>
+        // Define elements first, safely
+        const installBanner = document.getElementById('install-banner');
+        const installButton = installBanner ? document.getElementById('install-button') : null;
+        const closeBanner = installBanner ? document.getElementById('close-install-banner') : null;
+
+        // Unregister any existing service workers
+        
+        if (installButton) {
+            installButton.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                // Show the install prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                const { outcome } = await deferredPrompt.userChoice;
+                // We no longer need the prompt
+                deferredPrompt = null;
+                // Hide the banner
+                installBanner.style.display = 'none';
+            });
+        }
+        
+        if (closeBanner) {
+            closeBanner.addEventListener('click', () => {
+                installBanner.style.display = 'none';
+            });
+        }
+        
+        // Check if already installed
+        window.addEventListener('appinstalled', () => {
+            installBanner.style.display = 'none';
+        });
+        
+        // Detect if running as installed PWA
+        if (window.matchMedia('(display-mode: standalone)').matches || 
+            window.navigator.standalone === true) {
+            // Running as installed PWA
+            document.body.classList.add('pwa-installed');
+        }
+
+        // For debugging: log current manifest
+        console.log("Current manifest:", document.querySelector('link[rel="manifest"]')?.href || "No manifest found");
+    </script>
+    
+    <!-- Dedicated portal service worker registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            // First, unregister any existing service workers from main app
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    // Only unregister service workers that aren't for the portal
+                    if (!registration.scope.includes('/portal/')) {
+                        registration.unregister();
+                        console.log('Unregistered non-portal service worker:', registration.scope);
+                    }
+                }
+                
+                // Then register our portal-specific service worker
+                navigator.serviceWorker.register('/portal/portal-serviceworker.js', {
+                    scope: '/portal/'
+                }).then(function(registration) {
+                    console.log('Portal ServiceWorker registration successful with scope: ', registration.scope);
+                }).catch(function(error) {
+                    console.log('Portal ServiceWorker registration failed: ', error);
+                });
+            });
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

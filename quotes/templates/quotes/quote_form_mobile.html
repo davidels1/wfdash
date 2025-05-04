@@ -86,7 +86,7 @@
             <button type="button" class="btn btn-secondary btn-lg w-100 mb-2" id="add-form">
                 <i class="feather icon-plus"></i> Add Another Item
             </button>
-            <button type="submit" class="btn btn-primary btn-lg w-100 mb-2">Save Quote</button>
+            <button type="submit" id="saveMobileQuoteBtn" class="btn btn-primary btn-lg w-100 mb-2">Save Quote</button>
             <a href="{% url 'quotes:quote_list' %}" class="btn btn-outline-secondary w-100">Cancel</a>
         </div>
     </form>
@@ -294,6 +294,28 @@ $(document).ready(function() {
     } else {
         alert("getUserMedia is not supported on this browser.");
     }
+
+    // Add form submission handler
+    $('#quote-form').on('submit', function(e) {
+        // Get the save button
+        const saveBtn = document.getElementById('saveMobileQuoteBtn');
+        const originalText = saveBtn.innerHTML;
+        
+        // Disable the button and show loading state
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="feather icon-loader fa-spin"></i> Saving...';
+        
+        // Fallback to re-enable button after 10 seconds if something goes wrong
+        setTimeout(() => {
+            if (saveBtn.disabled) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+        }, 10000);
+        
+        // Continue with form submission
+        return true;
+    });
 });
 </script>
 {% endblock %}

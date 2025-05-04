@@ -1,0 +1,205 @@
+<!-- filepath: c:\###PYTHONANY_WORKING\WFDASH\dashboard\templates\dashboard\supplier_dashboard.html -->
+{% extends 'layouts/base.html' %}
+{% load static humanize %}
+
+{% block title %} {{ supplier.suppliername }} Dashboard {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="pcoded-content">
+    <div class="pcoded-inner-content">
+        <div class="main-body">
+            <div class="page-wrapper">
+                <!-- [ Main Content ] start -->
+                <div class="row">
+                    <!-- Supplier Info Card -->
+                    <div class="col-md-12 col-xl-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5>{{ supplier.suppliername }}</h5>
+                                <h6 class="text-muted">Supplier #{{ supplier.suppliernumber|default:"N/A" }}</h6>
+                                <hr>
+                                <p><i class="feather icon-map-pin me-2"></i>{{ supplier.supplieraddress|default:"N/A"|linebreaksbr }}</p>
+                                {# Add other supplier fields if they exist in wfdash.models.Suppliers #}
+                                {# e.g., <p><i class="feather icon-mail me-2"></i>{{ supplier.supplieremail|default:"N/A" }}</p> #}
+                                {# e.g., <p><i class="feather icon-phone me-2"></i>{{ supplier.supplierphone|default:"N/A" }}</p> #}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="col-md-12 col-xl-8">
+                        <div class="row">
+                            <!-- Total Purchased Value -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-8">
+                                                <h4 class="text-c-blue">R {{ total_purchased_value|floatformat:2|intcomma }}</h4>
+                                                <h6 class="text-muted m-b-0">Total Purchased Value</h6>
+                                                <small>(Completed Orders)</small>
+                                            </div>
+                                            <div class="col-4 text-end">
+                                                <i class="feather icon-dollar-sign f-28"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Outstanding Items -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-8">
+                                                <h4 class="text-c-red">{{ outstanding_items_count }}</h4>
+                                                <h6 class="text-muted m-b-0">Outstanding Items</h6>
+                                            </div>
+                                            <div class="col-4 text-end">
+                                                <i class="feather icon-alert-circle f-28"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Add more cards if needed -->
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Purchase Totals -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Purchases by Month (Completed Orders)</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    {% for month, total in monthly_totals.items %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            {{ month }}
+                                            <span class="badge bg-primary rounded-pill">R {{ total|floatformat:2|intcomma }}</span>
+                                        </li>
+                                    {% empty %}
+                                        <li class="list-group-item text-center">No monthly purchase data.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Purchases by Year (Completed Orders)</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                     {% for year, total in yearly_totals.items %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            {{ year }}
+                                            <span class="badge bg-success rounded-pill">R {{ total|floatformat:2|intcomma }}</span>
+                                        </li>
+                                    {% empty %}
+                                        <li class="list-group-item text-center">No yearly purchase data.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Data Tables -->
+                <div class="row">
+                    <!-- Outstanding Items Table -->
+                    <div class="col-xl-12 col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Outstanding Items from {{ supplier.suppliername }}</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Order #</th>
+                                                <th>Item Description</th>
+                                                <th>Qty</th>
+                                                <th>Cost Price</th>
+                                                <th>Item Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in outstanding_items_list %}
+                                            <tr>
+                                                <td><a href="{% url 'orders:order_detail' item.order.pk %}">{{ item.order.order_number }}</a></td>
+                                                <td>{{ item.description|truncatechars:50 }}</td>
+                                                <td>{{ item.quantity|default:0 }}</td>
+                                                <td>R {{ item.cost_price|default:0.00|floatformat:2|intcomma }}</td>
+                                                <td><span class="badge bg-light-warning">{{ item.get_item_status_display|default:"N/A" }}</span></td> {# Assumes get_item_status_display exists #}
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="5" class="text-center">No outstanding items found for this supplier.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Related Quotes Table -->
+                    <div class="col-xl-12 col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Related Quotes (Containing items from {{ supplier.suppliername }})</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Quote #</th>
+                                                <th>Customer</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for quote in related_quotes_list %}
+                                            <tr>
+                                                <td>{{ quote.quote_number }}</td>
+                                                <td>{{ quote.customer.customer }} ({{ quote.customer.company }})</td>
+                                                <td>{{ quote.created_at|date:"Y-m-d" }}</td>
+                                                <td><span class="badge bg-light-{{ quote.get_status_badge_class|default:'secondary' }}">{{ quote.status|default:"N/A" }}</span></td>
+                                                <td>
+                                                    <a href="{% url 'quotes:quote_detail' quote.pk %}" class="btn btn-sm btn-outline-primary"><i class="feather icon-eye"></i> View</a>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="5" class="text-center">No related quotes found.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- [ Main Content ] end -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

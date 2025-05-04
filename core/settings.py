@@ -18,7 +18,46 @@ from str2bool import str2bool
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 
+from datetime import timedelta
+
 load_dotenv()
+
+
+
+
+
+# Near the top of your settings file, after load_dotenv()
+ENVIRONMENT = os.getenv('DJANGO_ENV', 'development')
+
+# Update DEBUG setting
+DEBUG = ENVIRONMENT == 'development'
+
+
+# Add BASE_URL setting with a default value
+BASE_URL = os.getenv("BASE_URL", "https://wfdash.pythonanywhere.com")
+
+
+
+
+# Modify your security settings to only apply in production
+if ENVIRONMENT == 'production':
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    # Development settings
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+
+
+
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,12 +73,19 @@ if not SECRET_KEY:
     SECRET_KEY = ''.join(random.choice( string.ascii_lowercase  ) for i in range( 32 ))
 
 # Enable/Disable DEBUG Mode
-DEBUG = str2bool(os.environ.get('DEBUG'))
-#print(' DEBUG -> ' + str(DEBUG) ) 
+#DEBUG = str2bool(os.environ.get('DEBUG'))
+#print(' DEBUG -> ' + str(DEBUG) )
 
-ALLOWED_HOSTS = ['*']
+DEBUG = True
+ALLOWED_HOSTS = ['*', 'wfdash.pythonanywhere.com', 'localhost', '127.0.0.1']
 
-# Used by DEBUG-Toolbar 
+# Development-specific settings
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+
+# Used by DEBUG-Toolbar
 INTERNAL_IPS = [
     "127.0.0.1",
     "192.168.11.218",
@@ -47,10 +93,10 @@ INTERNAL_IPS = [
 
 # Add here your deployment HOSTS
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000',
+    'http://localhost:8000',################
     'http://127.0.0.1:8000',
     'http://192.168.11.218',
-    'https://*.zrok.io',  # Add this for zrok domains
+    'https://wfdash.pythonanywhere.com/',  # Add this for zrok domains
     'http://*',# Add this for pinggy domains
     'https://*',
     'https://2390-196-39-88-11.ngrok-free.app',#
@@ -91,26 +137,62 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_api_gen',
     'stock_management.apps.StockManagementConfig',
+    'django.contrib.humanize',
+    'stock_orders.apps.StockOrdersConfig',
+    'customer_portal.apps.CustomerPortalConfig',
+    'delivery_notes',
+    'rep_portal.apps.RepPortalConfig',
+    'internal_stock',
+    'search',
 ]
+
+PWA_APP_NAME = 'WF Designs Portal'
+PWA_APP_DESCRIPTION = "WF Designs Customer Portal"
+PWA_APP_THEME_COLOR = '#d1e756'
+PWA_APP_BACKGROUND_COLOR = '#ffffff'
+PWA_APP_DISPLAY = 'standalone'
+PWA_APP_SCOPE = '/portal/'
+PWA_APP_START_URL = '/portal/'
+
 
 SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
-    # Required for allauth
     'allauth.account.middleware.AccountMiddleware',
-    # Required for debug toolbar
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',  # Add this line
 ]
+
+CSRF_COOKIE_HTTPONLY = True
+CSRF_USE_SESSIONS = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
+CSRF_COOKIE_SECURE = True if ENVIRONMENT == 'production' else False
+CSRF_COOKIE_HTTPONLY = True
+CSRF_USE_SESSIONS = True
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_COOKIE_SECURE = True if ENVIRONMENT == 'production' else False
+
+CSRF_COOKIE_NAME = "csrftoken"
+CSRF_COOKIE_HTTPONLY = False  # JS needs to access it
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_TRUSTED_ORIGINS = [
+    'https://wfdash.pythonanywhere.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
+
 
 ROOT_URLCONF = 'core.urls'
 
@@ -147,21 +229,22 @@ DB_PORT     = os.getenv('DB_PORT'     , None)
 DB_NAME     = os.getenv('DB_NAME'     , None)
 
 if DB_ENGINE and DB_NAME and DB_USERNAME:
-    DATABASES = { 
+    DATABASES = {
       'default': {
-        'ENGINE'  : 'django.db.backends.' + DB_ENGINE, 
+        'ENGINE'  : 'django.db.backends.' + DB_ENGINE,
         'NAME'    : DB_NAME,
         'USER'    : DB_USERNAME,
         'PASSWORD': DB_PASS,
         'HOST'    : DB_HOST,
         'PORT'    : DB_PORT,
-        }, 
+        },
     }
+
 else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'db.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),  # Use absolute path
         }
     }
 
@@ -229,6 +312,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/dashboard/crm/'
+LOGIN_URL = '/accounts/login-v3/'
 
 # AllAuth
 ACCOUNT_EMAIL_VERIFICATION =  os.getenv('ACCOUNT_EMAIL_VERIFICATION', 'none')
@@ -319,54 +403,15 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 
 
-PWA_APP_NAME = 'WF Sales'
-PWA_APP_DESCRIPTION = "WF Sales Order Management System"
-PWA_APP_THEME_COLOR = '#000000'
-PWA_APP_BACKGROUND_COLOR = '#ffffff'
-PWA_APP_DISPLAY = 'standalone'
-PWA_APP_SCOPE = '/'
-PWA_APP_ORIENTATION = 'any'
-PWA_APP_START_URL = '/'
-PWA_APP_STATUS_BAR_COLOR = 'default'
-PWA_APP_ICONS = [
-    {
-        'src': '/static/images/icon-192x192.png',
-        'sizes': '192x192',
-        'type': 'image/png'
-    },
-    {
-        'src': '/static/images/icon-512x512.png',
-        'sizes': '512x512',
-        'type': 'image/png'
-    }
-]
-PWA_APP_SPLASH_SCREEN = [
-    {
-        'src': '/static/images/splash-640x1136.png',
-        'media': '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)'
-    }
-]
-PWA_APP_DIR = 'ltr'
-PWA_APP_LANG = 'en-US'
-PWA_APP_SHORTCUTS = [
-    {
-        'name': 'View Collections',
-        'url': '/drivers/pool/',
-        'description': 'View pending collections'
-    },
-    {
-        'name': 'Add Quote',  # Add this new shortcut
-        'url': '/quotes/add/',
-        'description': 'Create new quote',
-        'icons': [
-            {
-                'src': '/static/images/pwa/add-quote-192x192.png',
-                'sizes': '192x192',
-                'type': 'image/png'
-            }
-        ]
-    }
-]
+
+
+
+
+
+
+
+
+
 
 # Add these settings for push notifications
 VAPID_PRIVATE_KEY = "your_private_key_here"
@@ -385,6 +430,19 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'westscottgroup@gmail.com'
 EMAIL_HOST_PASSWORD = 'mwca qdoq jhul jnuh'  # Your app password
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'mail.wfsales.co.za'
+EMAIL_PORT = 465
+EMAIL_USE_TLS = False  # Changed from True
+EMAIL_USE_SSL = True   # Added this line
+EMAIL_HOST_USER = 'sales@wfsales.co.za'
+EMAIL_HOST_PASSWORD = 'Dian2806!'  # Consider using environment variables for passwords
+DEFAULT_FROM_EMAIL = 'WF Sales Portal <sales@wfsales.co.za>'
+
+
+
+
 
 # Report Settings
 REPORT_RECIPIENT_LIST = ['david.els1@outlook.com']
@@ -417,8 +475,7 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     CSRF_USE_SESSIONS = True
-    CSRF_COOKIE_HTTPONLY = True
-    
+
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -426,7 +483,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    
+
     LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -446,4 +503,150 @@ if not DEBUG:
         },
     },
 }
+
+
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {module}: {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'email_processing.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'quotes.management': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+
+
+# Session Security Settings
+SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_SECURE = True  # Use only with HTTPS
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = True  # Use only with HTTPS
+
+# Security Settings
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# Session Settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+# PWA Settings
+PWA_APP_NAME = 'WF Dash'
+PWA_APP_DESCRIPTION = "WF Sales Order Management System"
+PWA_APP_THEME_COLOR = '#ecbd70'
+PWA_APP_BACKGROUND_COLOR = '#ffffff'
+PWA_APP_DISPLAY = 'standalone'
+PWA_APP_SCOPE = '/'
+PWA_APP_ORIENTATION = 'any'
+PWA_APP_START_URL = '/'
+PWA_APP_STATUS_BAR_COLOR = 'black'
+PWA_APP_SCREENSHOTS = [
+    {
+        'src': '/static/images/pwa/screenshot-desktop1.png',
+        'sizes': '1280x800',
+        'type': 'image/png',
+        'form_factor': 'wide'
+    },
+    {
+        'src': '/static/images/pwa/screenshot-desktop2.png',
+        'sizes': '1280x800',
+        'type': 'image/png',
+        'form_factor': 'wide'
+    },
+    {
+        'src': '/static/images/pwa/screenshot-mobile1.png',
+        'sizes': '390x844',
+        'type': 'image/png',
+        'form_factor': 'narrow'
+    },
+    {
+        'src': '/static/images/pwa/screenshot-mobile2.png',
+        'sizes': '390x844',
+        'type': 'image/png',
+        'form_factor': 'narrow'
+    }
+]
+
+# Fix icon purpose
+PWA_APP_ICONS = [
+    {
+        'src': '/static/images/pwa/icon-192x192.png',
+        'sizes': '192x192',
+        'type': 'image/png',
+        'purpose': 'maskable'
+    },
+    {
+        'src': '/static/images/pwa/icon-192x192.png',
+        'sizes': '192x192',
+        'type': 'image/png',
+        'purpose': 'any'
+    },
+    {
+        'src': '/static/images/pwa/icon-512x512.png',
+        'sizes': '512x512',
+        'type': 'image/png',
+        'purpose': 'maskable'
+    },
+    {
+        'src': '/static/images/pwa/icon-512x512.png',
+        'sizes': '512x512',
+        'type': 'image/png',
+        'purpose': 'any'
+    }
+]
+
+PWA_APP_DIR = 'ltr'
+PWA_APP_LANG = 'en-US'
+
+# Fix service worker path - make sure this matches your actual location
+PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'static', 'serviceworker.js')
+
+
+# Add near other security settings
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+
+
 

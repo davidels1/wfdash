@@ -1,0 +1,55 @@
+/* Override Bootstrap's toast with higher specificity */
+html body #toast-container .toast,
+.toast.colored-toast {
+    --bs-toast-bg: transparent !important;
+    background-color: #000000 !important;
+    * Adding white text color */
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Make sure Toastr has proper colors */
+#toast-container > .toast-success {
+    background-color: #28a745 !important;
+}
+#toast-container > .toast-error {
+    background-color: #dc3545 !important;
+}
+#toast-container > .toast-info {
+    background-color: #17a2b8 !important;
+}
+#toast-container > .toast-warning {
+    background-color: #ffc107 !important;
+}
+
+.breakdown-order,
+tr.breakdown-order td,
+.card.breakdown-order,
+.list-group-item.breakdown-order,
+.table-row.breakdown-order {
+    background-color: rgba(244, 240, 4, 0.83) !important;
+    border-left: 8px solid #ebb223 !important;
+    position: relative;
+}
+
+/* Breakdown badge that appears in tables, cards, and lists */
+.breakdown-badge {
+    background-color: #e6ff07f5;
+    color: #212529;
+    padding: 0.25em 0.5em;
+    font-size: 0.75em;
+    font-weight: bold;
+    border-radius: 0.25rem;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+/* Print styles to ensure breakdown highlighting works in print/PDF */
+@media print {
+    .breakdown-order {
+        background-color: #fff7e0 !important;
+        border-left: 4px solid #8707ffb5 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}

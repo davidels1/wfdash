@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='companydetails',
-            name='phone',
+            name='number',
             field=models.CharField(max_length=20),
         ),
         migrations.AlterField(

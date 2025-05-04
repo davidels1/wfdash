@@ -91,6 +91,24 @@
     </ul>
 </li> -->
 
+
+
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-file-text"></i></span>
+        <span class="pcoded-mtext">Delivery Notes</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'delivery_notes:list' %}"><i class="feather icon-list me-2"></i>Delivery Notes List</a></li>
+        <li><a href="{% url 'delivery_notes:create' %}"><i class="feather icon-plus-circle me-2"></i>New Delivery Note</a></li>
+    </ul>
+</li>
+
+
+
+
+
+
 <!-- Stock Management -->
 <li class="nav-item pcoded-hasmenu">
     <a href="#!" class="nav-link">
@@ -103,12 +121,11 @@
         <span class="pcoded-mtext">Stock Management</span>
     </a>
     <ul class="pcoded-submenu">
-        <li><a href="{% url 'stock_management:stock_verification' %}"><i class="feather icon-check me-2"></i>Stock Verification</a></li>
-        <li><a href="{% url 'stock_management:stock_list' %}"><i class="feather icon-list me-2"></i>Current Stock</a></li>
+
         <li><a href="{% url 'stock_management:ready_to_pick' %}"><i class="feather icon-box me-2"></i>Ready to Pick</a></li>
         <li><a href="{% url 'stock_management:delivery_pick_list' %}"><i class="feather icon-clipboard me-2"></i>Delivery Pick List</a></li>
         <li><a href="{% url 'stock_management:ready_for_delivery' %}"><i class="feather icon-truck me-2"></i>Ready for Delivery</a></li>
-        <li><a href="{% url 'stock_management:office_stock' %}"><i class="feather icon-compass me-2"></i>Office Stock</a></li>
+
     </ul>
 </li>
 

@@ -1,0 +1,972 @@
+{% extends "rep_portal/base.html" %}
+{% load static %}
+
+{% block title %}Tasks Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Core styling for the tasks page */
+    :root {
+        --primary-color: #edae41;
+        --primary-light: #f9e9c5;
+        --primary-dark: #c7901e;
+        --secondary-color: #2c3e50;
+        --light-color: #f8f9fa;
+        --dark-color: #343a40;
+        --success-color: #28a745;
+        --error-color: #dc3545;
+        --body-bg: #f8f9fa;
+        --card-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        --transition: all 0.3s ease;
+    }
+    
+    .page-title {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: var(--secondary-color);
+        font-size: 1.75rem;
+        font-weight: 600;
+    }
+    
+    .tasks-section {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 1.5rem;
+        border: 2px solid #e0e0e0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Left border accent colors */
+    .quotes-section::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background-color: #d9534f; /* Red accent for quotes */
+    }
+    
+    .delivery-section::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background-color: #5bc0de; /* Blue accent for delivery notes */
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+        margin-bottom: 0;
+        font-weight: 600;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .quotes-section .section-title {
+        color: #d9534f; /* Red for quotes */
+    }
+    
+    .delivery-section .section-title {
+        color: #5bc0de; /* Blue for delivery notes */
+    }
+    
+    /* Table styling */
+    .tasks-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+    }
+    
+    .tasks-table th {
+        background-color: #f8f9fa;
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+    }
+    
+    .tasks-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+        vertical-align: middle;
+    }
+    
+    .tasks-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .tasks-table tr:hover {
+        background-color: rgba(0,0,0,0.02);
+    }
+    
+    /* Action buttons */
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .btn-approve {
+        background-color: var(--success-color);
+        color: white;
+        border: none;
+    }
+    
+    .btn-reject {
+        background-color: var(--error-color);
+        color: white;
+        border: none;
+    }
+    
+    .btn-price {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+    }
+    
+    /* Badge styling */
+    .badge {
+        padding: 0.35em 0.65em;
+        font-weight: 500;
+        border-radius: 0.25rem;
+    }
+    
+    .badge-pending {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .badge-missing {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    /* Empty state styling */
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+        font-style: italic;
+    }
+    
+    /* Price input styling */
+    .price-input {
+        width: 100px;
+        text-align: right;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .price-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(237, 174, 65, 0.25);
+        outline: none;
+    }
+    
+    /* Modal styling */
+    .modal-content {
+        border-radius: 0.5rem;
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .modal-header {
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+    
+    /* Responsive styling */
+    @media (max-width: 768px) {
+        .tasks-table {
+            display: block;
+            overflow-x: auto;
+        }
+        
+        .btn-sm {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.8rem;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+        }
+    }
+    
+    .quote-info h4 {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .quote-description, .quote-notes, .quote-items, .quote-attachments {
+        margin-bottom: 1.5rem;
+    }
+    
+    .quote-notes .bg-light {
+        background-color: #f8f9fa;
+        white-space: pre-line;
+    }
+    
+    .attachment-card {
+        transition: all 0.2s ease;
+        height: 100%;
+    }
+    
+    .attachment-card:hover {
+        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .attachment-icon {
+        color: var(--primary-color);
+    }
+
+    /* Add to your existing <style> section */
+    .section-header {
+        cursor: pointer;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s ease;
+        user-select: none;
+        border-radius: 8px;
+    }
+
+    .section-header:hover {
+        background-color: rgba(0,0,0,0.02);
+    }
+
+    .toggle-icon {
+        transition: transform 0.3s ease;
+    }
+
+    .section-header[aria-expanded="false"] .toggle-icon {
+        transform: rotate(-90deg);
+    }
+
+    .section-title .badge {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    /* Animation for expanding/collapsing */
+    .collapse {
+        transition: all 0.35s ease;
+    }
+
+    /* Add a divider between header and content when expanded */
+    .collapse.show {
+        border-top: 1px solid #eee;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mobile-form-container">
+    <h2 class="page-title">Tasks Dashboard</h2>
+    
+    <!-- Pending Quote Approvals Section - Made Collapsible -->
+    <div class="tasks-section quotes-section mb-4">
+        <div class="section-header d-flex justify-content-between align-items-center" 
+             data-bs-toggle="collapse" 
+             data-bs-target="#quotesCollapse" 
+             aria-expanded="true" 
+             aria-controls="quotesCollapse">
+            <h3 class="section-title mb-0">
+                Pending Quote Approvals
+                <span class="badge rounded-pill bg-danger ms-2">{{ pending_quotes|length }}</span>
+            </h3>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </div>
+        
+        <div class="collapse" id="quotesCollapse">
+            <div class="pt-3">
+                {% if pending_quotes %}
+                <div class="table-responsive">
+                    <table class="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Quote #</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for quote in pending_quotes %}
+                            <tr>
+                                <td>{{ quote.quote_number }}</td>
+                                <td>{{ quote.customer.company }}</td>
+                                <td>{{ quote.created_at|date:"d M Y" }}</td>
+                                <td><span class="badge badge-pending">Pending Approval</span></td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-approve" onclick="approveQuote('{{ quote.id }}')">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-reject" onclick="rejectQuote('{{ quote.id }}')">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                        <a href="#" class="btn btn-sm btn-secondary" onclick="viewQuote('{{ quote.id }}')">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>No quotes pending approval at this time.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delivery Notes Missing Prices Section - Made Collapsible -->
+    <div class="tasks-section delivery-section">
+        <div class="section-header d-flex justify-content-between align-items-center" 
+             data-bs-toggle="collapse" 
+             data-bs-target="#deliveriesCollapse" 
+             aria-expanded="true" 
+             aria-controls="deliveriesCollapse">
+            <h3 class="section-title mb-0">
+                Delivery Notes Missing Prices
+                <span class="badge rounded-pill bg-info ms-2">{{ delivery_notes|length }}</span>
+            </h3>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </div>
+        
+        <div class="collapse" id="deliveriesCollapse">
+            <div class="pt-3">
+                {% if delivery_notes %}
+                <div class="table-responsive">
+                    <table class="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Delivery #</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Items</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for note in delivery_notes %}
+                            <tr>
+                                <td>{{ note.delivery_number }}</td>
+                                <td>{{ note.company.company }}</td>
+                                <td>{{ note.created_at|date:"d M Y" }}</td>
+                                <td>{{ note.items.count }} ({{ note.items_missing_price }} missing prices)</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-price" onclick="updatePrices('{{ note.id }}')">
+                                        <i class="fas fa-dollar-sign"></i> Update Prices
+                                    </button>
+                                    <a href="#" class="btn btn-sm btn-secondary" onclick="viewDelivery('{{ note.id }}')">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>No delivery notes with missing prices.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Prices Modal -->
+<div class="modal fade" id="updatePricesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Item Prices</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updatePricesForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="deliveryNoteId" name="delivery_note_id">
+                    <div class="table-responsive">
+                        <table class="tasks-table" id="itemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Item Description</th>
+                                    <th>Quantity</th>
+                                    <th>Cost Price (R)</th>
+                                    <th>Selling Price (R)</th>
+                                    <th>Markup (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsTableBody">
+                                <!-- Items will be populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="savePricesBtn">Save Prices</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quote Preview Modal -->
+<div class="modal fade" id="quotePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quote Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="quoteLoadingSpinner" class="text-center my-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading quote details...</p>
+                </div>
+                
+                <div id="quotePreviewContent" class="d-none">
+                    <!-- Basic quote info -->
+                    <div class="quote-info border-bottom pb-3 mb-3">
+                        <h4 id="previewQuoteNumber" class="mb-3"></h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Customer:</strong> <span id="previewCustomer"></span></p>
+                                <p><strong>Company:</strong> <span id="previewCompany"></span></p>
+                                <p><strong>Date:</strong> <span id="previewDate"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Status:</strong> <span class="badge bg-warning">Pending Approval</span></p>
+                                <p><strong>Created By:</strong> <span id="previewCreatedBy"></span></p>
+                                <p><strong>Rep:</strong> <span id="previewRep"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quote description -->
+                    <div class="quote-description border-bottom pb-3 mb-3">
+                        <h5 class="mb-2">Description</h5>
+                        <p id="previewDescription" class="mb-0"></p>
+                    </div>
+                    
+                    <!-- Quote items -->
+                    <div class="quote-items border-bottom pb-3 mb-3">
+                        <h5 class="mb-3">Requested Items</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th>Quantity</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="previewItems">
+                                    <!-- Items will be populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes section -->
+                    <div class="quote-notes border-bottom pb-3 mb-3">
+                        <h5 class="mb-2">Notes</h5>
+                        <div id="previewNotes" class="p-3 bg-light rounded">
+                            <!-- Notes will be populated dynamically -->
+                        </div>
+                    </div>
+                    
+                    <!-- Attachments section -->
+                    <div class="quote-attachments">
+                        <h5 class="mb-3">Attachments</h5>
+                        <div id="previewAttachments" class="row">
+                            <!-- Attachments will be populated dynamically -->
+                        </div>
+                        <div id="noAttachments" class="text-muted fst-italic d-none">
+                            No attachments for this quote.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" id="rejectQuoteBtn">
+                    <i class="fas fa-times me-1"></i> Reject
+                </button>
+                <button type="button" class="btn btn-success" id="approveQuoteBtn">
+                    <i class="fas fa-check me-1"></i> Approve
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize modals
+        const updatePricesModal = new bootstrap.Modal(document.getElementById('updatePricesModal'));
+        const quotePreviewModal = new bootstrap.Modal(document.getElementById('quotePreviewModal'));
+        
+        let currentQuoteId = null;
+        
+        // Show quote preview before approval
+        window.approveQuote = function(quoteId) {
+            currentQuoteId = quoteId;
+            fetchQuoteDetails(quoteId);
+            quotePreviewModal.show();
+        };
+        
+        // Show quote preview on view
+        window.viewQuote = function(quoteId) {
+            currentQuoteId = quoteId;
+            fetchQuoteDetails(quoteId);
+            quotePreviewModal.show();
+        };
+        
+        // Function to fetch quote details
+        function fetchQuoteDetails(quoteId) {
+            document.getElementById('quoteLoadingSpinner').classList.remove('d-none');
+            document.getElementById('quotePreviewContent').classList.add('d-none');
+            
+            // Fetch quote details - you'll need to create this API endpoint
+            fetch(`/rep/api/quote-details/${quoteId}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    populateQuotePreview(data);
+                    document.getElementById('quoteLoadingSpinner').classList.add('d-none');
+                    document.getElementById('quotePreviewContent').classList.remove('d-none');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while loading quote details. Please try again.');
+                    quotePreviewModal.hide();
+                });
+        }
+        
+        // Function to populate quote preview
+        function populateQuotePreview(data) {
+            // Basic info
+            document.getElementById('previewQuoteNumber').textContent = `Quote #${data.quote_number}`;
+            document.getElementById('previewCustomer').textContent = data.customer_name || 'N/A';
+            document.getElementById('previewCompany').textContent = data.company || 'N/A';
+            document.getElementById('previewDate').textContent = data.created_at || 'N/A';
+            document.getElementById('previewCreatedBy').textContent = data.created_by || 'N/A';
+            document.getElementById('previewRep').textContent = data.rep || 'N/A';
+            document.getElementById('previewDescription').textContent = data.description || 'No description provided.';
+            
+            // Notes
+            const notesElem = document.getElementById('previewNotes');
+            if (data.notes && data.notes.trim()) {
+                notesElem.innerHTML = data.notes.replace(/\n/g, '<br>');
+            } else {
+                notesElem.innerHTML = '<em>No additional notes.</em>';
+            }
+            
+            // Items
+            const itemsTableBody = document.getElementById('previewItems');
+            itemsTableBody.innerHTML = '';
+            
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.description || 'N/A'}</td>
+                        <td>${item.quantity || '1'}</td>
+                        <td>${item.notes || 'No notes'}</td>
+                    `;
+                    itemsTableBody.appendChild(row);
+                });
+            } else {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="3" class="text-center">No items found.</td>';
+                itemsTableBody.appendChild(row);
+            }
+            
+            // Attachments
+            const attachmentsContainer = document.getElementById('previewAttachments');
+            const noAttachmentsMsg = document.getElementById('noAttachments');
+            attachmentsContainer.innerHTML = '';
+            
+            if (data.attachments && data.attachments.length > 0) {
+                noAttachmentsMsg.classList.add('d-none');
+                
+                data.attachments.forEach(attachment => {
+                    const attachmentCol = document.createElement('div');
+                    attachmentCol.className = 'col-md-4 mb-3';
+                    
+                    const icon = getFileIcon(attachment.filename);
+                    
+                    attachmentCol.innerHTML = `
+                        <div class="attachment-card p-2 border rounded text-center">
+                            <div class="attachment-icon mb-2">
+                                <i class="${icon} fa-2x"></i>
+                            </div>
+                            <div class="attachment-name small text-truncate mb-2" title="${attachment.filename}">
+                                ${attachment.filename}
+                            </div>
+                            <a href="${attachment.url}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                View
+                            </a>
+                        </div>
+                    `;
+                    
+                    attachmentsContainer.appendChild(attachmentCol);
+                });
+            } else {
+                noAttachmentsMsg.classList.remove('d-none');
+            }
+        }
+        
+        // Helper function to get file icon based on filename
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            
+            if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(ext)) {
+                return 'fas fa-file-image';
+            } else if (['pdf'].includes(ext)) {
+                return 'fas fa-file-pdf';
+            } else if (['doc', 'docx'].includes(ext)) {
+                return 'fas fa-file-word';
+            } else if (['xls', 'xlsx'].includes(ext)) {
+                return 'fas fa-file-excel';
+            } else if (['ppt', 'pptx'].includes(ext)) {
+                return 'fas fa-file-powerpoint';
+            } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+                return 'fas fa-file-archive';
+            } else {
+                return 'fas fa-file';
+            }
+        }
+        
+        // Handle approve button click in modal
+        document.getElementById('approveQuoteBtn').addEventListener('click', function() {
+            if (!currentQuoteId) return;
+            
+            if (confirm('Are you sure you want to approve this quote?')) {
+                // Send AJAX request to approve quote
+                fetch(`/rep/api/approve-quote/${currentQuoteId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        alert('Quote approved successfully');
+                        // Close modal
+                        quotePreviewModal.hide();
+                        // Reload page to refresh the list
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            }
+        });
+        
+        // Handle reject button click in modal
+        document.getElementById('rejectQuoteBtn').addEventListener('click', function() {
+            if (!currentQuoteId) return;
+            
+            const reason = prompt('Please provide a reason for rejection:');
+            if (reason) {
+                // Send AJAX request to reject quote
+                fetch(`/rep/api/reject-quote/${currentQuoteId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ reason: reason })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        alert('Quote rejected successfully');
+                        // Close modal
+                        quotePreviewModal.hide();
+                        // Reload page to refresh the list
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            }
+        });
+        
+        // Updated fetch and display items function
+        window.updatePrices = function(deliveryNoteId) {
+            // Fetch delivery note items
+            fetch(`/rep/api/delivery-items/${deliveryNoteId}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.items) {
+                        // Set the delivery note ID in the form
+                        document.getElementById('deliveryNoteId').value = deliveryNoteId;
+                        
+                        // Clear existing table rows
+                        const tableBody = document.getElementById('itemsTableBody');
+                        tableBody.innerHTML = '';
+                        
+                        // Add rows for each item
+                        data.items.forEach(item => {
+                            const row = document.createElement('tr');
+                            
+                            // Calculate default values
+                            const price = parseFloat(item.price) || 0;
+                            const costPrice = parseFloat(item.cost_price) || (price * 0.7); // Default 70% of price
+                            const markup = item.markup || (price > 0 && costPrice > 0 ? ((price / costPrice) - 1) * 100 : 30); // Default 30%
+                            
+                            row.innerHTML = `
+                                <td>${item.description}</td>
+                                <td>${item.quantity}</td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" 
+                                           class="price-input cost-price"
+                                           name="cost_price_${item.id}" 
+                                           id="cost_price_${item.id}" 
+                                           value="${costPrice.toFixed(2)}"
+                                           data-item-id="${item.id}">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" 
+                                           class="price-input selling-price" 
+                                           name="price_${item.id}" 
+                                           id="price_${item.id}" 
+                                           value="${price.toFixed(2)}"
+                                           data-item-id="${item.id}">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" 
+                                           class="price-input markup" 
+                                           name="markup_${item.id}" 
+                                           id="markup_${item.id}" 
+                                           value="${markup.toFixed(2)}"
+                                           data-item-id="${item.id}">
+                                </td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                        
+                        // Add event listeners for price calculations
+                        setupPriceCalculations();
+                        
+                        // Show the modal
+                        updatePricesModal.show();
+                    } else {
+                        alert('Error: Could not fetch delivery items');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+        };
+
+        // Add this function to set up the price calculation logic
+        function setupPriceCalculations() {
+            // When cost price changes, update markup
+            document.querySelectorAll('.cost-price').forEach(input => {
+                input.addEventListener('input', function() {
+                    const itemId = this.dataset.itemId;
+                    const costPrice = parseFloat(this.value) || 0;
+                    const sellingPrice = parseFloat(document.getElementById(`price_${itemId}`).value) || 0;
+                    
+                    if (costPrice > 0 && sellingPrice > 0) {
+                        const markup = ((sellingPrice / costPrice) - 1) * 100;
+                        document.getElementById(`markup_${itemId}`).value = markup.toFixed(2);
+                    }
+                });
+            });
+            
+            // When selling price changes, update markup
+            document.querySelectorAll('.selling-price').forEach(input => {
+                input.addEventListener('input', function() {
+                    const itemId = this.dataset.itemId;
+                    const sellingPrice = parseFloat(this.value) || 0;
+                    const costPrice = parseFloat(document.getElementById(`cost_price_${itemId}`).value) || 0;
+                    
+                    if (costPrice > 0 && sellingPrice > 0) {
+                        const markup = ((sellingPrice / costPrice) - 1) * 100;
+                        document.getElementById(`markup_${itemId}`).value = markup.toFixed(2);
+                    }
+                });
+            });
+            
+            // When markup changes, update selling price
+            document.querySelectorAll('.markup').forEach(input => {
+                input.addEventListener('input', function() {
+                    const itemId = this.dataset.itemId;
+                    const markup = parseFloat(this.value) || 0;
+                    const costPrice = parseFloat(document.getElementById(`cost_price_${itemId}`).value) || 0;
+                    
+                    if (costPrice > 0) {
+                        const sellingPrice = costPrice * (1 + (markup / 100));
+                        document.getElementById(`price_${itemId}`).value = sellingPrice.toFixed(2);
+                    }
+                });
+            });
+        }
+        
+        window.viewDelivery = function(deliveryId) {
+            // Redirect to the main delivery notes view (correct URL pattern)
+            window.location.href = `/delivery/delivery-notes/${deliveryId}/`;
+        };
+        
+        // Save prices button handler
+        document.getElementById('savePricesBtn').addEventListener('click', function() {
+            const deliveryNoteId = document.getElementById('deliveryNoteId').value;
+            const form = document.getElementById('updatePricesForm');
+            
+            // Collect all price data from form
+            const updatedItems = {};
+            document.querySelectorAll('tr').forEach(row => {
+                // Skip header row
+                if (row.querySelector('.price-input')) {
+                    const itemId = row.querySelector('.price-input').dataset.itemId;
+                    if (itemId) {
+                        updatedItems[itemId] = {
+                            price: parseFloat(document.getElementById(`price_${itemId}`).value) || 0,
+                            cost_price: parseFloat(document.getElementById(`cost_price_${itemId}`).value) || 0,
+                            markup: parseFloat(document.getElementById(`markup_${itemId}`).value) || 0
+                        };
+                    }
+                }
+            });
+            
+            // Send AJAX request to update prices
+            fetch(`/rep/api/update-prices/${deliveryNoteId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({ items: updatedItems })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(`Success! ${data.message || 'Prices updated successfully'}`);
+                    updatePricesModal.hide();
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error occurred'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+        
+        // Update the getCsrfToken function to first check for a dedicated csrf input
+        function getCsrfToken() {
+            // First try to get the token from a dedicated input
+            const tokenInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+            if (tokenInput) {
+                return tokenInput.value;
+            }
+            
+            // If not found, get from cookie
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') {
+                    return value;
+                }
+            }
+            
+            console.error('CSRF token not found');
+            return '';
+        }
+
+        // Handle collapse state indicators
+        document.querySelectorAll('.section-header').forEach(header => {
+            header.addEventListener('click', function() {
+                const isCollapsed = this.getAttribute('aria-expanded') === 'false';
+                const icon = this.querySelector('.toggle-icon');
+                
+                if (isCollapsed) {
+                    icon.style.transform = 'rotate(0deg)';
+                } else {
+                    icon.style.transform = 'rotate(-90deg)';
+                }
+            });
+        });
+        
+        // Make elements collapsed by default if desired
+        // Uncomment these lines to start with collapsed sections
+        /*
+        const quoteCollapseEl = document.getElementById('quotesCollapse');
+        const quoteCollapse = new bootstrap.Collapse(quoteCollapseEl, {
+            toggle: false
+        });
+        quoteCollapse.hide();
+        
+        const deliveryCollapseEl = document.getElementById('deliveriesCollapse');
+        const deliveryCollapse = new bootstrap.Collapse(deliveryCollapseEl, {
+            toggle: false
+        });
+        deliveryCollapse.hide();
+        */
+    });
+</script>
+{% endblock %}

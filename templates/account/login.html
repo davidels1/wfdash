@@ -1,10 +1,8 @@
 {% extends 'layouts/base-auth.html' %}
 {% load static %}
-{% load allauth %}
-{% load socialaccount %}
+{% load i18n %}
 
-
-{% block title %}Signin{% endblock title %}
+{% block title %}Login{% endblock title %}
 
 {% block content %}
 
@@ -17,49 +15,15 @@
                 <span class="r"></span>
             </div>
             <div class="card">
-                <form method="post" class="card-body text-center">
-                    {% csrf_token %}
-
-                    <div class="mb-4">
-                        <i class="feather icon-unlock auth-icon"></i>
-                    </div>
-                    <h3 class="mb-4">Login</h3>                 
-
-                    {% if form.non_field_errors %}
-                        {% for error in form.non_field_errors %}
-                            <span class="d-block mb-3 text-danger"> {{ error}} </span>
-                        {% endfor %}
-                    {% endif %}
-
-                    {% for field in form %}
-                    <div class="input-group mb-3">
-                        {{ field }}
-                    </div>
-                    {% endfor %}
-
-                    <div class="form-group text-left">
-                        <div class="checkbox checkbox-fill d-inline">
-                            <input type="checkbox" name="checkbox-fill-1" id="checkbox-fill-a1" checked="">
-                            <label for="checkbox-fill-a1" class="cr"> Save credentials</label>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary shadow-2 mb-4">Login</button>
-                    <p class="mb-2 text-muted">Forgot password? <a href="{% url 'password_reset_v1' %}">Reset</a></p>
-                    <p class="mb-0 text-muted">Don’t have an account? <a href="{% url 'register_v1' %}">Signup</a></p>
-                </form>
-
-                <div class="d-flex justify-content-center gap-3 mb-4">
-                    {% get_providers as socialaccount_providers %}
-                    {% for provider in socialaccount_providers %}
-                        <div class="border px-2 py-1">
-                            <form action="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}" method="post">
-                                {% csrf_token %}
-                                <button class="border-0 bg-transparent" type="submit">
-                                    <i class="fab fa-{{ provider.name|lower }}"></i>
-                                </button>
-                            </form>
-                        </div>
-                    {% endfor %}
+                <div class="text-center mb-4">
+                    <!-- Add your logo image here -->
+                    <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid" style="max-height: 100px;">
+                </div>
+                
+                <div class="text-center">
+                    <a href="https://wfdash.pythonanywhere.com/admin/" class="btn btn-primary btn-lg">
+                        Login
+                    </a>
                 </div>
             </div>
         </div>

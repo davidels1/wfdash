@@ -1,0 +1,447 @@
+{% extends "layouts/base.html" %}
+{% load static quote_filters %}
+{% load static %}
+
+{% block breadcrumbs %}
+<div class="page-header">
+  <div class="page-block">
+    <div class="row align-items-center">
+      <div class="col-md-12">
+        <div class="page-header-title">
+          <h5 class="m-b-10">Process Quote</h5>
+        </div>
+        <ul class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'index' %}"><i class="feather icon-home"></i></a></li>
+          <li class="breadcrumb-item"><a href="{% url 'quotes:quote_list' %}">Quotes</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'quotes:quote_detail' quote.id %}">Quote #{{ quote.quote_number }}</a></li>
+          <li class="breadcrumb-item"><span>Process</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock breadcrumbs %}
+
+<!-- Add this to the head section -->
+{% block head_css %}
+<!-- Existing CSS -->
+<style>
+    /* Add these styles for required fields */
+    .form-label span.text-danger {
+        font-size: 1.2em;
+        line-height: 0;
+    }
+    
+    .form-control.is-invalid, 
+    .was-validated .form-control:invalid,
+    .form-select.is-invalid {
+        border-color: #dc3545;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    
+    /* Shake animation for validation errors */
+    .validation-shake {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    
+    @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-2px, 0, 0); }
+        40%, 60% { transform: translate3d(2px, 0, 0); }
+    }
+
+    /* Add styles for item completion indicators */
+    .item-status-indicator {
+        font-size: 0.7rem;
+        vertical-align: middle;
+    }
+
+    /* Include in Quote checkbox styling */
+    .include-in-quote-container {
+        flex-grow: 1;
+        margin-right: 10px;
+        text-align: right;
+    }
+
+    .form-check-label {
+        font-size: 0.85rem;
+        color: #5a5a5a;
+    }
+
+    /* Selling price styling */
+    input[type="number"].selling-price {
+        transition: background-color 0.6s ease, color 0.6s ease;
+    }
+
+    input[type="number"].selling-price:hover {
+        opacity: 0.9;
+    }
+
+    /* Supplier select styling */
+    .supplier-select + .select2-container .select2-selection {
+        background-color: rgb(153, 205, 248) !important;
+        transition: background-color 0.6s ease, color 0.6s ease;
+    }
+
+    .supplier-select + .select2-container .select2-selection .select2-selection__rendered {
+        color: #000 !important;
+    }
+
+    /* PIN error animation */
+    .shake {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        transform: translate3d(0, 0, 0);
+    }
+
+    @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+        40%, 60% { transform: translate3d(4px, 0, 0); }
+    }
+
+    .item-in-quote {
+        border-left: 4px solid #28a745;
+    }
+
+    .item-saved {
+        box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+        transition: box-shadow 0.5s ease;
+    }
+    </style>
+
+{{ block.super }}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock head_css %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- NEW: Quote Overview Card -->
+    <div class="card mb-3">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Quote #{{ quote.quote_number }} Overview</h5>
+                <span class="badge {% if quote.status == 'new' %}bg-warning{% elif quote.status == 'claimed' %}bg-info{% elif quote.status == 'processed' %}bg-primary{% else %}bg-success{% endif %}">
+                    {{ quote.status|title }}
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Customer Information -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="feather icon-user me-2"></i>Customer Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Name:</strong> {{ quote.customer.customer }}</p>
+                            <p><strong>Company:</strong> {{ quote.customer.company }}</p>
+                            <p><strong>Email:</strong> {{ quote.customer.email }}</p>
+                            <p><strong>Phone:</strong> {{ quote.customer.number }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quote Details -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="feather icon-file-text me-2"></i>Quote Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Created:</strong> {{ quote.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Reference:</strong> {{ quote.quote_reference|default:"None" }}</p>
+                            <p><strong>Description:</strong> {{ quote.description|truncatechars:50 }}</p>
+                            <p><strong>Items:</strong> {{ quote.items.count }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Staff Information -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="feather icon-users me-2"></i>Staff Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Requested By:</strong> {{ quote.rep.get_full_name|default:quote.rep.username }}</p>
+                            <p><strong>Assigned To:</strong> {{ quote.assigned_to.get_full_name|default:quote.assigned_to.username|default:"Not Assigned" }}</p>
+                            <p><strong>Company Letterhead:</strong> {{ quote.company_letterhead }}</p>
+                            <p><strong>Last Updated:</strong> {{ quote.updated_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Original card starts here -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>Process Quote #{{ quote.quote_number }}</h5>
+                <button type="button" class="btn btn-primary" id="add-item-btn">
+                    <i class="feather icon-plus"></i> Add Item
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" id="quote-process-form">
+                {% csrf_token %}
+                <!-- Replace the company letterhead dropdown with buttons
+                <div class="mb-3">
+                    <label class="form-label">Company Letterhead</label>
+                    <div class="d-flex gap-2">
+                         Hidden input to maintain form value
+                        <input type="hidden" name="company_letterhead" id="company_letterhead" value="{{ quote.company_letterhead }}">
+
+                        CNL Button
+                        <button type="button" class="btn letterhead-btn {% if quote.company_letterhead == 'CNL' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                                data-letterhead="CNL">
+                            <i class="feather icon-file-text me-1"></i> CNL Mining
+                        </button>
+
+                         Isherwood Button
+                        <button type="button" class="btn letterhead-btn {% if quote.company_letterhead == 'ISH' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                                data-letterhead="ISH">
+                            <i class="feather icon-file-text me-1"></i> Isherwood Engineering
+                        </button>
+                    </div>
+                </div>-->
+                <div id="items-container" data-quote-id="{{ quote.id }}">
+                    {% for item in items %}
+                    <div class="item-section card mb-3 {% if item.included_in_quote %}item-in-quote{% endif %}" data-item-id="{{ item.id }}">
+                        {% include "quotes/partials/quote_item.html" with item=item suppliers=suppliers forloop=forloop checked=True %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- Letterhead-specific quote generation buttons
+                <div class="text-end">
+                    <button type="submit" class="btn btn-success">Save All Items</button>
+                </div> 
+            </form>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">Save Changes</button>-->
+
+                <!-- Letterhead-specific quote generation buttons -->
+                <div class="mt-3">
+                    <button type="button" class="btn btn-success generate-quote-btn" data-letterhead="CNL">
+                        <i class="feather icon-file-text"></i> Generate CNL Quote
+                    </button>
+                    <button type="button" class="btn btn-info generate-quote-btn" data-letterhead="ISH">
+                        <i class="feather icon-file-text"></i> Generate Isherwood Quote
+                    </button>
+                </div>
+            </div>
+            {% if quote.all_items_complete %}
+            <div class="text-end mt-3">
+                <a href="{% url 'quotes:generate_quote_pdf' quote.id %}"
+                    id="generateQuoteBtn"
+                    class="btn btn-success">
+                    <i class="feather icon-file-text"></i> Generate Quote PDF
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- New Email Details Card -->
+    <div class="col-sm-12 mt-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Email Quote Details</h5>
+                <button class="btn btn-primary btn-sm" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#emailDetails">
+                    <i class="feather icon-eye"></i> Toggle Details
+                </button>
+            </div>
+            <div class="collapse show" id="emailDetails">
+                <div class="card-body">
+                    {% if quote.email_sender %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h6>From:</h6>
+                                <p>{{ quote.email_sender }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Subject:</h6>
+                                <p>{{ quote.email_subject }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h6>Email Content:</h6>
+                            <pre class="p-3 bg-light rounded">{{ quote.email_body }}</pre>
+                        </div>
+
+                        {% if quote.has_attachments %}
+                            <div class="mb-3">
+                                <h6>Attachments:</h6>
+                                <ul class="list-group">
+                                    {% for attachment in quote.attachments.all %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <a href="{{ attachment.file.url }}" target="_blank">
+                                                <i class="feather icon-paperclip"></i>
+                                                {{ attachment.filename }}
+                                            </a>
+                                            <span class="text-muted small">
+                                                {{ attachment.uploaded_at|date:"Y-m-d H:i" }}
+                                            </span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted">This quote was not created from an email.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this after the Email Details Card -->
+    <div class="col-sm-12 mt-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Quote Attachments & Voice Notes</h5>
+                <button class="btn btn-primary btn-sm" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#attachmentDetails">
+                    <i class="feather icon-eye"></i> Toggle Details
+                </button>
+            </div>
+            <div class="collapse show" id="attachmentDetails">
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Quote Photo Display -->
+                        {% if quote.photo %}
+                        <div class="col-md-6 mb-4">
+                            <h6>Quote Photo:</h6>
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <a href="{{ quote.photo.url }}" target="_blank">
+                                        <img src="{{ quote.photo.url }}" alt="Quote Photo" class="img-fluid rounded" 
+                                             style="max-height: 200px; max-width: 100%;">
+                                    </a>
+                                    <p class="small text-muted mt-2">Click to view full size</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Voice Notes Display -->
+                        {% if quote.voice_notes.exists %}
+                        <div class="col-md-6 mb-4">
+                            <h6>Voice Notes:</h6>
+                            <div class="list-group">
+                                {% for voice_note in quote.voice_notes.all %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Voice Note</h6>
+                                        <small>{{ voice_note.created_at|date:"Y-m-d H:i" }}</small>
+                                    </div>
+                                    <div class="mt-2">
+                                        <audio controls style="width: 100%;">
+                                            <source src="{{ voice_note.audio_file.url }}" type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- File Attachments Display -->
+                    {% if quote.attachments.exists %}
+                    <div class="mt-4">
+                        <h6>File Attachments:</h6>
+                        <div class="row">
+                            {% for attachment in quote.attachments.all %}
+                            <div class="col-md-3 col-sm-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body p-2 text-center">
+                                        <a href="{{ attachment.file.url }}" target="_blank">
+                                            {% if attachment.file.name|lower|endswith:'.jpg,.jpeg,.png,.gif' %}
+                                                <img src="{{ attachment.file.url }}" class="img-thumbnail" style="max-height: 100px;">
+                                            {% elif attachment.file.name|lower|endswith:'.pdf' %}
+                                                <i class="feather icon-file-text text-danger" style="font-size: 2rem;"></i>
+                                            {% else %}
+                                                <i class="feather icon-file" style="font-size: 2rem;"></i>
+                                            {% endif %}
+                                        </a>
+                                        <p class="small mb-1 text-truncate">{{ attachment.filename }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mt-3">No file attachments found.</p>
+                    {% endif %}
+                    
+                    {% if not quote.photo and not quote.voice_notes.exists and not quote.attachments.exists %}
+                    <div class="alert alert-light text-center">
+                        <i class="feather icon-file-text"></i> No attachments or voice notes found for this quote.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this somewhere in your page, it can be hidden -->
+    <div class="d-none">
+        <div class="customer-info">
+            <span class="customer-email">{{ quote.customer.email }}</span>
+        </div>
+        <div class="rep-info">
+            <span class="rep-email">{{ quote.rep.email }}</span>
+        </div>
+    </div>
+
+    <!-- Manager PIN Override Modal -->
+    <div class="modal fade" id="pinOverrideModal" tabindex="-1" aria-labelledby="pinOverrideModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pinOverrideModalLabel">Manager Override Required</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-danger">
+                        <i class="feather icon-alert-triangle me-1"></i>
+                        The markup is below 20%. Manager approval required.
+                    </p>
+                    <div class="mb-3">
+                        <label for="managerPin" class="form-label">Enter Manager PIN</label>
+                        <input type="password" class="form-control" id="managerPin" placeholder="Enter PIN">
+                        <div class="invalid-feedback">Invalid PIN. Please try again or contact a manager.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="validatePinBtn">Validate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block javascripts %}
+    {{ block.super }}
+    
+{% endblock %}
+<!-- No inline JavaScript needed - everything is in the JS file -->
+{% block extra_js %}
+    <script src="{% static '/js/quote_process_n.js' %}"></script>
+
+    <script src="{% static '/js/quote_email.js' %}"></script>
+{% endblock %}

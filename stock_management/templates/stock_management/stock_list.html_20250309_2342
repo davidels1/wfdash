@@ -1,0 +1,1129 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Current Stock</h5>
+            <div>
+                <div class="btn-group me-2" role="group">
+                    <button type="button" class="btn btn-outline-secondary active" id="cardViewBtn">
+                        <i class="feather icon-grid"></i> Card View
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="tableViewBtn">
+                        <i class="feather icon-list"></i> Table View
+                    </button>
+                </div>
+                <button type="button" class="btn btn-primary" id="bulkInvoiceBtn" disabled>
+                    <i class="feather icon-file-text me-1"></i> Bulk Update Invoice
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Search and filter section -->
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="feather icon-search"></i></span>
+                        <input type="text" id="stockFilter" class="form-control" placeholder="Search by description, supplier, PO number...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearFilter">
+                            <i class="feather icon-x"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="statusFilter" class="form-select">
+                        <option value="all">All Status</option>
+                        <option value="verified">Verified</option>
+                        <option value="invoiced">Invoiced</option>
+                        <option value="office_stock">Office Stock</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Card View (initially visible) -->
+            <div id="cardView" class="view-container">
+                {% if grouped_items %}
+                    {% for order_number, items in grouped_items.items %}
+                    <div class="order-section mb-4 filter-container">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
+                            <h6 class="order-number">Order #{{ order_number }}</h6>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input select-all-order" 
+                                       data-order="{{ order_number }}" id="selectAll{{ order_number }}">
+                                <label class="form-check-label" for="selectAll{{ order_number }}">
+                                    Select All
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            {% for item in items %}
+                            <div class="col-12 col-md-6 col-lg-4 mb-3 stock-item" 
+                                 data-description="{{ item.order_item.description|lower }}"
+                                 data-supplier="{{ item.collection.supplier.suppliername|default:'no supplier'|lower }}"
+                                 data-po="{{ item.order_item.purchase_order.po_number|default:'no po'|lower }}"
+                                 data-status="{{ item.status|default:'unknown' }}">
+                                <div class="card h-100 {% if item.invoice_number %}border-success{% endif %}">
+                                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-2">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input item-select" 
+                                                   data-id="{{ item.id }}" 
+                                                   data-order="{{ order_number }}">
+                                        </div>
+                                        <span class="badge {% if item.collection.supplier.suppliername %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ item.collection.supplier.suppliername|default:"No Supplier" }}
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">{{ item.order_item.description }}</h6>
+                                        <p class="mb-1"><strong>Quantity:</strong> {{ item.received_qty }}</p>
+                                        
+                                        <p class="mb-1">
+                                            <strong>Cost:</strong> 
+                                            {% if item.order_item.cost_price %}
+                                                R{{ item.order_item.cost_price|floatformat:2 }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </p>
+                                        
+                                        {% if item.collection.supplier.suppliername %}
+                                        <p class="mb-2"><strong>PO:</strong> 
+                                            {{ item.order_item.purchase_order.po_number|default:"No PO" }}
+                                        </p>
+                                        {% endif %}
+                                        
+                                        {% if item.invoice_number %}
+                                            <p class="mb-2 text-success">
+                                                <strong>Invoice:</strong> {{ item.invoice_number }}
+                                                <br>
+                                                <small>{{ item.invoice_date }}</small>
+                                            </p>
+                                        {% endif %}
+                                        
+                                        <div class="mt-3">
+                                            {% if not item.invoice_number %}
+                                                <button type="button" class="btn btn-sm btn-primary invoice-btn" 
+                                                        data-item-id="{{ item.id }}">
+                                                    <i class="feather icon-file-text"></i> Add Invoice
+                                                </button>
+                                            {% else %}
+                                                <span class="badge bg-success">Invoiced</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center">No stock items found</p>
+                {% endif %}
+            </div>
+
+            <!-- Table View (initially hidden) -->
+            <div id="tableView" class="view-container" style="display:none;">
+                {% if grouped_items %}
+                    {% for order_number, items in grouped_items.items %}
+                    <div class="order-table-section mb-4 filter-container">
+                        <h6 class="border-bottom pb-2 d-flex justify-content-between align-items-center">
+                            <span class="order-number">Order #{{ order_number }}</span>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input select-all-order-table" 
+                                       data-order="{{ order_number }}" id="tableSelectAll{{ order_number }}">
+                                <label class="form-check-label" for="tableSelectAll{{ order_number }}">
+                                    Select All
+                                </label>
+                            </div>
+                        </h6>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="invisible">
+                                            </div>
+                                        </th>
+                                        <th class="sortable">Description</th>
+                                        <th class="sortable numeric">Quantity</th>
+                                        <th class="sortable numeric">Cost Price</th>
+                                        <th class="sortable">Supplier</th>
+                                        <th class="sortable">PO #</th>
+                                        <th class="sortable">Status</th>
+                                        <th>Invoice</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in items %}
+                                    <tr class="{% if item.invoice_number %}table-success{% endif %} stock-item"
+                                        data-description="{{ item.order_item.description|lower }}"
+                                        data-supplier="{{ item.collection.supplier.suppliername|default:'no supplier'|lower }}"
+                                        data-po="{{ item.order_item.purchase_order.po_number|default:'no po'|lower }}"
+                                        data-status="{{ item.status|default:'unknown' }}">
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input item-select-table" 
+                                                       data-id="{{ item.id }}" 
+                                                       data-order="{{ order_number }}">
+                                            </div>
+                                        </td>
+                                        <td>{{ item.order_item.description }}</td>
+                                        <td>{{ item.received_qty }}</td>
+                                        <td>
+                                            {% if item.order_item.cost_price %}
+                                                R{{ item.order_item.cost_price|floatformat:2 }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ item.collection.supplier.suppliername|default:"No Supplier" }}</td>
+                                        <td>{{ item.order_item.purchase_order.po_number|default:"No PO" }}</td>
+                                        <td>
+                                            {% if item.invoice_number %}
+                                                <span class="badge bg-success">Invoiced</span>
+                                            {% else %}
+                                                <span class="badge bg-info">{{ item.status|default:"Verified" }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.invoice_number %}
+                                                {{ item.invoice_number }}<br>
+                                                <small>{{ item.invoice_date }}</small>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if not item.invoice_number %}
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-primary invoice-btn"
+                                                    data-item-id="{{ item.id }}">
+                                                <i class="feather icon-file-text"></i> Add Invoice
+                                            </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center">No stock items found</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Single Invoice Modal -->
+<div class="modal fade" id="invoiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Invoice Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="invoiceForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Invoice Number *</label>
+                        <input type="text" class="form-control" id="invoice_number" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Invoice Date *</label>
+                        <input type="date" class="form-control" id="invoice_date" required>
+                    </div>
+                    <input type="hidden" id="itemId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveInvoiceBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Invoice Modal -->
+<div class="modal fade" id="bulkInvoiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Update Invoice Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="orderValidationAlert" class="alert alert-success order-validation-message">
+                    <i class="feather icon-check-circle me-1"></i> All selected items are from the same order
+                    <span id="selectedItemsCount" style="display:none;"></span>
+                </div>
+                <form id="bulkInvoiceForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Invoice Number *</label>
+                        <input type="text" class="form-control" id="bulk_invoice_number" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Invoice Date *</label>
+                        <input type="date" class="form-control" id="bulk_invoice_date" required>
+                    </div>
+                    <div class="overflow-auto" style="max-height: 200px">
+                        <ul class="list-group" id="selectedItemsList"></ul>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="bulkSaveBtn">Save All</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+    /* Modal styles for mobile */
+    .modal {
+        z-index: 1050 !important;
+    }
+    .modal-backdrop {
+        z-index: 1040 !important;
+    }
+    .modal-dialog {
+        margin: 1rem auto;
+        max-width: 95%;
+    }
+    @media (min-width: 576px) {
+        .modal-dialog {
+            max-width: 500px;
+        }
+    }
+    
+    /* Form improvements for mobile */
+    .modal-body input {
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+    
+    /* Card and button styling */
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .invoice-btn {
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    /* Checkbox styling */
+    .form-check-input {
+        cursor: pointer;
+        width: 1.2em;
+        height: 1.2em;
+    }
+    
+    /* Selected items */
+    .card.selected {
+        border: 2px solid #4e73df;
+        box-shadow: 0 0 10px rgba(78, 115, 223, 0.3);
+    }
+    
+    /* Bulk button visibility */
+    #bulkInvoiceBtn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+    
+    /* Selected items list */
+    #selectedItemsList {
+        margin-top: 10px;
+    }
+    #selectedItemsList li {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    /* Toast custom colors */
+    .colored-toast.toast-success {
+        background-color: #1cc88a !important;
+    }
+    .colored-toast.toast-error {
+        background-color: #e74a3b !important;
+    }
+
+    /* Card Selection Style */
+    .card.selected {
+        border: 2px solid #4e73df !important;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    
+    /* Table Row Selection Style */
+    .table-row-selected {
+        background-color: rgba(78, 115, 223, 0.15) !important;
+    }
+    
+    /* View Container Transitions */
+    .view-container {
+        transition: opacity 0.2s ease-in-out;
+    }
+    
+    /* Table Styling */
+    .table {
+        font-size: 0.9rem;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    /* View Toggle Button Styling */
+    .btn-group .btn.active {
+        background-color: #4e73df;
+        color: white;
+    }
+    
+    /* Sortable Columns */
+    .sortable {
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .sortable:hover {
+        background-color: #f8f9fc;
+    }
+    
+    .sortable::after {
+        content: '⇅';
+        position: absolute;
+        right: 8px;
+        opacity: 0.3;
+    }
+    
+    .sortable.sort-asc::after {
+        content: '↑';
+        opacity: 1;
+    }
+    
+    .sortable.sort-desc::after {
+        content: '↓';
+        opacity: 1;
+    }
+    
+    /* Empty results message */
+    .empty-results {
+        display: none;
+        padding: 2rem;
+        text-align: center;
+        font-style: italic;
+        color: #6c757d;
+    }
+
+    /* Order conflict highlighting */
+    .card.order-conflict {
+        box-shadow: 0 0 8px rgba(0,0,0,0.2);
+        transition: border-color 0.3s ease;
+    }
+
+    tr.order-conflict {
+        transition: border-left 0.3s ease;
+    }
+
+    /* Validation message in bulk modal */
+    .order-validation-message {
+        margin-bottom: 15px;
+    }
+
+    #order-conflict-alert {
+        animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Make sure this is loaded -->
+<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize modals
+    const invoiceModal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+    const bulkInvoiceModal = new bootstrap.Modal(document.getElementById('bulkInvoiceModal'));
+    const invoiceForm = document.getElementById('invoiceForm');
+    const bulkInvoiceForm = document.getElementById('bulkInvoiceForm');
+    const bulkInvoiceBtn = document.getElementById('bulkInvoiceBtn');
+    
+    // Set today's date as default for both forms
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('invoice_date').value = today;
+    document.getElementById('bulk_invoice_date').value = today;
+    
+    // Track selected items
+    const selectedItems = new Set();
+
+    // Initialize invoice-order mapping
+    let invoiceOrderMap = {};
+    
+    // Try to load existing invoice-order mapping from localStorage
+    try {
+        const savedMap = localStorage.getItem('invoiceOrderMap');
+        if (savedMap) {
+            invoiceOrderMap = JSON.parse(savedMap);
+            
+            // Clean up old entries (older than 24 hours)
+            const now = new Date().getTime();
+            for (const invoice in invoiceOrderMap) {
+                if (now - invoiceOrderMap[invoice].timestamp > 24 * 60 * 60 * 1000) {
+                    delete invoiceOrderMap[invoice];
+                }
+            }
+            // Save cleaned map back
+            localStorage.setItem('invoiceOrderMap', JSON.stringify(invoiceOrderMap));
+        }
+    } catch (e) {
+        console.error("Error loading invoice-order map from localStorage:", e);
+        invoiceOrderMap = {};
+    }
+    
+    // Handle individual invoice button clicks
+    document.querySelectorAll('.invoice-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            document.getElementById('itemId').value = itemId;
+            document.getElementById('invoice_number').value = '';
+            
+            // Get order number for this item
+            const orderContainer = this.closest('.order-section') || this.closest('.order-table-section');
+            const orderNumber = orderContainer.querySelector('.order-number').textContent.replace('Order #', '').trim();
+            
+            // Store order number for validation during submission
+            document.getElementById('itemId').setAttribute('data-order', orderNumber);
+            
+            // Show modal with slight delay for better mobile response
+            setTimeout(() => invoiceModal.show(), 50);
+        });
+    });
+    
+    // Individual form submission with order validation
+    document.getElementById('saveInvoiceBtn').addEventListener('click', function(event) {
+        // Store reference to the button
+        const saveButton = this;
+        
+        try {
+            if (!invoiceForm.checkValidity()) {
+                invoiceForm.reportValidity();
+                return;
+            }
+
+            const itemId = document.getElementById('itemId').value;
+            const orderNumber = document.getElementById('itemId').getAttribute('data-order');
+            const invoiceNumber = document.getElementById('invoice_number').value.trim();
+            
+            // Check if this invoice number is already used for a different order
+            if (invoiceOrderMap[invoiceNumber] && 
+                invoiceOrderMap[invoiceNumber].orderNumber !== orderNumber) {
+                
+                // Show warning and ask for confirmation using your modal
+                const confirmMsg = `<p>Invoice #<strong>${invoiceNumber}</strong> is already used for Order #<strong>${invoiceOrderMap[invoiceNumber].orderNumber}</strong>.</p>
+                                  <p>You are trying to assign it to Order #<strong>${orderNumber}</strong>.</p>
+                                  <p class="alert alert-warning"><i class="feather icon-alert-triangle me-1"></i> This could cause issues with billing.</p>`;
+                
+                // Create and store modal instance in a variable accessible to both buttons
+                showConfirmationModal(
+                    'Invoice Number Conflict', 
+                    confirmMsg, 
+                    // On Confirm (Yes) callback:
+                    async function() {
+                        await saveInvoiceData(saveButton, itemId, invoiceNumber, orderNumber);
+                    }
+                    // No explicit callback needed for "No" - modal just closes
+                );
+            } else {
+                // No conflict, proceed with saving
+                saveInvoiceData(saveButton, itemId, invoiceNumber, orderNumber);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toastr.error(error.message || 'An unexpected error occurred', 'Error');
+            this.disabled = false;
+            this.textContent = 'Save';
+        }
+    });
+
+    // Helper function for saving invoice data
+    async function saveInvoiceData(button, itemId, invoiceNumber, orderNumber) {
+        try {
+            const formData = new FormData();
+            formData.append('invoice_number', invoiceNumber);
+            formData.append('invoice_date', document.getElementById('invoice_date').value);
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Disable button and show loading state
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+            
+            const response = await fetch(`/stock/update-invoice/${itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const textContent = await response.text();
+                console.error('Non-JSON response:', textContent);
+                throw new Error('Server returned an invalid response format');
+            }
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || `Error: ${response.status}`);
+            }
+            
+            if (data.status === 'success') {
+                // Save the invoice-order mapping
+                invoiceOrderMap[invoiceNumber] = {
+                    orderNumber: orderNumber,
+                    timestamp: new Date().getTime()
+                };
+                
+                // Save to localStorage
+                try {
+                    localStorage.setItem('invoiceOrderMap', JSON.stringify(invoiceOrderMap));
+                } catch (e) {
+                    console.warn("Could not save to localStorage:", e);
+                }
+                
+                // Show success notification
+                toastr.success('Invoice details updated successfully', 'Success');
+                // Reload after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1800);
+            } else {
+                throw new Error(data.message || 'Failed to update invoice');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toastr.error(error.message || 'An unexpected error occurred', 'Error');
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Save';
+            invoiceModal.hide();
+        }
+    }
+
+    // Bulk invoice form submission with order validation
+    document.getElementById('bulkSaveBtn').addEventListener('click', function() {
+        // Store reference to the button
+        const bulkSaveButton = this;
+        
+        try {
+            if (!bulkInvoiceForm.checkValidity()) {
+                bulkInvoiceForm.reportValidity();
+                return;
+            }
+            
+            const itemIds = Array.from(selectedItems);
+            if (itemIds.length === 0) {
+                toastr.warning('No items selected', 'Warning');
+                return;
+            }
+            
+            const invoiceNumber = document.getElementById('bulk_invoice_number').value.trim();
+            const invoiceDate = document.getElementById('bulk_invoice_date').value;
+            
+            // Get the order number from the validation
+            const validation = validateSingleOrderSelection();
+            if (!validation.valid) {
+                toastr.error(validation.message, 'Cannot proceed');
+                return;
+            }
+            
+            // Check if this invoice is already used for a different order
+            if (invoiceOrderMap[invoiceNumber] && 
+                invoiceOrderMap[invoiceNumber].orderNumber !== validation.order) {
+                
+                // Show warning and ask for confirmation using custom modal
+                const confirmMsg = `<p>Invoice #<strong>${invoiceNumber}</strong> is already used for Order #<strong>${invoiceOrderMap[invoiceNumber].orderNumber}</strong>.</p>
+                                 <p>You are trying to assign it to Order #<strong>${validation.order}</strong>.</p>
+                                 <p class="alert alert-warning"><i class="feather icon-alert-triangle me-1"></i> This could cause issues with billing.</p>`;
+                
+                showConfirmationModal(
+                    'Invoice Number Conflict', 
+                    confirmMsg, 
+                    // Only executed if "Yes" is clicked
+                    async function() {
+                        await saveBulkInvoiceData(bulkSaveButton, itemIds, invoiceNumber, invoiceDate, validation.order);
+                    }
+                );
+            } else {
+                // No conflict, proceed with saving
+                saveBulkInvoiceData(bulkSaveButton, itemIds, invoiceNumber, invoiceDate, validation.order);
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            toastr.error(error.message || 'An unexpected error occurred', 'Error');
+            this.disabled = false;
+            this.innerHTML = 'Save All';
+        }
+    });
+
+    // Helper function for bulk save
+    async function saveBulkInvoiceData(button, itemIds, invoiceNumber, invoiceDate, orderNumber) {
+        try {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Disable button and show loading state
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+            
+            // Show info toast to indicate processing has started
+            toastr.info(`Processing ${itemIds.length} items...`, 'Please wait');
+            
+            const response = await fetch('/stock/bulk-update-invoice/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    item_ids: itemIds,
+                    invoice_number: invoiceNumber,
+                    invoice_date: invoiceDate
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || `Error: ${response.status}`);
+            }
+            
+            if (data.status === 'success' || data.status === 'partial') {
+                // Save the invoice-order mapping
+                invoiceOrderMap[invoiceNumber] = {
+                    orderNumber: orderNumber,
+                    timestamp: new Date().getTime()
+                };
+                
+                // Save to localStorage
+                try {
+                    localStorage.setItem('invoiceOrderMap', JSON.stringify(invoiceOrderMap));
+                } catch (e) {
+                    console.warn("Could not save to localStorage:", e);
+                }
+                
+                if (data.status === 'success') {
+                    // Show success notification
+                    toastr.success(`${itemIds.length} items updated successfully`, 'Success');
+                } else {
+                    toastr.warning(`${data.success_count} items updated. ${data.error_count} failed.`, 'Partial Success');
+                }
+                
+                // Reload after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1800);
+            } else {
+                throw new Error(data.message || 'Failed to update invoices');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toastr.error(error.message || 'An unexpected error occurred', 'Error');
+        } finally {
+            button.disabled = false;
+            button.innerHTML = 'Save All';
+            bulkInvoiceModal.hide();
+        }
+    }
+
+
+
+        // Handle modal events for iOS
+        const modalElements = document.querySelectorAll('.modal');
+        modalElements.forEach(modalElement => {
+            modalElement.addEventListener('shown.bs.modal', function() {
+                // Fix body scrolling on iOS
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${window.scrollY}px`;
+            });
+        
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                // Restore body scrolling on iOS
+                const scrollY = document.body.style.top;
+                document.body.style.position = '';
+                document.body.style.top = '';
+                window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            });
+        });
+    
+        // ==============================
+        // View Toggling
+        // ==============================
+        const cardViewBtn = document.getElementById('cardViewBtn');
+        const tableViewBtn = document.getElementById('tableViewBtn');
+        const cardView = document.getElementById('cardView');
+        const tableView = document.getElementById('tableView');
+        
+        // View toggling
+        cardViewBtn.addEventListener('click', function() {
+            cardView.style.display = 'block';
+            tableView.style.display = 'none';
+            cardViewBtn.classList.add('active');
+            tableViewBtn.classList.remove('active');
+            localStorage.setItem('stockViewPreference', 'card');
+        });
+        
+        tableViewBtn.addEventListener('click', function() {
+            cardView.style.display = 'none';
+            tableView.style.display = 'block';
+            tableViewBtn.classList.add('active');
+            cardViewBtn.classList.remove('active');
+            localStorage.setItem('stockViewPreference', 'table');
+        });
+        
+        // Load user's preference if available
+        const storedPreference = localStorage.getItem('stockViewPreference');
+        if (storedPreference === 'table') {
+            tableViewBtn.click();
+        } else {
+            cardViewBtn.click(); // Default to card view
+        }
+        
+        // ==============================
+        // Item Selection
+        // ==============================
+        // Update bulk button state based on selections
+        function updateBulkButton() {
+            const bulkBtn = document.getElementById('bulkInvoiceBtn');
+            if (selectedItems.size > 0) {
+                bulkBtn.disabled = false;
+            } else {
+                bulkBtn.disabled = true;
+            }
+        }
+        
+        // Update visual indicator for selected items
+        function updateSelectionVisuals() {
+            // Update card highlighting
+            document.querySelectorAll('.item-select').forEach(checkbox => {
+                const card = checkbox.closest('.card');
+                if (card && selectedItems.has(checkbox.dataset.id)) {
+                    card.classList.add('selected');
+                } else if (card) {
+                    card.classList.remove('selected');
+                }
+            });
+            
+            // Update table row highlighting
+            document.querySelectorAll('.item-select-table').forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                if (row && selectedItems.has(checkbox.dataset.id)) {
+                    row.classList.add('table-row-selected');
+                } else if (row) {
+                    row.classList.remove('table-row-selected');
+                }
+            });
+            
+            // Keep checkboxes in sync between views
+            document.querySelectorAll('.item-select, .item-select-table').forEach(checkbox => {
+                checkbox.checked = selectedItems.has(checkbox.dataset.id);
+            });
+        }
+        
+        // ==============================
+        // Search and Filtering
+        // ==============================
+        const stockFilter = document.getElementById('stockFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const clearFilterBtn = document.getElementById('clearFilter');
+        
+        function filterItems() {
+            const searchValue = stockFilter.value.toLowerCase();
+            const statusValue = statusFilter.value;
+            
+            // Track if any results are found for each order section
+            let orderVisibility = {};
+            let totalVisibleItems = 0;
+            
+            // Filter function that works for both views
+            document.querySelectorAll('.stock-item').forEach(item => {
+                const description = item.dataset.description;
+                const supplier = item.dataset.supplier;
+                const po = item.dataset.po;
+                const status = item.dataset.status;
+                const orderSection = item.closest('.filter-container');
+                const orderNumber = orderSection.querySelector('.order-number').textContent.trim();
+                
+                // Initialize order visibility
+                if (!orderVisibility[orderNumber]) {
+                    orderVisibility[orderNumber] = 0;
+                }
+                
+                // Check if item matches search
+                const matchesSearch = !searchValue || 
+                    description.includes(searchValue) || 
+                    supplier.includes(searchValue) || 
+                    po.includes(searchValue);
+                
+                // Check if item matches status filter
+                const matchesStatus = statusValue === 'all' || status === statusValue;
+                
+                // Show/hide item based on filters
+                if (matchesSearch && matchesStatus) {
+                    item.style.display = '';
+                    orderVisibility[orderNumber]++;
+                    totalVisibleItems++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show/hide order sections based on their visible items
+            document.querySelectorAll('.filter-container').forEach(container => {
+                const orderNumber = container.querySelector('.order-number').textContent.trim();
+                container.style.display = orderVisibility[orderNumber] > 0 ? '' : 'none';
+            });
+            
+            // Show empty results message if needed
+            const emptyMessage = document.querySelector('.empty-results');
+            if (emptyMessage) {
+                emptyMessage.style.display = totalVisibleItems === 0 ? 'block' : 'none';
+            }
+        }
+        
+        // Add filter event listeners
+        stockFilter.addEventListener('input', filterItems);
+        statusFilter.addEventListener('change', filterItems);
+        
+        // Clear filter button
+        clearFilterBtn.addEventListener('click', function() {
+            stockFilter.value = '';
+            statusFilter.value = 'all';
+            filterItems();
+        });
+        
+        // ==============================
+        // Table Sorting
+        // ==============================
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', function() {
+                const table = this.closest('table');
+                const index = Array.from(this.parentNode.children).indexOf(this);
+                const isNumeric = this.classList.contains('numeric');
+                const isAscending = !this.classList.contains('sort-asc');
+                
+                // Update sort indicators
+                document.querySelectorAll('.sortable').forEach(h => {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                });
+                
+                this.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+                
+                // Get all order sections and sort within each
+                document.querySelectorAll('.order-table-section').forEach(orderSection => {
+                    const tbody = orderSection.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    
+                    rows.sort((a, b) => {
+                        let aValue = a.children[index].textContent.trim();
+                        let bValue = b.children[index].textContent.trim();
+                        
+                        if (isNumeric) {
+                            return isAscending 
+                                ? parseFloat(aValue) - parseFloat(bValue) 
+                                : parseFloat(bValue) - parseFloat(aValue);
+                        } else {
+                            return isAscending 
+                                ? aValue.localeCompare(bValue) 
+                                : bValue.localeCompare(aValue);
+                        }
+                    });
+                    
+                    // Remove rows and re-add in sorted order
+                    rows.forEach(row => tbody.appendChild(row));
+                });
+            });
+        });
+    
+        // ==============================
+        // Order Validation Functions
+        // ==============================
+        
+        // Track orders of selected items
+        function getSelectedItemOrders() {
+            const orderGroups = {};
+            
+            selectedItems.forEach(itemId => {
+                // Find which order this item belongs to
+                const checkbox = document.querySelector(`.item-select[data-id="${itemId}"], .item-select-table[data-id="${itemId}"]`);
+                if (checkbox) {
+                    const orderNumber = checkbox.dataset.order;
+                    if (!orderGroups[orderNumber]) {
+                        orderGroups[orderNumber] = [];
+                    }
+                    orderGroups[orderNumber].push(itemId);
+                }
+            });
+            
+            return orderGroups;
+        }
+    
+        // Check if all selected items belong to the same order
+        function validateSingleOrderSelection() {
+            const orderGroups = getSelectedItemOrders();
+            const orders = Object.keys(orderGroups);
+            
+            // If no items or multiple orders selected
+            if (orders.length === 0) {
+                return { valid: false, message: 'No items selected' };
+            } else if (orders.length > 1) {
+                return { 
+                    valid: false, 
+                    message: `Items from ${orders.length} different orders selected. Please select items from only one order.`,
+                    orders: orderGroups
+                };
+            }
+            
+            // Valid - all items from the same order
+            return { 
+                valid: true, 
+                order: orders[0],
+                items: orderGroups[orders[0]]
+            };
+        }
+    
+        // Visual feedback for order conflicts
+        function highlightOrderConflicts(orderGroups) {
+            // First reset all highlights
+            document.querySelectorAll('.card.order-conflict').forEach(card => {
+                card.classList.remove('order-conflict');
+                card.style.borderColor = '';
+            });
+            document.querySelectorAll('tr.order-conflict').forEach(row => {
+                row.classList.remove('order-conflict');
+                row.style.borderLeft = '';
+            });
+            
+            // Generate a color for each order
+            const colors = ['#f6c23e', '#36b9cc', '#1cc88a', '#e74a3b', '#4e73df'];
+            
+            // Apply color borders to items by order
+            let colorIndex = 0;
+            for (const [orderNumber, itemIds] of Object.entries(orderGroups)) {
+                const color = colors[colorIndex % colors.length];
+                colorIndex++;
+                
+                // Apply to each item in this order
+                itemIds.forEach(itemId => {
+                    // Card view
+                    const cardCheckbox = document.querySelector(`.item-select[data-id="${itemId}"]`);
+                    if (cardCheckbox) {
+                        const card = cardCheckbox.closest('.card');
+                        if (card) {
+                            card.classList.add('order-conflict');
+                            card.style.borderColor = color;
+                        }
+                    }
+                    
+                    // Table view
+                    const rowCheckbox = document.querySelector(`.item-select-table[data-id="${itemId}"]`);
+                    if (rowCheckbox) {
+                        const row = rowCheckbox.closest('tr');
+                        if (row) {
+                            row.classList.add('order-conflict');
+                            row.style.borderLeft = `5px solid ${color}`;
+                        }
+                    }
+                });
+            }
+            
+            // Show toast message about the conflict
+            const ordersList = Object.keys(orderGroups).map(order => `Order #${order}`).join(', ');
+            toastr.warning(`Please select items from a single order for bulk operations. Currently selected: ${ordersList}`, 'Multiple Orders Detected');
+        }
+    });
+    
+    // ==============================
+    // Confirmation Dialog Function 
+    // ==============================
+    function showConfirmationModal(title, message, confirmCallback) {
+        // Create modal elements
+        const modalId = 'confirmOrderModal';
+        let modalElement = document.getElementById(modalId);
+        
+        if (!modalElement) {
+            const modalHTML = `
+                <div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-warning text-dark">
+                                <h5 class="modal-title"><i class="feather icon-alert-triangle me-2"></i><span id="confirmTitle">${title}</span></h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="confirmMessage">${message}</div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" id="cancelBtn" data-bs-dismiss="modal">No, Cancel</button>
+                                <button type="button" class="btn btn-danger" id="confirmBtn">Yes, Continue</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Append modal HTML to document
+            const div = document.createElement('div');
+            div.innerHTML = modalHTML;
+            document.body.appendChild(div);
+            modalElement = document.getElementById(modalId);
+        } else {
+            // Update existing modal content
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').innerHTML = message;
+        }
+        
+        // Initialize modal
+        const modal = new bootstrap.Modal(modalElement);
+        
+        // Set up confirm action
+        const confirmBtn = document.getElementById('confirmBtn');
+        
+        // Remove previous event listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        // Add new event listener for Yes button
+        newConfirmBtn.addEventListener('click', function() {
+            modal.hide();
+            if (typeof confirmCallback === 'function') {
+                confirmCallback();
+            }
+        });
+        
+        // Show modal
+        modal.show();
+    }
+    </script>
+    {% endblock %}

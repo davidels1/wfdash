@@ -1,53 +1,113 @@
 {% extends "layouts/base.html" %}
+{% load static %}
 
 {% block title %} Edit Company {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex align-items-center">
-                        <i class="feather icon-briefcase h4 mb-0 me-2"></i>
-                        <h4 class="card-title mb-0">Edit Company</h4>
+    <div class="card">
+        <div class="card-header">
+            <h5>Edit Company</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" id="edit-company-form">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Company Name</label>
+                            {{ form.company }}
+                            {% if form.company.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.company.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Address</label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.address.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-                <div class="card-body">
-                    <form method="post" class="form-horizontal">
-                        {% csrf_token %}
-                        {% for field in form %}
-                        <div class="form-group row mb-4">
-                            <label class="col-sm-3 col-form-label">
-                                {% if field.name == 'company' %}
-                                    <i class="feather icon-briefcase me-2"></i>
-                                {% elif field.name == 'address' %}
-                                    <i class="feather icon-map-pin me-2"></i>
-                                {% endif %}
-                                {{ field.label }}
-                            </label>
-                            <div class="col-sm-9">
-                                {{ field }}
-                                {% if field.errors %}
-                                <div class="invalid-feedback d-block">{{ field.errors }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                        <div class="row">
-                            <div class="col-sm-9 offset-sm-3">
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    <i class="feather icon-save me-1"></i>Save Changes
-                                </button>
-                                <a href="{% url 'wfdash:company_list' %}" class="btn btn-light btn-sm">
-                                    <i class="feather icon-x me-1"></i>Cancel
-                                </a>
-                            </div>
-                        </div>
-                    </form>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label class="form-label">Vendor Number</label>
+                        {{ form.vendor }}
+                        <small class="text-muted">Vendor number for mines or other organizations (optional)</small>
+                    </div>
                 </div>
-            </div>
+                
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="feather icon-save me-1"></i> Save Changes
+                    </button>
+                    <a href="{% url 'wfdash:company_list' %}" class="btn btn-secondary">
+                        <i class="feather icon-x me-1"></i> Cancel
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 {% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('edit-company-form');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Form submission error');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                toastr.success('Company updated successfully!');
+                setTimeout(() => window.location.href = "{% url 'wfdash:company_list' %}", 1000);
+            } else {
+                // Handle validation errors
+                if (data.errors) {
+                    Object.keys(data.errors).forEach(field => {
+                        const errors = data.errors[field];
+                        errors.forEach(error => {
+                            toastr.error(error, `Error in ${field}`);
+                        });
+                    });
+                } else {
+                    toastr.error(data.message || 'Error updating company');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            toastr.error(error.message || 'Error updating company');
+        });
+    });
+});
+</script>
+{% endblock %}

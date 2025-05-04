@@ -14,13 +14,25 @@
             "src": "/static/images/pwa/icon-192x192.png",
             "sizes": "192x192",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "maskable"
+        },
+        {
+            "src": "/static/images/pwa/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
         },
         {
             "src": "/static/images/pwa/icon-512x512.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "maskable"
+        },
+        {
+            "src": "/static/images/pwa/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
         },
         {
             "src": "/static/images/pwa/apple-touch-icon.png",
@@ -28,19 +40,64 @@
             "type": "image/png"
         }
     ],
+    "screenshots": [
+        {
+            "src": "/static/images/pwa/screenshot-desktop1.png",
+            "sizes": "1280x800",
+            "type": "image/png",
+            "form_factor": "wide"
+        },
+        {
+            "src": "/static/images/pwa/screenshot-desktop2.png",
+            "sizes": "1280x800",
+            "type": "image/png",
+            "form_factor": "wide"
+        },
+        {
+            "src": "/static/images/pwa/screenshot-mobile1.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "form_factor": "narrow"
+        },
+        {
+            "src": "/static/images/pwa/screenshot-mobile2.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "form_factor": "narrow"
+        }
+    ],
     "shortcuts": [
         {
             "name": "Add Quote",
             "short_name": "New Quote",
             "description": "Create new quote",
-            "url": "/quotes/new",
-            "icons": [{ "src": "/static/images/pwa/add-quote-192x192.png", "sizes": "192x192" }]
+            "url": "https://wfdash.pythonanywhere.com/quotes/create/",
+            "icons": [
+                { 
+                    "src": "/static/images/pwa/add-quote-192x192.png", 
+                    "sizes": "192x192" 
+                },
+                { 
+                    "src": "/static/images/pwa/add-quote-96x96.png", 
+                    "sizes": "96x96" 
+                }
+            ]
         },
         {
             "name": "View Collections",
             "short_name": "Collections",
             "description": "View pending collections",
-            "url": "/drivers/pool"
+            "url": "/drivers/pool",
+            "icons": [
+                { 
+                    "src": "/static/images/pwa/collections-192x192.png", 
+                    "sizes": "192x192" 
+                },
+                { 
+                    "src": "/static/images/pwa/collections-96x96.png", 
+                    "sizes": "96x96" 
+                }
+            ]
         }
     ],
     "prefer_related_applications": false,

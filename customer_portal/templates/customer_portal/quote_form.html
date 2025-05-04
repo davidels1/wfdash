@@ -1,0 +1,514 @@
+{% extends "customer_portal/base.html" %}
+{% load static %}
+
+{% block title %}Request a Quote{% endblock %}
+
+{% block content %}
+<div class="mobile-form-container">
+    <h2 class="form-heading">Quick Quote Request</h2>
+    
+    <form method="post" id="quoteForm" action="{% url 'customer_portal:quote_request' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        
+        <!-- Contact Information Section -->
+        <div class="form-section">
+            <h3 class="section-title">Your Contact Information</h3>
+            
+            <div class="form-floating mb-3">
+                {{ form.name }}
+                <label for="{{ form.name.id_for_label }}">Your Name*</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                {{ form.email }}
+                <label for="{{ form.email.id_for_label }}">Email Address*</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                {{ form.phone }}
+                <label for="{{ form.phone.id_for_label }}">Phone Number*</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                {{ form.company }}
+                <label for="{{ form.company.id_for_label }}">Company Name</label>
+            </div>
+        </div>
+        
+        <!-- Quote Details Section -->
+        <div class="form-section">
+            <h3 class="section-title">Quote Details</h3>
+            
+            <!-- Item formset -->
+            {{ formset.management_form }}
+            <div id="items-container">
+                {% for item_form in formset %}
+                <div class="item-row">
+                    <div class="form-floating mb-2">
+                        {{ item_form.description }}
+                        <label for="{{ item_form.description.id_for_label }}">Item Description*</label>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Qty</span>
+                        {{ item_form.quantity }}
+                    </div>
+                    {% if forloop.first == False %}
+                    <button type="button" class="remove-item">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <button type="button" id="add-item-btn" class="btn btn-sm btn-outline-secondary w-100 mb-4">
+                <i class="fas fa-plus me-1"></i> Add Another Item
+            </button>
+            
+            <!-- File upload section moved after items -->
+            <div class="file-upload-section mb-4">
+                <h4 class="items-title">Attachments</h4>
+                <p class="text-muted small mb-2">Upload photos or files to help us understand your requirements better (optional)</p>
+                
+                <div class="file-input-container">
+                    <input type="file" class="form-control" id="quote-attachments" name="attachments[]" multiple 
+                           accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                </div>
+                <div id="file-preview-container" class="mt-2"></div>
+            </div>
+        </div>
+        
+        <!-- Additional Notes Section - moved to bottom like in order form -->
+        <div class="form-section">
+            <h3 class="section-title">Additional Notes</h3>
+            
+            <div class="form-floating mb-3">
+                {{ form.description }}
+                <label for="{{ form.description.id_for_label }}">Special Instructions (optional)</label>
+            </div>
+        </div>
+        
+        <!-- Submit Section -->
+        <div class="form-section">
+            <button type="submit" class="btn btn-primary btn-lg w-100">Submit Quote Request</button>
+            <p class="text-muted small text-center mt-2">
+                We'll respond to your quote request as soon as possible.
+            </p>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Form container styling */
+    .mobile-form-container {
+        max-width: 100%;
+        padding: 0.5rem;
+    }
+    
+    .form-heading {
+        text-align: center;
+        margin-bottom: 1rem;
+        color: var(--secondary-color);
+        font-size: 1.75rem;
+    }
+    
+    .form-section {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 1rem;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+        margin-bottom: 1.25rem;
+        color: var(--secondary-color);
+    }
+    
+    .items-title {
+        font-size: 1.1rem;
+        margin: 1rem 0;
+        color: var(--secondary-color);
+    }
+    
+    /* Form elements styling */
+    .form-floating > label {
+        opacity: 0.75;
+    }
+    
+    .form-floating:focus-within > label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 1;
+        color: var(--primary-color);
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(237, 174, 65, 0.25);
+    }
+    
+    /* Button styling */
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
+    
+    .btn-outline-secondary {
+        color: var(--secondary-color);
+        border-color: #ced4da;
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #f8f9fa;
+        color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+    
+    /* Item rows */
+    .item-row {
+        position: relative;
+        padding-right: 30px;
+        margin-bottom: 1rem;
+    }
+    
+    .remove-item {
+        position: absolute;
+        top: 5px;
+        right: 0;
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+        z-index: 5;
+    }
+    
+    #add-item-btn {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    /* File upload styling */
+    .file-upload-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    #file-preview-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .file-preview {
+        display: flex;
+        align-items: center;
+        background: white;
+        border-radius: 4px;
+        padding: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        position: relative;
+        width: calc(50% - 5px);
+    }
+
+    .file-preview img {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-right: 10px;
+    }
+
+    .file-preview .file-icon {
+        font-size: 24px;
+        color: #6c757d;
+        margin-right: 10px;
+        width: 40px;
+        text-align: center;
+    }
+
+    .file-preview .file-name {
+        flex: 1;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 0.9rem;
+    }
+
+    .file-item {
+        padding: 8px;
+        margin-top: 5px;
+        background: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .file-item i {
+        color: #6c757d;
+        margin-right: 8px;
+    }
+
+    #file-preview-container {
+        max-height: 150px;
+        overflow-y: auto;
+    }
+
+    /* Force consistent primary button colors across all devices */
+    .btn-primary, 
+    button[type="submit"] {
+        background-color: #e76240 !important; /* Orange color - adjust to match your brand */
+        border-color: #e76240 !important;
+        color: white !important;
+    }
+
+    .btn-primary:hover, 
+    button[type="submit"]:hover {
+        background-color: #d45535 !important; /* Darker orange for hover */
+        border-color: #d45535 !important;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Item formset handling
+        const addBtn = document.getElementById('add-item-btn');
+        const formset = document.getElementById('items-container');
+        const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+        
+        addBtn.addEventListener('click', function() {
+            const formCount = parseInt(totalForms.value);
+            const newRow = document.createElement('div');
+            newRow.className = 'item-row';
+            
+            // Description floating field
+            const descContainer = document.createElement('div');
+            descContainer.className = 'form-floating mb-2';
+            
+            const descInput = document.createElement('input');
+            descInput.type = 'text';
+            descInput.name = `form-${formCount}-description`;
+            descInput.id = `id_form-${formCount}-description`;
+            descInput.className = 'form-control';
+            descInput.placeholder = 'Item description';
+            
+            const descLabel = document.createElement('label');
+            descLabel.textContent = 'Item Description*';
+            
+            descContainer.appendChild(descInput);
+            descContainer.appendChild(descLabel);
+            
+            // Quantity field with prepend
+            const qtyGroup = document.createElement('div');
+            qtyGroup.className = 'input-group mb-3';
+            
+            const qtyPrepend = document.createElement('span');
+            qtyPrepend.className = 'input-group-text';
+            qtyPrepend.textContent = 'Qty';
+            
+            const qtyInput = document.createElement('input');
+            qtyInput.type = 'number';
+            qtyInput.name = `form-${formCount}-quantity`;
+            qtyInput.id = `id_form-${formCount}-quantity`;
+            qtyInput.className = 'form-control';
+            qtyInput.min = '1';
+            qtyInput.value = '1';
+            qtyInput.required = true;
+            
+            qtyGroup.appendChild(qtyPrepend);
+            qtyGroup.appendChild(qtyInput);
+            
+            // Remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-item';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.addEventListener('click', function() {
+                this.closest('.item-row').remove();
+            });
+            
+            // Assemble the row
+            newRow.appendChild(descContainer);
+            newRow.appendChild(qtyGroup);
+            newRow.appendChild(removeBtn);
+            
+            formset.appendChild(newRow);
+            totalForms.value = formCount + 1;
+        });
+
+        // Set up remove item handlers for existing items
+        document.querySelectorAll('.remove-item').forEach(button => {
+            button.addEventListener('click', function() {
+                this.closest('.item-row').remove();
+            });
+        });
+
+        // Form validation before submission
+        const form = document.getElementById('quoteForm');
+        form.addEventListener('submit', function(event) {
+            // Prevent form from submitting while we validate
+            event.preventDefault();
+            
+            // Required fields in main form
+            const requiredFields = [
+                { id: '{{ form.name.id_for_label }}', name: 'Name' },
+                { id: '{{ form.email.id_for_label }}', name: 'Email' },
+                { id: '{{ form.phone.id_for_label }}', name: 'Phone' }
+            ];
+            
+            let isValid = true;
+            
+            // Check required fields
+            for (const field of requiredFields) {
+                const input = document.getElementById(field.id);
+                if (!input.value.trim()) {
+                    alert(`Please enter your ${field.name}`);
+                    input.focus();
+                    isValid = false;
+                    break;
+                }
+                
+                // Simple email validation
+                if (field.name === 'Email' && !input.value.includes('@')) {
+                    alert('Please enter a valid email address');
+                    input.focus();
+                    isValid = false;
+                    break;
+                }
+            }
+            
+            // Check the first item (required)
+            const firstItemDesc = document.getElementById('id_form-0-description');
+            const firstItemQty = document.getElementById('id_form-0-quantity');
+            
+            if (isValid && (!firstItemDesc.value.trim() || !firstItemQty.value)) {
+                alert('Please add at least one item to your quote');
+                firstItemDesc.focus();
+                isValid = false;
+            }
+            
+            // If all validations pass, submit the form
+            if (isValid) {
+                console.log('Form is valid, submitting...');
+                
+                // Update the submit button to show loading state
+                const submitBtn = document.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Submitting...';
+                
+                // Submit the form
+                this.submit();
+            }
+        });
+
+        // File input handler
+        const fileInput = document.getElementById('quote-attachments');
+        const previewContainer = document.getElementById('file-preview-container');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                previewContainer.innerHTML = '';
+                
+                if (this.files.length > 5) {
+                    alert('Please select a maximum of 5 files.');
+                    this.value = '';
+                    return;
+                }
+                
+                for (let i = 0; i < this.files.length; i++) {
+                    const file = this.files[i];
+                    
+                    // Check file size (10MB limit)
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert(`File ${file.name} exceeds 10MB limit.`);
+                        this.value = '';
+                        previewContainer.innerHTML = '';
+                        return;
+                    }
+                    
+                    const filePreview = document.createElement('div');
+                    filePreview.className = 'file-preview';
+                    
+                    // Display file thumbnail for images
+                    if (file.type.startsWith('image/')) {
+                        const img = document.createElement('img');
+                        img.src = URL.createObjectURL(file);
+                        img.onload = function() {
+                            URL.revokeObjectURL(this.src);
+                        };
+                        filePreview.appendChild(img);
+                    } else {
+                        // Icon for non-image files
+                        const icon = document.createElement('i');
+                        
+                        if (file.name.endsWith('.pdf')) {
+                            icon.className = 'fas fa-file-pdf file-icon';
+                        } else if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                            icon.className = 'fas fa-file-word file-icon';
+                        } else {
+                            icon.className = 'fas fa-file file-icon';
+                        }
+                        
+                        filePreview.appendChild(icon);
+                    }
+                    
+                    const fileName = document.createElement('div');
+                    fileName.className = 'file-name';
+                    fileName.textContent = file.name;
+                    filePreview.appendChild(fileName);
+                    
+                    previewContainer.appendChild(filePreview);
+                }
+            });
+        }
+
+        // Save form data to localStorage
+        const nameField = document.getElementById('{{ form.name.id_for_label }}');
+        const emailField = document.getElementById('{{ form.email.id_for_label }}');
+        const phoneField = document.getElementById('{{ form.phone.id_for_label }}');
+        const companyField = document.getElementById('{{ form.company.id_for_label }}');
+        
+        // Load saved values on page load
+        if (localStorage.getItem('quote_name')) {
+            nameField.value = localStorage.getItem('quote_name');
+        }
+        if (localStorage.getItem('quote_email')) {
+            emailField.value = localStorage.getItem('quote_email');
+        }
+        if (localStorage.getItem('quote_phone')) {
+            phoneField.value = localStorage.getItem('quote_phone');
+        }
+        if (localStorage.getItem('quote_company')) {
+            companyField.value = localStorage.getItem('quote_company');
+        }
+        
+        // Save values when focusing out of fields
+        nameField.addEventListener('blur', function() {
+            localStorage.setItem('quote_name', this.value);
+        });
+        emailField.addEventListener('blur', function() {
+            localStorage.setItem('quote_email', this.value);
+        });
+        phoneField.addEventListener('blur', function() {
+            localStorage.setItem('quote_phone', this.value);
+        });
+        companyField.addEventListener('blur', function() {
+            localStorage.setItem('quote_company', this.value);
+        });
+    });
+</script>
+{% endblock %}

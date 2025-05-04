@@ -1,0 +1,356 @@
+<!-- filepath: c:\###PYTHONANY_WORKING\WFDASH\dashboard\templates\dashboard\rep_dashboard.html -->
+{% extends 'layouts/base.html' %}
+{% load static humanize %}
+
+{% block title %} Rep Dashboard - {{ rep_user.first_name|default:rep_user.username }} {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="pcoded-content">
+    <div class="pcoded-inner-content">
+        <div class="main-body">
+            <div class="page-wrapper">
+                <!-- [ Main Content ] start -->
+                <div class="row">
+                    <!-- Welcome Card -->
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4>Welcome, {{ rep_user.first_name|default:rep_user.username }}!</h4>
+                                <p>Here's a summary of your sales performance.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overall Stats Cards -->
+                <div class="row">
+                    <div class="col-md-6 col-xl-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="mb-2 f-w-400 text-muted">Total Quotes</h6>
+                                <h4 class="mb-3">{{ total_quotes_count }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="mb-2 f-w-400 text-muted">Total Orders</h6>
+                                <h4 class="mb-3">{{ total_orders_count }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="col-md-6 col-xl-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="mb-2 f-w-400 text-muted">Total Sales Value</h6>
+                                <h4 class="mb-3 text-c-green">R {{ total_value|floatformat:2|intcomma }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="col-md-6 col-xl-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="mb-2 f-w-400 text-muted">Overall Markup</h6>
+                                <h4 class="mb-3 text-c-blue">{{ overall_markup_percentage|floatformat:2 }}%</h4>
+                                <small>(Value: R {{ overall_markup_value|floatformat:2|intcomma }})</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row">
+                    <!-- Monthly Quotes Chart -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Quotes per Month</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="monthlyQuotesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Monthly Profitability Chart -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Monthly Sales vs Cost</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="monthlyProfitChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                     <!-- Quotes by Customer Chart -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Quotes by Customer (Top 10)</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="quotesByCustomerChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Data Tables Row -->
+                <div class="row">
+                    <!-- Monthly Profitability Table -->
+                    <div class="col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Monthly Performance Breakdown</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Month</th>
+                                                <th>Sales Value</th>
+                                                <th>Cost Price</th>
+                                                <th>Markup Value</th>
+                                                <th>Markup %</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in monthly_profitability_table %}
+                                            <tr>
+                                                <td>{{ item.month }}</td>
+                                                <td>R {{ item.value|floatformat:2|intcomma }}</td>
+                                                <td>R {{ item.cost|floatformat:2|intcomma }}</td>
+                                                <td>R {{ item.markup_value|floatformat:2|intcomma }}</td>
+                                                <td>{{ item.markup_percentage|floatformat:2 }}%</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="5" class="text-center">No monthly data available.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Yearly Profitability Table -->
+                    <div class="col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Yearly Performance Breakdown</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Year</th>
+                                                <th>Sales Value</th>
+                                                <th>Cost Price</th>
+                                                <th>Markup Value</th>
+                                                <th>Markup %</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in yearly_profitability_table %}
+                                            <tr>
+                                                <td>{{ item.year }}</td>
+                                                <td>R {{ item.value|floatformat:2|intcomma }}</td>
+                                                <td>R {{ item.cost|floatformat:2|intcomma }}</td>
+                                                <td>R {{ item.markup_value|floatformat:2|intcomma }}</td>
+                                                <td>{{ item.markup_percentage|floatformat:2 }}%</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="5" class="text-center">No yearly data available.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- Quotes by Customer Table -->
+                    <div class="col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Quotes by Customer</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Customer Company</th>
+                                                <th>Quote Count</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in quotes_by_customer_list %}
+                                            <tr>
+                                                <td>{{ item.customer__company|default:"N/A" }}</td>
+                                                <td>{{ item.count }}</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="2" class="text-center">No quotes found.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- [ Main Content ] end -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+{# Include Chart.js library - download or use CDN #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{# --- ADD json_script tags to safely embed data --- #}
+{{ monthly_quotes_chart_labels|json_script:"monthly-quotes-labels" }}
+{{ monthly_quotes_chart_data|json_script:"monthly-quotes-data" }}
+{{ quotes_by_customer_chart_labels|json_script:"customer-quotes-labels" }}
+{{ quotes_by_customer_chart_data|json_script:"customer-quotes-data" }}
+{{ monthly_profit_chart_labels|json_script:"monthly-profit-labels" }}
+{{ monthly_profit_chart_value|json_script:"monthly-profit-value" }}
+{{ monthly_profit_chart_cost|json_script:"monthly-profit-cost" }}
+{# --- END ADD --- #}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- UPDATE: Function to get data using json_script ID ---
+        const getChartData = (elementId) => {
+            try {
+                const element = document.getElementById(elementId);
+                if (!element) {
+                    console.error(`Chart data element with ID "${elementId}" not found.`);
+                    return [];
+                }
+                return JSON.parse(element.textContent);
+            } catch (e) {
+                console.error(`Error parsing JSON from element ID "${elementId}":`, e);
+                return []; // Return empty array on error
+            }
+        };
+        // --- END UPDATE ---
+
+        // --- Monthly Quotes Chart ---
+        const monthlyQuotesCtx = document.getElementById('monthlyQuotesChart')?.getContext('2d');
+        if (monthlyQuotesCtx) {
+            // --- UPDATE: Get data using getChartData ---
+            const monthlyQuotesLabels = getChartData('monthly-quotes-labels');
+            const monthlyQuotesData = getChartData('monthly-quotes-data');
+            // --- END UPDATE ---
+            new Chart(monthlyQuotesCtx, {
+                type: 'bar',
+                data: {
+                    labels: monthlyQuotesLabels,
+                    datasets: [{
+                        label: 'Quotes per Month',
+                        data: monthlyQuotesData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)', // Blue
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        // --- Monthly Profitability Chart ---
+        const monthlyProfitCtx = document.getElementById('monthlyProfitChart')?.getContext('2d');
+        if (monthlyProfitCtx) {
+            // --- UPDATE: Get data using getChartData ---
+            const monthlyProfitLabels = getChartData('monthly-profit-labels');
+            const monthlyProfitValueData = getChartData('monthly-profit-value');
+            const monthlyProfitCostData = getChartData('monthly-profit-cost');
+            // --- END UPDATE ---
+            new Chart(monthlyProfitCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyProfitLabels,
+                    datasets: [
+                        {
+                            label: 'Sales Value (R)',
+                            data: monthlyProfitValueData,
+                            borderColor: 'rgba(75, 192, 192, 1)', // Green
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            tension: 0.1,
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: 'Cost Price (R)',
+                            data: monthlyProfitCostData,
+                            borderColor: 'rgba(255, 99, 132, 1)', // Red
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            tension: 0.1,
+                            yAxisID: 'y',
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: function(value) { return 'R ' + value.toLocaleString(); } }
+                        }
+                    }
+                }
+            });
+        }
+
+         // --- Quotes by Customer Chart ---
+        const quotesByCustomerCtx = document.getElementById('quotesByCustomerChart')?.getContext('2d');
+        if (quotesByCustomerCtx) {
+            // --- UPDATE: Get data using getChartData ---
+            const quotesByCustomerLabels = getChartData('customer-quotes-labels');
+            const quotesByCustomerData = getChartData('customer-quotes-data');
+             // --- END UPDATE ---
+            new Chart(quotesByCustomerCtx, {
+                type: 'pie',
+                data: {
+                    labels: quotesByCustomerLabels,
+                    datasets: [{
+                        label: 'Quotes by Customer',
+                        data: quotesByCustomerData,
+                        backgroundColor: [ // Add more colors if needed
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)',
+                            'rgba(255, 159, 64, 0.6)',
+                            'rgba(199, 199, 199, 0.6)',
+                            'rgba(83, 102, 255, 0.6)',
+                            'rgba(100, 255, 100, 0.6)',
+                            'rgba(255, 100, 100, 0.6)'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                 options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'top', }, }
+                }
+            });
+        }
+
+    });
+</script>
+{% endblock javascripts %}

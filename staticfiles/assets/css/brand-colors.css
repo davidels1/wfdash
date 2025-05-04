@@ -1,0 +1,109 @@
+/* Primary color - Blue (#4d93d1) */
+.btn-primary {
+    background-color: #4d93d1 !important;
+    border-color: #4d93d1 !important;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+    background-color: #3a7ab5 !important;
+    border-color: #3a7ab5 !important;
+}
+.text-primary {
+    color: #4d93d1 !important;
+}
+.bg-primary {
+    background-color: #4d93d1 !important;
+}
+.border-primary {
+    border-color: #4d93d1 !important;
+}
+
+/* Success color - Gold (#ecbd70) */
+.btn-success {
+    background-color: #ecbd70 !important;
+    border-color: #ecbd70 !important;
+    color: #212529 !important; /* Dark text for better contrast */
+}
+.btn-success:hover, .btn-success:focus, .btn-success:active {
+    background-color: #e5af55 !important;
+    border-color: #e5af55 !important;
+    color: #212529 !important;
+}
+.text-success {
+    color: #ecbd70 !important;
+}
+.bg-success {
+    background-color: #ecbd70 !important;
+}
+.border-success {
+    border-color: #ecbd70 !important;
+}
+
+/* Danger color - Red (#ea4c4b) */
+.btn-danger {
+    background-color: #ea4c4b !important;
+    border-color: #ea4c4b !important;
+}
+.btn-danger:hover, .btn-danger:focus, .btn-danger:active {
+    background-color: #d73c3b !important;
+    border-color: #d73c3b !important;
+}
+.text-danger {
+    color: #ea4c4b !important;
+}
+.bg-danger {
+    background-color: #ea4c4b !important;
+}
+.border-danger {
+    border-color: #ea4c4b !important;
+}
+
+/* Alert colors */
+.alert-primary {
+    background-color: rgba(77, 147, 209, 0.2) !important;
+    border-color: rgba(77, 147, 209, 0.5) !important;
+    color: #3a7ab5 !important;
+}
+.alert-success {
+    background-color: rgba(236, 189, 112, 0.2) !important;
+    border-color: rgba(236, 189, 112, 0.5) !important;
+    color: #b38d45 !important;
+}
+.alert-danger {
+    background-color: rgba(234, 76, 75, 0.2) !important;
+    border-color: rgba(234, 76, 75, 0.5) !important;
+    color: #cf3c3b !important;
+}
+
+/* Badge colors */
+.badge.bg-primary {
+    background-color: #4d93d1 !important;
+}
+.badge.bg-success {
+    background-color: #ecbd70 !important;
+    color: #212529 !important;
+}
+.badge.bg-danger {
+    background-color: #ea4c4b !important;
+}
+
+/* Add to your theme CSS file */
+.header-green {
+    background: #2e7d32 !important;
+    color: #fff;
+}
+
+.header-orange {
+    background: #e65100 !important;
+    color: #fff;
+}
+
+/* Dark theme persistence support */
+body.theme-dark {
+    background: #263238 !important;
+    color: #b0bec5;
+}
+
+body.theme-light {
+    background: #f5f5f5 !important;
+    color: #333;
+}

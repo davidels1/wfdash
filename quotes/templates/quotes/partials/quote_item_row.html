@@ -13,4 +13,20 @@
             <i class="feather icon-trash-2"></i> Remove
         </button>
     </td>
+    <td>
+        <!-- Edit Pricing button - use index instead of item.id -->
+        <button type="button" class="btn btn-outline-primary btn-sm edit-pricing-btn" data-item-id="{{ index }}">
+            <i class="feather icon-dollar-sign"></i> Edit Pricing
+        </button>
+
+        <!-- Hidden pricing fields - use index consistently -->
+        <input type="hidden" name="items-{{ index }}-cost_price" value="" class="item-cost-price">
+        <input type="hidden" name="items-{{ index }}-markup" value="" class="item-markup">
+        <input type="hidden" name="items-{{ index }}-selling_price" value="" class="item-selling-price">
+
+        <!-- Pricing display section with consistent ID format -->
+        <div class="pricing-display-{{ index }} ms-2">
+            <span class="badge bg-light text-secondary">No pricing set</span>
+        </div>
+    </td>
 </tr>

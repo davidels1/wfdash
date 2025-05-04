@@ -1,0 +1,161 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Approve Quote{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="feather icon-check-circle mr-2"></i> Approve Quote #{{ quote.quote_number }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="mb-2">Customer</h6>
+                            <p>{{ quote.customer.company }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-2">Company Letterhead</h6>
+                            <p>{{ quote.company_letterhead }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="feather icon-info mr-2"></i>
+                        You can approve this quote and email it directly to the customer.
+                    </div>
+                    
+                    <div class="d-flex mt-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="sendEmailToggle" checked>
+                            <label class="form-check-label" for="sendEmailToggle">Send email after approval</label>
+                        </div>
+                    </div>
+                    
+                    <form id="approveForm" method="post" action="{% url 'quotes:approve_quote' quote.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="send_email" value="true" id="sendEmailInput">
+                        
+                        <div id="emailFormSection">
+                            <h5 class="mt-4 mb-3">Email Details</h5>
+                            
+                            <!-- Email form fields -->
+                            <div class="mb-3">
+                                <label for="emailTo" class="form-label">To:</label>
+                                <input type="email" class="form-control" id="emailTo" name="to" 
+                                       value="{{ quote.customer.email }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="emailCc" class="form-label">CC:</label>
+                                <input type="email" class="form-control" id="emailCc" name="cc">
+                            </div>
+                            <div class="mb-3">
+                                <label for="emailBcc" class="form-label">BCC:</label>
+                                <input type="email" class="form-control" id="emailBcc" name="bcc" 
+                                       value="{{ quote.rep.email }}" placeholder="Add additional recipients">
+                            </div>
+                            <div class="mb-3">
+                                <label for="emailSubject" class="form-label">Subject:</label>
+                                <input type="text" class="form-control" id="emailSubject" name="subject" 
+                                       value="Quotation {{ quote.quote_number }} from {{ quote.company_letterhead }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="emailBody" class="form-label">Message:</label>
+                                <textarea class="form-control" id="emailBody" name="body" rows="6" required>Dear {{ quote.customer.company }},
+
+Thank you for your enquiry. Please find attached our quotation {{ quote.quote_number }}.
+
+Should you have any questions or require further information, please don't hesitate to contact us.
+
+Kind regards,
+{{ quote.company_letterhead }} Team
+{% if quote.company_letterhead == 'CNL' %}quotes@cnlmining.co.za{% else %}quotes@wfsales.co.za{% endif %}</textarea>
+                            </div>
+                            <input type="hidden" name="letterhead" value="{{ quote.company_letterhead }}">
+                            <input type="hidden" name="update_status" value="true">
+                        </div>
+                        
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a href="{% url 'quotes:pending_approvals' %}" class="btn btn-secondary">
+                                <i class="feather icon-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="feather icon-check"></i> 
+                                <span id="submitButtonText">Approve & Send Email</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sendEmailToggle = document.getElementById('sendEmailToggle');
+        const sendEmailInput = document.getElementById('sendEmailInput');
+        const emailFormSection = document.getElementById('emailFormSection');
+        const submitButtonText = document.getElementById('submitButtonText');
+        const emailFields = document.querySelectorAll('#emailFormSection input, #emailFormSection textarea');
+        
+        function updateEmailForm() {
+            if (sendEmailToggle.checked) {
+                emailFormSection.style.display = 'block';
+                sendEmailInput.value = 'true';
+                submitButtonText.textContent = 'Approve & Send Email';
+                // Make email fields required
+                emailFields.forEach(field => {
+                    if (field.getAttribute('required') !== null) {
+                        field.required = true;
+                    }
+                });
+            } else {
+                emailFormSection.style.display = 'none';
+                sendEmailInput.value = 'false';
+                submitButtonText.textContent = 'Approve Only';
+                // Make email fields not required
+                emailFields.forEach(field => {
+                    field.required = false;
+                });
+            }
+        }
+        
+        // Initialize form state
+        updateEmailForm();
+        
+        // Add event listener for toggle changes
+        sendEmailToggle.addEventListener('change', updateEmailForm);
+        
+        // Fetch email info when the page loads to populate default values
+        const quoteId = '{{ quote.id }}';
+        const letterhead = '{{ quote.company_letterhead }}';
+        
+        fetch(`/quotes/email_quote_info/${quoteId}/?letterhead=${letterhead}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Populate form with email data
+                    const emailData = data.email_data;
+                    document.getElementById('emailTo').value = emailData.to || '';
+                    document.getElementById('emailSubject').value = emailData.subject || '';
+                    document.getElementById('emailBody').value = emailData.body || '';
+                    
+                    // If rep email is provided, add it to BCC
+                    if (emailData.rep_email) {
+                        document.getElementById('emailBcc').value = emailData.rep_email;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching email info:', error);
+            });
+    });
+</script>
+{% endblock %}

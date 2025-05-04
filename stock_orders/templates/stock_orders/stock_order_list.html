@@ -1,0 +1,243 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load stock_order_filters %}
+
+
+{% block title %}Stock Orders{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Style the status tabs */
+    #statusTabs .nav-link {
+        border-radius: 6px 6px 0 0;
+        padding: 8px 15px;
+        margin-right: 3px;
+        border: none;
+    }
+    
+    #statusTabs .nav-link.active {
+        font-weight: bold;
+        position: relative;
+    }
+    
+    #statusTabs .nav-link:not(.active) {
+        opacity: 0.8;
+    }
+    
+    #statusTabs .nav-link:hover:not(.active) {
+        opacity: 1;
+    }
+    
+    #statusTabs .badge {
+        margin-left: 5px;
+    }
+    
+    /* Override tab borders */
+    .nav-tabs {
+        border-bottom: 1px solid #ddd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Stock Orders</h1>
+        <a href="{% url 'stock_orders:create' %}" class="btn btn-primary">
+            <i class="feather icon-plus-circle"></i> New Stock Order
+        </a>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="input-group mb-2 mr-sm-2">
+                    <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ search_query }}">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="feather icon-search"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group mb-2 mr-sm-2">
+                    <label class="sr-only">Status</label>
+                    <select name="status" class="form-control" onchange="this.form.submit()">
+                        <option value="">All Statuses</option>
+                        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="processed" {% if status_filter == 'processed' %}selected{% endif %}>Processed</option>
+                        <option value="assigned" {% if status_filter == 'assigned' %}selected{% endif %}>Assigned</option>
+                        <option value="collected" {% if status_filter == 'collected' %}selected{% endif %}>Collected</option>
+                        <option value="in_stock" {% if status_filter == 'in_stock' %}selected{% endif %}>In Stock</option>
+                        <option value="canceled" {% if status_filter == 'canceled' %}selected{% endif %}>Canceled</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+                <a href="{% url 'stock_orders:list' %}" class="btn btn-secondary mb-2 ml-2">Clear</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stock Orders Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Stock Orders</h6>
+        </div>
+        <div class="card-body">
+            {% if stock_orders %}
+            <!-- Status tabs navigation -->
+            <ul class="nav nav-tabs mb-3" id="statusTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active bg-light" id="all-tab" data-bs-toggle="tab" href="#all" role="tab">
+                        All <span class="badge bg-secondary">{{ stock_orders|length }}</span>
+                    </a>
+                </li>
+                {% for status_name, status_display in status_choices %}
+                    {% with status_count=stock_orders|filter_by_status:status_name|length %}
+                        {% if status_count > 0 %}
+                        <li class="nav-item">
+                            <a class="nav-link 
+                                {% if status_name == 'draft' %}text-white bg-secondary{% endif %}
+                                {% if status_name == 'pending' %}text-white bg-info{% endif %}
+                                {% if status_name == 'processed' %}text-white bg-primary{% endif %}
+                                {% if status_name == 'assigned' %}text-dark bg-warning{% endif %}
+                                {% if status_name == 'collected' %}text-white bg-success{% endif %}
+                                {% if status_name == 'in_stock' %}text-white bg-success{% endif %}
+                                {% if status_name == 'canceled' %}text-white bg-danger{% endif %}"
+                               id="{{ status_name }}-tab" data-bs-toggle="tab" href="#{{ status_name }}" role="tab">
+                                {{ status_display }} <span class="badge bg-light text-dark">{{ status_count }}</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </ul>
+            
+            <div class="tab-content" id="statusTabContent">
+                <!-- All orders tab -->
+                <div class="tab-pane fade show active" id="all" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Supplier</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Driver</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in stock_orders %}
+                                <tr>
+                                    <td>{{ order.order_number }}</td>
+                                    <td>{{ order.supplier.suppliername }}</td>
+                                    <td>
+                                        {% if order.status == 'draft' %}
+                                        <span class="badge bg-secondary">Draft</span>
+                                        {% elif order.status == 'pending' %}
+                                        <span class="badge bg-info">Pending</span>
+                                        {% elif order.status == 'processed' %}
+                                        <span class="badge bg-primary">Processed</span>
+                                        {% elif order.status == 'assigned' %}
+                                        <span class="badge bg-warning">Assigned</span>
+                                        {% elif order.status == 'collected' %}
+                                        <span class="badge bg-success">Collected</span>
+                                        {% elif order.status == 'in_stock' %}
+                                        <span class="badge bg-success">In Stock</span>
+                                        {% elif order.status == 'canceled' %}
+                                        <span class="badge bg-danger">Canceled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                    <td>{{ order.driver|default:"Not Assigned" }}</td>
+                                    <td>
+                                        <a href="{% url 'stock_orders:detail' order.pk %}" class="btn btn-sm btn-info">
+                                            <i class="feather icon-eye"></i>
+                                        </a>
+                                        
+                                        {% if order.status == 'draft' or order.status == 'pending' %}
+                                        <a href="{% url 'stock_orders:process' order.pk %}" class="btn btn-sm btn-primary">
+                                            <i class="feather icon-send"></i> Process
+                                        </a>
+                                        {% endif %}
+                                        
+                                        {% if order.status == 'processed' %}
+                                        <!-- Only keep the Download PDF button -->
+                                        <a href="{% url 'stock_orders:download_po' po_id=order.pk %}" class="btn btn-sm btn-success">
+                                            <i class="feather icon-download"></i> Download PDF
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Status-specific tabs -->
+                {% for status_name, status_display in status_choices %}
+                <div class="tab-pane fade" id="{{ status_name }}" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Supplier</th>
+                                    <th>Created</th>
+                                    <th>Driver</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in stock_orders %}
+                                    {% if order.status == status_name %}
+                                    <tr>
+                                        <td>{{ order.order_number }}</td>
+                                        <td>{{ order.supplier.suppliername }}</td>
+                                        <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                        <td>{{ order.driver|default:"Not Assigned" }}</td>
+                                        <td>
+                                            <a href="{% url 'stock_orders:detail' order.pk %}" class="btn btn-sm btn-info">
+                                                <i class="feather icon-eye"></i>
+                                            </a>
+                                            
+                                            {% if order.status == 'processed' %}
+                                            <!-- Only keep the Download PDF button -->
+                                            <a href="{% url 'stock_orders:download_po' po_id=order.pk %}" class="btn btn-sm btn-success">
+                                                <i class="feather icon-download"></i> Download PDF
+                                            </a>
+                                            {% endif %}
+                                            
+                                            {% if order.status == 'draft' or order.status == 'pending' %}
+                                            <a href="{% url 'stock_orders:process' order.pk %}" class="btn btn-sm btn-primary">
+                                                <i class="feather icon-send"></i> Process
+                                            </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p>No stock orders found.</p>
+                <a href="{% url 'stock_orders:create' %}" class="btn btn-primary">
+                    <i class="feather icon-plus-circle"></i> Create Stock Order
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,700 @@
+let select2Initialized = false;
+let quoteProcessInitialized = false;
+
+// Safely access jQuery
+function safeJQuery(callback) {
+    if (window.jQuery) {
+        callback(window.jQuery);
+    } else {
+        console.log("jQuery not available yet");
+        setTimeout(() => safeJQuery(callback), 100);
+    }
+}
+
+// Update price colors based on markup
+function updatePriceColor(element, markup) {
+    if (markup >= 15) {
+        element.style.backgroundColor = '#d4edda';
+        element.style.color = '#155724';
+    } else {
+        element.style.backgroundColor = '#f8d7da';
+        element.style.color = '#721c24';
+    }
+}
+
+// Calculate prices for an item
+function calculatePrices(itemId, source) {
+    console.log(`Calculating prices for item ${itemId}, source: ${source}`);
+
+    const costPriceInput = document.querySelector(`[name="cost_price_${itemId}"]`);
+    const markupInput = document.querySelector(`[name="markup_${itemId}"]`);
+    const sellingPriceInput = document.querySelector(`[name="selling_price_${itemId}"]`);
+
+    if (!costPriceInput || !markupInput || !sellingPriceInput) {
+        console.error(`Missing inputs for item ${itemId}`);
+        return;
+    }
+
+    const costPrice = parseFloat(costPriceInput.value) || 0;
+    const markup = parseFloat(markupInput.value) || 0;
+    const sellingPrice = parseFloat(sellingPriceInput.value) || 0;
+
+    switch (source) {
+        case 'cost':
+        case 'markup':
+            if (costPrice > 0 && markup >= 0) {
+                const calculatedSellingPrice = costPrice * (1 + (markup / 100));
+                sellingPriceInput.value = calculatedSellingPrice.toFixed(2);
+                updatePriceColor(sellingPriceInput, markup);
+            }
+            break;
+
+        case 'selling':
+            if (costPrice > 0 && sellingPrice > 0) {
+                const calculatedMarkup = ((sellingPrice - costPrice) / costPrice) * 100;
+                markupInput.value = calculatedMarkup.toFixed(2);
+                updatePriceColor(sellingPriceInput, calculatedMarkup);
+            }
+            break;
+    }
+}
+
+// Helper function to get CSRF token - FIXED INFINITE LOOP
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) { // FIXED: was "for (let i = 0; cookies.length; i++)"
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Save an individual item
+function saveItem(itemId, button) {
+    if (!button) return;
+    
+    // Validate required fields
+    let isValid = true;
+    let firstInvalidField = null;
+    
+    // BEFORE sending the form - Auto-populate RFQ Description with Quote DESCRIPTION if RFQ is empty
+    const quoteDescriptionField = document.querySelector(`[name="quote_reference_${itemId}"]`);
+    const rfqDescriptionField = document.querySelector(`[name="description_${itemId}"]`);
+    
+    if (rfqDescriptionField && quoteDescriptionField && (!rfqDescriptionField.value.trim() || rfqDescriptionField.value.trim() === '')) {
+        // If RFQ Description is empty, populate it with Quote DESCRIPTION
+        rfqDescriptionField.value = quoteDescriptionField.value;
+        
+        // Add a visual effect to indicate the copy happened
+        rfqDescriptionField.style.backgroundColor = '#e8f4fd';
+        setTimeout(() => {
+            rfqDescriptionField.style.backgroundColor = '';
+        }, 1000);
+    }
+    
+    // Check if supplier is selected
+    const supplierSelect = document.querySelector(`select[name="supplier_${itemId}"]`);
+    if (!supplierSelect || !supplierSelect.value) {
+        isValid = false;
+        supplierSelect.classList.add('is-invalid');
+        
+        // Show error message
+        if (window.toastr) {
+            toastr.error('Please select a supplier before saving.');
+        }
+        
+        // Highlight Select2 if used
+        if (window.jQuery && window.jQuery.fn.select2) {
+            window.jQuery(supplierSelect).next('.select2-container').css('border', '1px solid #dc3545');
+        }
+        
+        firstInvalidField = firstInvalidField || supplierSelect;
+    } else {
+        supplierSelect.classList.remove('is-invalid');
+        if (window.jQuery && window.jQuery.fn.select2) {
+            window.jQuery(supplierSelect).next('.select2-container').css('border', '');
+        }
+    }
+    
+    // Check cost price
+    const costPriceInput = document.querySelector(`input[name="cost_price_${itemId}"]`);
+    if (!costPriceInput || !costPriceInput.value) {
+        isValid = false;
+        costPriceInput.classList.add('is-invalid');
+        
+        if (window.toastr) {
+            toastr.error('Please enter a cost price before saving.');
+        }
+        
+        firstInvalidField = firstInvalidField || costPriceInput;
+    } else {
+        costPriceInput.classList.remove('is-invalid');
+    }
+    
+    // Check markup
+    const markupInput = document.querySelector(`input[name="markup_${itemId}"]`);
+    if (!markupInput || !markupInput.value) {
+        isValid = false;
+        markupInput.classList.add('is-invalid');
+        
+        if (window.toastr) {
+            toastr.error('Please enter a markup percentage before saving.');
+        }
+        
+        firstInvalidField = firstInvalidField || markupInput;
+    } else {
+        markupInput.classList.remove('is-invalid');
+    }
+    
+    // Stop if validation failed
+    if (!isValid) {
+        if (firstInvalidField) {
+            firstInvalidField.focus();
+            firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+    }
+    
+    // Get form data
+    const formData = new FormData(document.getElementById('quote-process-form'));
+    
+    // Show loading state
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="feather icon-loader"></i> Saving...';
+    button.disabled = true;
+    
+    // Get CSRF token
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/quotes/save-item/${itemId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrftoken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Mark row as saved with a visible effect
+            const itemRow = document.querySelector(`tr[data-item-id="${itemId}"]`);
+            if (itemRow) {
+                // Apply immediate visual feedback
+                itemRow.classList.add('row-saved');
+                
+                // Show a prominent notification
+                showPromptSaveNotification(itemId);
+            }
+            
+            // Success button animation - simple and clear
+            button.innerHTML = '<i class="feather icon-check"></i> SAVED!';
+            button.classList.replace('btn-info', 'btn-success');
+            
+            // Reset button after delay
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.replace('btn-success', 'btn-info');
+                button.disabled = false;
+            }, 2000);
+            
+            // Show success toast if available
+            if (window.toastr) {
+                toastr.options = {
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: "toast-top-center",
+                    timeOut: 3000,
+                    extendedTimeOut: 1000
+                };
+                toastr.success('Item #' + itemId + ' saved successfully');
+            }
+        } else {
+            if (window.toastr) {
+                toastr.error('Failed to save item: ' + (data.message || 'Unknown error'));
+            }
+            
+            // Reset button
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error saving item:', error);
+        
+        if (window.toastr) {
+            toastr.error('Failed to save item. Please try again.');
+        }
+        
+        // Reset button
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// Temporary but very visible save notification
+function showPromptSaveNotification(itemId) {
+    // Create notification if it doesn't exist
+    let notification = document.getElementById('prompt-save-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'prompt-save-notification';
+        notification.style.position = 'fixed';
+        notification.style.top = '50%';
+        notification.style.left = '50%';
+        notification.style.transform = 'translate(-50%, -50%)';
+        notification.style.backgroundColor = '#28a745';
+        notification.style.color = 'white';
+        notification.style.padding = '20px 40px';
+        notification.style.borderRadius = '8px';
+        notification.style.boxShadow = '0 0 20px rgba(0,0,0,0.3)';
+        notification.style.zIndex = '9999';
+        notification.style.textAlign = 'center';
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.3s ease';
+        notification.style.fontSize = '24px';
+        notification.style.fontWeight = 'bold';
+        document.body.appendChild(notification);
+    }
+    
+    // Set content and show
+    notification.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" viewBox="0 0 16 16" style="margin-right:15px;">
+                <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+            </svg>
+            <div style="text-align: left;">
+                <div style="font-size: 28px; margin-bottom: 4px;">SAVED!</div>
+                <div style="font-size: 18px; opacity: 0.9;">Item #${itemId} saved successfully</div>
+            </div>
+        </div>
+    `;
+    notification.style.opacity = '1';
+    
+    // Hide after delay
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+    }, 2000);
+    
+    // Also add a permanent marker to the row
+    const itemRow = document.querySelector(`tr[data-item-id="${itemId}"]`);
+    if (itemRow) {
+        // Add persistent saved class
+        itemRow.classList.add('item-saved-persistent');
+        
+        // Add enhanced green left border marker (much more prominent)
+        if (!itemRow.querySelector('.item-saved-marker')) {
+            const marker = document.createElement('div');
+            marker.className = 'item-saved-marker';
+            marker.style.position = 'absolute';
+            marker.style.left = '0';
+            marker.style.top = '0';
+            marker.style.bottom = '0';
+            marker.style.width = '10px'; // Make it wider
+            marker.style.backgroundColor = '#28a745';
+            marker.style.boxShadow = '0 0 8px rgba(40, 167, 69, 0.6)'; // Add glow effect
+            itemRow.style.position = 'relative';
+            itemRow.appendChild(marker);
+        }
+    }
+}
+
+// Main initialization function
+function initQuoteProcessPage() {
+    console.log("Initializing quote process page");
+    
+    // Skip if already initialized
+    if (window.quoteProcessPageInitialized) {
+        console.log("Quote process page already initialized");
+        return;
+    }
+
+    // Initialize Select2 dropdowns
+    initSelect2Dropdowns();
+    
+    // Set up price calculation handlers
+    initPriceCalculations();
+    
+    // Set up toggle handlers
+    initToggleHandlers();
+    
+    // Set up item actions
+    initItemActions();
+    
+    // Initialize form handlers (save, generate quote)
+    initFormHandlers();
+    
+    // Mark as initialized
+    window.quoteProcessPageInitialized = true;
+    console.log("Quote process page initialization complete");
+}
+
+// Initialize Select2 dropdowns
+function initSelect2Dropdowns() {
+    safeJQuery(function($) {
+        // Debug check
+        console.log("jQuery loaded:", !!$);
+        console.log("Select2 loaded:", !!$.fn.select2);
+        
+        if (!$.fn.select2) {
+            console.log("Select2 not loaded yet, retrying in 100ms");
+            setTimeout(initSelect2Dropdowns, 100);
+            return;
+        }
+        
+        // Force destroy any existing instances to avoid duplicates
+        $('.supplier-select').each(function() {
+            try {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            } catch (e) {
+                console.log("Error destroying Select2:", e);
+            }
+        });
+        
+        // Initialize fresh instances - FIX THE DROPDOWN PARENT SETTING
+        $('.supplier-select').each(function() {
+            try {
+                console.log("Initializing Select2 for", this);
+                $(this).select2({
+                    theme: 'bootstrap-5',
+                    width: '100%', 
+                    placeholder: 'Select supplier',
+                    allowClear: true,
+                    // Remove the dropdownParent or set it to body
+                    dropdownParent: $('body')  // This fixes positioning issues
+                });
+            } catch (error) {
+                console.error("Error initializing Select2:", error);
+            }
+        });
+        
+        select2Initialized = true;
+        console.log("Select2 initialization complete");
+    });
+}
+
+// Initialize price calculation handlers
+function initPriceCalculations() {
+    // Remove existing event handlers by cloning and replacing elements
+    document.querySelectorAll('.cost-price, .markup, .selling-price').forEach(input => {
+        const newInput = input.cloneNode(true);
+        if (input.parentNode) {
+            input.parentNode.replaceChild(newInput, input);
+        }
+        
+        // Add new event handlers
+        newInput.addEventListener('input', function() {
+            const itemId = this.name.split('_').pop();
+            const source = this.classList.contains('cost-price') ? 'cost' :
+                this.classList.contains('markup') ? 'markup' : 'selling';
+            calculatePrices(itemId, source);
+        });
+    });
+    
+    // Calculate initial prices for all items
+    document.querySelectorAll('.cost-price').forEach(input => {
+        const itemId = input.name.split('_').pop();
+        calculatePrices(itemId, 'cost');
+    });
+}
+
+// Initialize toggle handlers
+function initToggleHandlers() {
+    // RFQ Description toggle buttons
+    document.querySelectorAll('.toggle-notes').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const targetId = this.getAttribute('data-bs-target');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                targetElement.classList.toggle('show');
+                
+                this.innerHTML = targetElement.classList.contains('show') ?
+                    '<i class="feather icon-info"></i> Hide RFQ Details' :
+                    '<i class="feather icon-info"></i> RFQ Details';
+            }
+        });
+    });
+    
+    // Notes toggle buttons
+    document.querySelectorAll('.toggle-item-notes').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const targetId = this.getAttribute('data-bs-target');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                targetElement.classList.toggle('show');
+                
+                if (targetElement.classList.contains('show')) {
+                    this.innerHTML = '<i class="feather icon-message-square"></i> Hide Notes';
+                } else {
+                    const hasNotes = button.querySelector('.badge') !== null;
+                    let html = '<i class="feather icon-message-square"></i>';
+                    if (hasNotes) {
+                        html += ' <span class="badge bg-info text-white">✓</span>';
+                    }
+                    html += ' Notes';
+                    this.innerHTML = html;
+                }
+            }
+        });
+    });
+    
+    // Select All checkbox
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            document.querySelectorAll('input[name="selected_items"]').forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+}
+
+// Initialize item action handlers
+function initItemActions() {
+    // Add Item button
+    const addItemBtn = document.getElementById('add-item-btn');
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', function() {
+            console.log("Add Item button clicked");
+            
+            const itemsContainer = document.getElementById('items-container');
+            if (!itemsContainer) {
+                console.error("Items container not found");
+                return;
+            }
+            
+            const quoteId = itemsContainer.getAttribute('data-quote-id');
+            if (!quoteId) {
+                console.error("Quote ID not found");
+                return;
+            }
+            
+            // Get CSRF token directly from the DOM instead of using cookies
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            
+            // Create form data and proper headers
+            const formData = new FormData();
+            formData.append('quote_id', quoteId);
+            
+            fetch('/quotes/add_item_to_quote/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'  // Add this line
+                },
+                credentials: 'same-origin'  // Add this line
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    console.error("Error adding item:", data.message);
+                    if (window.toastr) {
+                        toastr.error("Error adding item: " + data.message);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Error adding new item:", error);
+                if (window.toastr) {
+                    toastr.error("Error adding new item. Please try again.");
+                }
+            });
+        });
+    }
+    
+    // Save Item buttons
+    document.querySelectorAll('.save-item-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            if (itemId) {
+                saveItem(itemId, this);
+            }
+        });
+    });
+    
+    // Delete Item buttons using event delegation for all current and future buttons
+    document.addEventListener('click', function(event) {
+        const removeButton = event.target.closest('.remove-item');
+        if (!removeButton) return;
+        
+        event.preventDefault();
+        
+        const itemId = removeButton.getAttribute('data-item-id');
+        if (!itemId) return;
+        
+        // Prevent multiple clicks
+        if (removeButton.disabled) return;
+        removeButton.disabled = true;
+        
+        if (confirm('Are you sure you want to delete this item?')) {
+            fetch(`/quotes/delete-item/${itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Remove related rows from DOM
+                    const itemRow = document.querySelector(`tr[data-item-id="${itemId}"]`);
+                    const descRow = document.getElementById(`description-${itemId}`);
+                    const notesRow = document.getElementById(`notes-row-${itemId}`);
+                    
+                    if (itemRow) itemRow.remove();
+                    if (descRow) descRow.remove();
+                    if (notesRow) notesRow.remove();
+                    
+                    if (window.toastr) {
+                        toastr.success('Item deleted successfully');
+                    }
+                } else {
+                    if (window.toastr) {
+                        toastr.error('Failed to delete item: ' + (data.message || 'Unknown error'));
+                    }
+                    removeButton.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting item:', error);
+                if (window.toastr) {
+                    toastr.error('An error occurred while deleting the item');
+                }
+                removeButton.disabled = false;
+            });
+        } else {
+            removeButton.disabled = false;
+        }
+    });
+}
+
+// Initialize form handlers
+function initFormHandlers() {
+    // Save Changes button
+    const quoteForm = document.getElementById('quote-process-form');
+    const saveChangesBtn = document.querySelector('.card-footer .btn-primary');
+    
+    if (saveChangesBtn && quoteForm) {
+        saveChangesBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(quoteForm);
+            
+            fetch(window.location.pathname, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Server error');
+                return response.json();
+            })
+            .then(data => {
+                if (window.toastr) {
+                    toastr.success('Quote updated successfully');
+                }
+                setTimeout(() => window.location.reload(), 1000);
+            })
+            .catch(error => {
+                console.error('Error saving changes:', error);
+                if (window.toastr) {
+                    toastr.error('Failed to save changes. Please try again.');
+                }
+            });
+        });
+    }
+    
+    // Generate quote buttons
+    document.querySelectorAll('.generate-quote-btn').forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            
+            const letterhead = this.getAttribute('data-letterhead');
+            const formData = new FormData(quoteForm);
+            
+            fetch(window.location.pathname, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Server error');
+                return response.json();
+            })
+            .then(data => {
+                // Extract quote ID from URL
+                const pathParts = window.location.pathname.split('/').filter(Boolean);
+                const quoteId = pathParts[pathParts.indexOf('process') - 1];
+                
+                // Get selected items
+                const selectedItems = getSelectedItems();
+                
+                // Build URL based on letterhead
+                let pdfUrl = `/quotes/quote/${quoteId}/`;
+                if (letterhead === 'CNL') {
+                    pdfUrl += 'cnl-pdf/';
+                } else {
+                    pdfUrl += 'ish-pdf/';
+                }
+                
+                // Add selected items as query parameter
+                if (selectedItems) {
+                    pdfUrl += `?items=${selectedItems}`;
+                }
+                
+                window.location.href = pdfUrl;
+            })
+            .catch(error => {
+                console.error('Error generating quote:', error);
+                if (window.toastr) {
+                    toastr.error('Failed to generate quote. Please try again.');
+                }
+            });
+        });
+    });
+}
+
+// Helper function to get selected items
+function getSelectedItems() {
+    const selectedCheckboxes = document.querySelectorAll('input[name="selected_items"]:checked');
+    if (selectedCheckboxes.length > 0) {
+        return Array.from(selectedCheckboxes).map(checkbox => checkbox.value).join(',');
+    }
+    return null;
+}
+
+// Initialize when document is ready
+document.addEventListener('DOMContentLoaded', initQuoteProcessPage);
+
+// Export functions for use in inline scripts if needed
+window.calculatePrices = calculatePrices;
+window.updatePriceColor = updatePriceColor; 
+window.initQuoteProcessPage = initQuoteProcessPage;
+window.saveItem = saveItem;

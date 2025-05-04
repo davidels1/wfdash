@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Order Request</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            background-color: #edae41;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+        .content {
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .order-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .order-ref {
+            font-weight: bold;
+            font-size: 18px;
+            color: #edae41;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .items-table th {
+            background-color: #f8f9fa;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+        .items-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .action-button {
+            display: inline-block;
+            background-color: #edae41;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>New Order Request</h1>
+    </div>
+    
+    <div class="content">
+        <div class="order-info">
+            <p>A new order has been submitted through the Customer Portal.</p>
+            <p>Order Number: <span class="order-ref">{{ order.order_number }}</span></p>
+            <p>Submitted: {{ date|date:"F j, Y g:i A" }}</p>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">Customer Information</h2>
+            <p><strong>Company:</strong> {{ company.company }}</p>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">Order Notes</h2>
+            <p>{{ order.notes|default:"No additional notes provided." }}</p>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">Ordered Items</h2>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Qty</th>
+                        <th>Description</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.notes|default:"" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <a href="{{ admin_url }}" class="action-button">View in Admin Panel</a>
+    </div>
+    
+    <div class="footer">
+        <p>This is an automated notification from the WF Sales Portal. Please do not reply directly to this email.</p>
+    </div>
+</body>
+</html>

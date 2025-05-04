@@ -1,0 +1,662 @@
+{% extends "rep_portal/base.html" %}
+{% load static %}
+
+{% block title %}Submit Order{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Fixed header with back button */
+    .form-header {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        z-index: 100;
+        margin-bottom: 1rem;
+    }
+    
+    .form-header .back-button {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--secondary-color);
+        margin-right: 1rem;
+        padding: 0;
+        line-height: 1;
+    }
+    
+    .form-header h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        flex: 1;
+        text-align: center;
+    }
+    
+    .form-header .spacer {
+        width: 24px; /* Same width as back button for balance */
+    }
+    
+    /* Adjust content for fixed header */
+    .mobile-form-container {
+        padding-top: 0.5rem;
+    }
+    
+    /* Form container styling */
+    .mobile-form-container {
+        max-width: 100%;
+        padding: 0.5rem;
+    }
+    
+    .form-heading {
+        text-align: center;
+        margin-bottom: 1rem;
+        color: var(--secondary-color);
+        font-size: 1.75rem;
+    }
+    
+    /* Updated form section with border and enhanced styling */
+    .form-section {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 1rem;
+        border: 2px solid #e0e0e0; /* Add outline */
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Add a colored accent bar to the left of each section */
+    .form-section::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background-color: var(--primary-color);
+    }
+    
+    /* Make section titles more prominent */
+    .section-title {
+        font-size: 1.25rem;
+        margin-bottom: 1.25rem;
+        color: var(--secondary-color);
+        font-weight: 600;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .items-title {
+        font-size: 1.1rem;
+        margin: 1rem 0;
+        color: var(--secondary-color);
+        font-weight: 500;
+    }
+    
+    /* Form elements styling */
+    .form-floating > label {
+        opacity: 0.75;
+    }
+    
+    .form-floating:focus-within > label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 1;
+        color: var(--primary-color);
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(231, 98, 64, 0.25);
+    }
+    
+    /* Form elements styling with matching colors based on section */
+    .form-floating > label {
+        opacity: 0.75;
+    }
+
+    /* Customer section - Orange */
+    .form-section:nth-of-type(1) .form-floating:focus-within > label,
+    .form-section:nth-of-type(1) .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 1;
+        color: var(--primary-color);
+    }
+
+    .form-section:nth-of-type(1) .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(231, 98, 64, 0.25);
+    }
+
+    /* Order section - Blue */
+    .form-section:nth-of-type(2) .form-floating:focus-within > label,
+    .form-section:nth-of-type(2) .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 1;
+        color: var(--secondary-color);
+    }
+
+    .form-section:nth-of-type(2) .form-control:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.25rem rgba(44, 62, 80, 0.25);
+    }
+
+    /* Notes section - Green */
+    .form-section:nth-of-type(3) .form-floating:focus-within > label,
+    .form-section:nth-of-type(3) .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 1;
+        color: #40bf55;
+    }
+
+    .form-section:nth-of-type(3) .form-control:focus {
+        border-color: #40bf55;
+        box-shadow: 0 0 0 0.25rem rgba(64, 191, 85, 0.25);
+    }
+    
+    /* Select2 Styling */
+    .select2-container--default .select2-selection--single {
+        height: 38px;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 38px;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+    
+    /* Button styling */
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
+    
+    .btn-outline-secondary {
+        color: var(--secondary-color);
+        border-color: #ced4da;
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #f8f9fa;
+        color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+    
+    /* Item rows */
+    .item-row {
+        position: relative;
+        padding-right: 30px;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1rem;
+    }
+    
+    .item-row:last-child {
+        border-bottom: none;
+    }
+    
+    .remove-item {
+        position: absolute;
+        top: 5px;
+        right: 0;
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+        z-index: 5;
+    }
+    
+    #add-item-btn {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    /* Force consistent primary button colors across all devices */
+    .btn-primary, 
+    button[type="submit"] {
+        background-color: #e76240 !important; /* Orange color - adjust to match your brand */
+        border-color: #e76240 !important;
+        color: white !important;
+    }
+
+    .btn-primary:hover, 
+    button[type="submit"]:hover {
+        background-color: #d45535 !important; /* Darker orange for hover */
+        border-color: #d45535 !important;
+    }
+    
+    /* Add different accent colors to each section */
+    .form-section:nth-child(1)::before {
+        background-color: var(--primary-color);
+    }
+    
+    .form-section:nth-child(2)::before {
+        background-color: var(--secondary-color);
+    }
+    
+    .form-section:nth-child(3)::before {
+        background-color: #40bf55; /* Green */
+    }
+    
+    .form-section:nth-child(4)::before {
+        background-color: #4287f5; /* Blue */
+    }
+    
+    /* Make labels bolder */
+    label {
+        font-weight: 500;
+    }
+    
+    /* Required field indicator */
+    label[for$="*"] {
+        position: relative;
+    }
+    
+    label[for$="*"]::after {
+        content: '*';
+        color: #e76240;
+        margin-left: 3px;
+    }
+
+    /* Color indicators for each section at the top */
+    .form-section-legend {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.8rem;
+    }
+    
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    
+    .legend-color.orange {
+        background-color: var(--primary-color); /* Orange for customer info */
+    }
+    
+    .legend-color.blue {
+        background-color: var(--secondary-color); /* Blue for order details */
+    }
+    
+    .legend-color.green {
+        background-color: #40bf55; /* Green for notes */
+    }
+    
+    .legend-color.purple {
+        background-color: #4287f5; /* Blue for submit button */
+    }
+    
+    /* Make section titles match section color */
+    .form-section:nth-of-type(1) .section-title {
+        color: var(--primary-color); /* Orange for customer info */
+    }
+    
+    .form-section:nth-of-type(2) .section-title,
+    .form-section:nth-of-type(2) .items-title {
+        color: var(--secondary-color); /* Blue for order details */
+    }
+    
+    .form-section:nth-of-type(3) .section-title {
+        color: #40bf55; /* Green for notes */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Fixed header with back button (hidden in PWA mode) -->
+<div class="form-header">
+    <a href="{% url 'rep_portal:home' %}" class="back-button" id="backButton">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <h2>Create Customer Order</h2>
+    <div class="spacer"></div>
+</div>
+
+<div class="mobile-form-container">
+    <!-- Color legend for the form sections -->
+    <div class="form-section-legend">
+        <div class="legend-item">
+            <div class="legend-color orange"></div>
+            <span>Customer</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color blue"></div>
+            <span>Items</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color green"></div>
+            <span>Notes</span>
+        </div>
+    </div>
+
+    <form method="post" id="orderForm" action="{% url 'rep_portal:order_submit' %}">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        
+        <!-- Customer Selection Section -->
+        <div class="form-section">
+            <h3 class="section-title">Customer Contact Information</h3>
+            
+            <!-- Customer selection dropdown -->
+            <div class="mb-3">
+                <label for="{{ form.customer.id_for_label }}" class="form-label">Select Existing Customer</label>
+                {{ form.customer }}
+                <div class="form-text text-muted">Select a customer or enter details manually below</div>
+            </div>
+            
+            <hr class="my-3">
+            
+            <div class="form-floating mb-3">
+                {{ form.name }}
+                <label for="{{ form.name.id_for_label }}">Customer Name*</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                {{ form.email }}
+                <label for="{{ form.email.id_for_label }}">Email Address*</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                {{ form.phone }}
+                <label for="{{ form.phone.id_for_label }}">Phone Number</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                {{ form.company }}
+                <label for="{{ form.company.id_for_label }}">Company Name</label>
+            </div>
+        </div>
+        
+        <!-- Item Section -->
+        <div class="form-section">
+            <h3 class="section-title">Order Details</h3>
+            
+            <!-- PO Number moved to top of item section -->
+            <div class="form-floating mb-3">
+                {{ form.purchase_order }}
+                <label for="{{ form.purchase_order.id_for_label }}">PO Number / Custom Order ID</label>
+                <div class="form-text text-muted">Optional: Enter your own order number or leave blank for system-generated ID</div>
+            </div>
+            
+            <h4 class="items-title">Items</h4>
+            
+            {{ formset.management_form }}
+            <div id="items-container">
+                {% for item_form in formset.forms %}
+                <div class="item-row">
+                    <div class="form-floating mb-2">
+                        {{ item_form.description }}
+                        <label for="{{ item_form.description.id_for_label }}">Item Description*</label>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Qty</span>
+                        {{ item_form.quantity }}
+                    </div>
+                    <div class="form-floating mb-3">
+                        {{ item_form.notes }}
+                        <label for="{{ item_form.notes.id_for_label }}">Item Notes (optional)</label>
+                    </div>
+                    {% if not forloop.first %}
+                    <button type="button" class="remove-item">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <button type="button" id="add-item-btn" class="btn btn-sm btn-outline-secondary w-100 mb-4">
+                <i class="fas fa-plus me-1"></i> Add Another Item
+            </button>
+        </div>
+        
+        <!-- Notes Section -->
+        <div class="form-section">
+            <h3 class="section-title">Additional Notes</h3>
+            
+            <div class="form-floating mb-3">
+                {{ form.notes }}
+                <label for="{{ form.notes.id_for_label }}">Special Instructions (optional)</label>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <button type="submit" class="btn btn-primary btn-lg w-100">Create Order</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if running as PWA and hide back button if needed
+        if (window.matchMedia('(display-mode: standalone)').matches || 
+            window.navigator.standalone === true) {
+            // Running as PWA - hide back button
+            document.getElementById('backButton').style.display = 'none';
+        }
+        
+        // Initialize Select2 for customer dropdown
+        $('#{{ form.customer.id_for_label }}').select2({
+            placeholder: "Select a customer",
+            allowClear: true,
+            width: '100%'
+        });
+        
+        // Auto-fill customer details when selected from dropdown
+        $('#{{ form.customer.id_for_label }}').on('change', function() {
+            const customerId = $(this).val();
+            if (customerId) {
+                // Fetch customer details via AJAX
+                fetch(`/rep/api/customers/${customerId}/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Customer data received:', data);
+                        // Fill the form with customer data
+                        $('#{{ form.name.id_for_label }}').val(data.customer).trigger('change');
+                        $('#{{ form.email.id_for_label }}').val(data.email).trigger('change');
+                        $('#{{ form.phone.id_for_label }}').val(data.number).trigger('change');
+                        $('#{{ form.company.id_for_label }}').val(data.company).trigger('change');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching customer data:', error);
+                        alert('Failed to load customer information. Please try again or enter details manually.');
+                    });
+            } else {
+                // Clear fields if no customer selected
+                $('#{{ form.name.id_for_label }}').val('');
+                $('#{{ form.email.id_for_label }}').val('');
+                $('#{{ form.phone.id_for_label }}').val('');
+                $('#{{ form.company.id_for_label }}').val('');
+            }
+        });
+    
+        // Item formset handling
+        const addBtn = document.getElementById('add-item-btn');
+        const formset = document.getElementById('items-container');
+        const totalForms = document.getElementById('id_items-TOTAL_FORMS');
+        
+        // Add new item
+        addBtn.addEventListener('click', function() {
+            const formCount = parseInt(totalForms.value);
+            const newRow = document.createElement('div');
+            newRow.className = 'item-row';
+            
+            // Description floating field
+            const descContainer = document.createElement('div');
+            descContainer.className = 'form-floating mb-2';
+            
+            const descInput = document.createElement('input');
+            descInput.type = 'text';
+            descInput.name = `items-${formCount}-description`;
+            descInput.id = `id_items-${formCount}-description`;
+            descInput.className = 'form-control';
+            descInput.placeholder = 'Item description';
+            descInput.required = true;
+            
+            const descLabel = document.createElement('label');
+            descLabel.setAttribute('for', `id_items-${formCount}-description`);
+            descLabel.textContent = 'Item Description*';
+            
+            descContainer.appendChild(descInput);
+            descContainer.appendChild(descLabel);
+            
+            // Quantity field with prepend
+            const qtyGroup = document.createElement('div');
+            qtyGroup.className = 'input-group mb-3';
+            
+            const qtyPrepend = document.createElement('span');
+            qtyPrepend.className = 'input-group-text';
+            qtyPrepend.textContent = 'Qty';
+            
+            const qtyInput = document.createElement('input');
+            qtyInput.type = 'number';
+            qtyInput.name = `items-${formCount}-quantity`;
+            qtyInput.id = `id_items-${formCount}-quantity`;
+            qtyInput.className = 'form-control';
+            qtyInput.min = '1';
+            qtyInput.value = '1';
+            qtyInput.required = true;
+            
+            qtyGroup.appendChild(qtyPrepend);
+            qtyGroup.appendChild(qtyInput);
+            
+            // Notes field
+            const notesContainer = document.createElement('div');
+            notesContainer.className = 'form-floating mb-3';
+            
+            const notesInput = document.createElement('textarea');
+            notesInput.name = `items-${formCount}-notes`;
+            notesInput.id = `id_items-${formCount}-notes`;
+            notesInput.className = 'form-control';
+            notesInput.placeholder = 'Item notes';
+            notesInput.rows = 2;
+            
+            const notesLabel = document.createElement('label');
+            notesLabel.setAttribute('for', `id_items-${formCount}-notes`);
+            notesLabel.textContent = 'Item Notes (optional)';
+            
+            notesContainer.appendChild(notesInput);
+            notesContainer.appendChild(notesLabel);
+            
+            // Remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-item';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.addEventListener('click', function() {
+                this.closest('.item-row').remove();
+            });
+            
+            // Assemble the row
+            newRow.appendChild(descContainer);
+            newRow.appendChild(qtyGroup);
+            newRow.appendChild(notesContainer);
+            newRow.appendChild(removeBtn);
+            
+            formset.appendChild(newRow);
+            totalForms.value = formCount + 1;
+        });
+        
+        // Add remove buttons to existing items (except first one)
+        document.querySelectorAll('.remove-item').forEach(button => {
+            button.addEventListener('click', function() {
+                this.closest('.item-row').remove();
+            });
+        });
+        
+        // Form submission handling with validation
+        const form = document.getElementById('orderForm');
+        form.addEventListener('submit', function(event) {
+            // Prevent form from submitting while we validate
+            event.preventDefault();
+            
+            // Required fields in main form - UPDATED: Phone removed from required fields
+            const requiredFields = [
+                { id: '{{ form.name.id_for_label }}', name: 'Customer Name' },
+                { id: '{{ form.email.id_for_label }}', name: 'Email' }
+            ];
+            
+            let isValid = true;
+            
+            // Check required fields
+            for (const field of requiredFields) {
+                const input = document.getElementById(field.id);
+                if (!input.value.trim()) {
+                    alert(`Please enter the customer's ${field.name}`);
+                    input.focus();
+                    isValid = false;
+                    break;
+                }
+                
+                // Simple email validation
+                if (field.name === 'Email' && !input.value.includes('@')) {
+                    alert('Please enter a valid email address');
+                    input.focus();
+                    isValid = false;
+                    break;
+                }
+            }
+            
+            // Check the first item (required)
+            const firstItemDesc = document.getElementById('id_items-0-description');
+            const firstItemQty = document.getElementById('id_items-0-quantity');
+            
+            if (isValid && (!firstItemDesc || !firstItemDesc.value.trim() || !firstItemQty || !firstItemQty.value)) {
+                alert('Please add at least one item to the order');
+                if (firstItemDesc) firstItemDesc.focus();
+                isValid = false;
+            }
+            
+            // Fix for Purchase Order field - always add to notes
+            const poNumber = document.getElementById('{{ form.purchase_order.id_for_label }}').value;
+            if (poNumber) {
+                const notesField = document.getElementById('{{ form.notes.id_for_label }}');
+                notesField.value = `PO: ${poNumber}\n${notesField.value}`;
+            }
+            
+            // If all validations pass, submit the form
+            if (isValid) {
+                console.log('Form is valid, submitting...');
+                
+                // Update the submit button to show loading state
+                const submitBtn = document.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Creating Order...';
+                
+                // Submit the form
+                this.submit();
+            }
+        });
+    });
+</script>
+{% endblock %}

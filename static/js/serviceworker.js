@@ -50,34 +50,47 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-self.addEventListener('fetch', (event) => {
-    console.log('[ServiceWorker] Fetch:', event.request.url);
+self.addEventListener('fetch', event => {
+    if (event.request.method !== 'GET') {
+        // For non-GET requests (like POST), don't use cache
+        return;
+    }
+
     event.respondWith(
-        caches.match(event.request)
+        fetch(event.request)
             .then(response => {
-                if (response) {
-                    console.log('[ServiceWorker] Returning cached:', event.request.url);
-                    return response;
-                }
-                console.log('[ServiceWorker] Fetching:', event.request.url);
-                return fetch(event.request)
-                    .then(response => {
-                        // Cache successful responses
-                        if (response && response.status === 200) {
-                            const responseToCache = response.clone();
-                            caches.open(CACHE_NAME)
-                                .then(cache => {
-                                    cache.put(event.request, responseToCache);
-                                });
-                        }
-                        return response;
-                    })
-                    .catch(() => {
-                        console.log('[ServiceWorker] Fetch failed, returning offline page');
-                        return caches.match(OFFLINE_URL);
+                // Clone the response before using it
+                const responseClone = response.clone();
+                
+                if (response.status === 200) {
+                    caches.open('v1').then(cache => {
+                        cache.put(event.request, responseClone);
                     });
+                }
+                
+                return response;
+            })
+            .catch(() => {
+                return caches.match(event.request);
             })
     );
+});
+
+// Add CSRF handling for POST requests
+self.addEventListener('fetch', event => {
+    if (event.request.method === 'POST') {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => response)
+                .catch(error => {
+                    console.error('Fetch failed:', error);
+                    return new Response(
+                        JSON.stringify({ error: 'Network request failed' }), 
+                        { status: 503, headers: { 'Content-Type': 'application/json' } }
+                    );
+                })
+        );
+    }
 });
 
 self.addEventListener('push', (event) => {

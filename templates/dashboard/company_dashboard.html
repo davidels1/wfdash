@@ -1,0 +1,517 @@
+<!-- filepath: c:\###PYTHONANY_WORKING\WFDASH\dashboard\templates\dashboard\company_dashboard.html -->
+{% extends 'layouts/base.html' %}
+{% load static humanize %}
+
+{% block title %} {{ company.company }} Dashboard {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+    /* Optional: Style for the nested item details */
+    .item-details-row td {
+        background-color: #f8f9fa; /* Light background for item rows */
+        padding: 0 !important; /* Remove padding from the outer cell */
+    }
+    .item-details-row .table {
+        margin-bottom: 0; /* Remove margin from nested table */
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="pcoded-content">
+    <div class="pcoded-inner-content">
+        <div class="main-body">
+            <div class="page-wrapper">
+                <!-- [ Main Content ] start -->
+                <div class="row">
+                    <!-- Company Info Card -->
+                    <div class="col-md-12 col-xl-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5>{{ company.company }}</h5>
+                                {# Add other company fields if they exist #}
+                                <hr>
+                                {% if company.address %}
+                                <p><i class="feather icon-map-pin me-2"></i>{{ company.address|default:"N/A"|linebreaksbr }}</p>
+                                {% endif %}
+                                {% if company.contact_person %}
+                                <p><i class="feather icon-user me-2"></i>{{ company.contact_person|default:"N/A" }}</p>
+                                {% endif %}
+                                {% if company.email %}
+                                <p><i class="feather icon-mail me-2"></i>{{ company.email|default:"N/A" }}</p>
+                                {% endif %}
+                                {% if company.phone %}
+                                <p><i class="feather icon-phone me-2"></i>{{ company.phone|default:"N/A" }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="col-md-12 col-xl-8">
+                        <div class="row">
+                            <!-- Order Stats -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="text-c-green">{{ total_orders }}</h4>
+                                        <h6 class="text-muted m-b-0">Total Orders</h6>
+                                    </div>
+                                    <div class="card-footer bg-light-green">
+                                        <small>
+                                            {% for status, count in order_status_counts.items %}
+                                                {{ status|default:"Unknown" }}: {{ count }}{% if not forloop.last %}, {% endif %}
+                                            {% empty %}No orders.{% endfor %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Quote Stats -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="text-c-yellow">{{ total_quotes }}</h4>
+                                        <h6 class="text-muted m-b-0">Total Quotes</h6>
+                                    </div>
+                                     <div class="card-footer bg-light-yellow">
+                                        <small>
+                                            {% for status, count in quote_status_counts.items %}
+                                                {{ status|default:"Unknown" }}: {{ count }}{% if not forloop.last %}, {% endif %}
+                                            {% empty %}No quotes.{% endfor %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                             <!-- Order Value Stats -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="text-c-blue">R {{ total_order_value|floatformat:2|intcomma }}</h4>
+                                        <h6 class="text-muted m-b-0">Total Order Value</h6>
+                                    </div>
+                                </div>
+                            </div>
+                             <!-- Customer Stats -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="text-c-purple">{{ total_customers }}</h4>
+                                        <h6 class="text-muted m-b-0">Associated Customers</h6>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Delivery Note Stats -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="text-c-red">{{ total_delivery_notes }}</h4>
+                                        <h6 class="text-muted m-b-0">Total Delivery Notes</h6>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Order Items Stats -->
+                            <div class="col-sm-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="text-c-orange">{{ total_order_items }}</h4>
+                                        <h6 class="text-muted m-b-0">Total Order Items</h6>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Charts Row -->
+                <div class="row">
+                    <!-- Monthly Order Value Chart -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Order Value per Month</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="monthlyValueChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Order Status Chart -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Order Status Distribution</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="orderStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Data Tables Row -->
+                <div class="row">
+                    <!-- Recent Orders Table -->
+                    <div class="col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Recent Orders</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th></th> {# Column for toggle button #}
+                                                <th>Order #</th>
+                                                <th>Customer</th>
+                                                <th>Rep</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in recent_orders_list %}
+                                            <tr>
+                                                {# Toggle Button #}
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary toggle-items py-0 px-1" data-target="#items-order-{{ order.pk }}">
+                                                        <i class="feather icon-plus"></i>
+                                                    </button>
+                                                </td>
+                                                <td>{{ order.order_number }}</td>
+                                                <td>{{ order.quote.customer.customer|default:"N/A" }}</td>
+                                                <td>
+                                                    {% if order.rep %}{{ order.rep.first_name|default:order.rep.username|default:"N/A" }}{% else %}N/A{% endif %}
+                                                </td>
+                                                <td>{{ order.created_at|date:"Y-m-d" }}</td>
+                                                <td><span class="badge bg-light-{{ order.get_status_badge_class|default:'secondary' }}">{{ order.status|default:"N/A" }}</span></td>
+                                                <td>
+                                                    <a href="{% url 'orders:order_detail' order.pk %}" class="btn btn-sm btn-outline-primary"><i class="feather icon-eye"></i> View</a>
+                                                </td>
+                                            </tr>
+                                            {# Hidden Row for Items #}
+                                            <tr id="items-order-{{ order.pk }}" class="item-details-row" style="display: none;">
+                                                <td colspan="7"> {# Colspan = number of columns in header #}
+                                                    <div class="p-2">
+                                                        <h6 class="mb-1 ms-1"><small>Items for Order {{ order.order_number }}</small></h6>
+                                                        <table class="table table-sm table-bordered">
+                                                            <thead class="table-light">
+                                                                <tr><th>Description</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% for item in order.items.all %}
+                                                                <tr>
+                                                                    <td>{{ item.description|truncatechars:50 }}</td>
+                                                                    <td>{{ item.quantity }}</td>
+                                                                    <td>R {{ item.selling_price|default:0.00|floatformat:2|intcomma }}</td>
+                                                                    <td>R {{ item.get_total_price|default:0.00|floatformat:2|intcomma }}</td>
+                                                                </tr>
+                                                                {% empty %}
+                                                                <tr><td colspan="4" class="text-center">No items found for this order.</td></tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="7" class="text-center">No recent orders found for this company.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Quotes Table -->
+                    <div class="col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Recent Quotes</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th></th> {# Toggle Column #}
+                                                <th>Quote #</th>
+                                                <th>Customer</th>
+                                                <th>Rep</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for quote in recent_quotes_list %}
+                                            <tr>
+                                                {# Toggle Button #}
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary toggle-items py-0 px-1" data-target="#items-quote-{{ quote.pk }}">
+                                                        <i class="feather icon-plus"></i>
+                                                    </button>
+                                                </td>
+                                                <td>{{ quote.quote_number }}</td>
+                                                <td>{{ quote.customer.customer|default:"N/A" }}</td>
+                                                <td>
+                                                    {% if quote.rep %}{{ quote.rep.first_name|default:quote.rep.username|default:"N/A" }}{% else %}N/A{% endif %}
+                                                </td>
+                                                <td>{{ quote.created_at|date:"Y-m-d" }}</td>
+                                                <td><span class="badge bg-light-{{ quote.get_status_badge_class|default:'secondary' }}">{{ quote.status|default:"N/A" }}</span></td>
+                                                <td>
+                                                    <a href="{% url 'quotes:quote_detail' quote.pk %}" class="btn btn-sm btn-outline-primary"><i class="feather icon-eye"></i> View</a>
+                                                </td>
+                                            </tr>
+                                            {# Hidden Row for Items #}
+                                            <tr id="items-quote-{{ quote.pk }}" class="item-details-row" style="display: none;">
+                                                <td colspan="7"> {# Adjust colspan #}
+                                                    <div class="p-2">
+                                                        <h6 class="mb-1 ms-1"><small>Items for Quote {{ quote.quote_number }}</small></h6>
+                                                        <table class="table table-sm table-bordered">
+                                                            <thead class="table-light">
+                                                                <tr><th>Description</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% for item in quote.items.all %} {# Use the correct related_name (e.g., 'items') #}
+                                                                <tr>
+                                                                    <td>{{ item.description|truncatechars:50 }}</td>
+                                                                    <td>{{ item.quantity }}</td>
+                                                                    <td>R {{ item.price|default:0.00|floatformat:2|intcomma }}</td>
+                                                                    <td>R {{ item.get_total|default:0.00|floatformat:2|intcomma }}</td> {# Assuming get_total method #}
+                                                                </tr>
+                                                                {% empty %}
+                                                                <tr><td colspan="4" class="text-center">No items found for this quote.</td></tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="7" class="text-center">No recent quotes found for this company.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Delivery Notes Table -->
+                    <div class="col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Recent Delivery Notes</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th></th> {# Toggle Column #}
+                                                <th>DN #</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Needs Pricing?</th>
+                                                <th>Created By</th>
+                                                <th>Delivered By</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for dn in recent_delivery_notes_list %}
+                                            <tr>
+                                                {# Toggle Button #}
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary toggle-items py-0 px-1" data-target="#items-dn-{{ dn.pk }}">
+                                                        <i class="feather icon-plus"></i>
+                                                    </button>
+                                                </td>
+                                                <td>{{ dn.delivery_number }}</td>
+                                                <td>{{ dn.delivery_date|date:"Y-m-d" }}</td>
+                                                <td><span class="badge bg-light-secondary">{{ dn.status|default:"N/A" }}</span></td>
+                                                <td>
+                                                    {% if not dn.has_all_items_priced %}<span class="badge bg-light-warning">Yes</span>{% else %}<span class="badge bg-light-success">No</span>{% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if dn.created_by %}{{ dn.created_by.first_name|default:dn.created_by.username|default:"N/A" }}{% else %}N/A{% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if dn.delivered_by %}{{ dn.delivered_by.first_name|default:dn.delivered_by.username|default:"N/A" }}{% else %}N/A{% endif %}
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'delivery_notes:detail' dn.pk %}" class="btn btn-sm btn-outline-primary"><i class="feather icon-eye"></i> View</a>
+                                                </td>
+                                            </tr>
+                                            {# Hidden Row for Items #}
+                                            <tr id="items-dn-{{ dn.pk }}" class="item-details-row" style="display: none;">
+                                                <td colspan="8"> {# Adjust colspan #}
+                                                    <div class="p-2">
+                                                        <h6 class="mb-1 ms-1"><small>Items for DN {{ dn.delivery_number }}</small></h6>
+                                                        <table class="table table-sm table-bordered">
+                                                            <thead class="table-light">
+                                                                <tr><th>Description</th><th>Qty</th><th>Price</th><th>Needs Price?</th></tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% for item in dn.items.all %}
+                                                                <tr>
+                                                                    <td>{{ item.description|truncatechars:50 }}</td>
+                                                                    <td>{{ item.quantity }}</td>
+                                                                    <td>R {{ item.price|default:0.00|floatformat:2|intcomma }}</td>
+                                                                    <td>{% if item.price is None or item.price <= 0 %}<span class="text-danger">Yes</span>{% else %}No{% endif %}</td>
+                                                                </tr>
+                                                                {% empty %}
+                                                                <tr><td colspan="4" class="text-center">No items found for this delivery note.</td></tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="8" class="text-center">No recent delivery notes found for this company.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Order Items Table -->
+                    <div class="col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Recent Order Items</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Order #</th>
+                                                <th>Description</th>
+                                                <th>Qty</th>
+                                                <th>Price</th>
+                                                <th>Total</th>
+                                                <th>Order Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in recent_order_items_list %}
+                                            <tr>
+                                                <td>{{ item.order.order_number }}</td>
+                                                <td>{{ item.description|truncatechars:40 }}</td>
+                                                <td>{{ item.quantity|default:0 }}</td>
+                                                <td>R {{ item.selling_price|default:0.00|floatformat:2|intcomma }}</td>
+                                                <td>R {{ item.get_total_price|default:0.00|floatformat:2|intcomma }}</td>
+                                                <td><span class="badge bg-light-{{ item.order.get_status_badge_class|default:'secondary' }}">{{ item.order.status|default:"N/A" }}</span></td>
+                                                <td>
+                                                    <a href="{% url 'orders:order_detail' item.order.pk %}" class="btn btn-sm btn-outline-primary"><i class="feather icon-eye"></i> View Order</a>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="7" class="text-center">No recent order items found for this company.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- Associated Customers Table -->
+                    <div class="col-md-12">
+                        <div class="card table-card">
+                            <div class="card-header">
+                                <h5>Associated Customers</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Phone</th>
+                                                <th>Rep</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for cust in customers_list %}
+                                            <tr>
+                                                <td>{{ cust.customer }}</td>
+                                                <td>{{ cust.email|default:"N/A" }}</td>
+                                                <td>{{ cust.number|default:"N/A" }}</td>
+                                                <td>{{ cust.rep|default:"N/A" }}</td>
+                                                <td>
+                                                    <a href="{% url 'dashboard:customer_dashboard' cust.pk %}" class="btn btn-sm btn-outline-info"><i class="feather icon-bar-chart-2"></i> Dashboard</a>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr><td colspan="5" class="text-center">No customers found associated with this company.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- [ Main Content ] end -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE - Use the block defined in base.html -->
+{% block extra_js %}
+    {{ block.super }}
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    {# Safely embed chart data #}
+    {{ monthly_value_labels|json_script:"monthly-value-labels" }}
+    {{ monthly_value_data|json_script:"monthly-value-data" }}
+    {{ order_status_labels|json_script:"order-status-labels" }}
+    {{ order_status_data|json_script:"order-status-data" }}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const monthlyCtx = document.getElementById('monthlyValueChart')?.getContext('2d');
+            const statusCtx = document.getElementById('orderStatusChart')?.getContext('2d');
+
+            if (monthlyCtx) {
+                const monthlyLabels = JSON.parse(document.getElementById('monthly-value-labels').textContent);
+                const monthlyData = JSON.parse(document.getElementById('monthly-value-data').textContent);
+                new Chart(monthlyCtx, { /* ... monthly chart config ... */ });
+            } else {
+                console.warn("Monthly value chart canvas not found.");
+            }
+
+            if (statusCtx) {
+                const statusLabels = JSON.parse(document.getElementById('order-status-labels').textContent);
+                const statusData = JSON.parse(document.getElementById('order-status-data').textContent);
+                new Chart(statusCtx, { /* ... status chart config ... */ });
+            } else {
+                console.warn("Order status chart canvas not found.");
+            }
+        });
+    </script>
+
+    <script src="{% static 'js/company_dashboard_toggle.js' %}"></script>
+{% endblock extra_js %}

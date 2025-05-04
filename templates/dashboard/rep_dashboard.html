@@ -1,0 +1,639 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load humanize %}  <!-- Add this line to load the humanize filters -->
+
+{% block title %}Sales Dashboard{% endblock %}
+
+{% block breadcrumbs %}
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col-md-12">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Sales Dashboard</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'index' %}"><i class="feather icon-home"></i></a></li>
+                    <li class="breadcrumb-item active">Sales Dashboard</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock breadcrumbs %}
+
+{% block stylesheets %}
+{{ block.super }}
+<style>
+    /* Enhanced Card Styling */
+    .card {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 6px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 20px rgba(0,0,0,0.12);
+    }
+    
+    /* Gradient Backgrounds for Summary Cards */
+    .bg-gradient-primary {
+        background: linear-gradient(135deg,rgb(255, 64, 121) 0%,rgb(71, 195, 226) 100%);
+    }
+    
+    .bg-gradient-success {
+        background: linear-gradient(135deg,rgb(61, 126, 170) 0%,rgb(255, 228, 122) 100%);
+    }
+    
+    .bg-gradient-warning {
+        background: linear-gradient(135deg,rgb(0, 162, 255) 0%,rgb(89, 86, 218) 100%);
+    }
+    
+    .bg-gradient-info {
+        background: linear-gradient(135deg,rgb(60, 165, 92) 0%,rgb(181, 172, 73) 100%);
+    }
+    
+    .bg-gradient-danger {
+        background: linear-gradient(135deg, rgb(255, 88, 88) 0%, rgb(240, 152, 25) 100%);
+    }
+    
+    /* Improved Stats Counter */
+    .stat-counter {
+        font-size: 2.2rem;
+        font-weight: 600;
+        margin-bottom: 0;
+        color: #fff;
+    }
+    
+    .stat-label {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Pattern Overlay for Cards */
+    .pattern-overlay {
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 2 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 2 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+        background-size: cover;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    
+    /* Chart Cards */
+    .chart-card {
+        background-color: #fff;
+        border-radius: 12px;
+    }
+    
+    .chart-card .card-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        background-color: rgba(248, 249, 250, 0.5);
+    }
+    
+    /* Table Styling */
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.4em 0.7em;
+    }
+    
+    /* Counter Animation */
+    @keyframes countUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-counter {
+        animation: countUp 1s ease-out forwards;
+    }
+    
+    /* Status badge styling */
+    .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 30px;
+        font-weight: 500;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Summary Stats Cards -->
+    <div class="row">
+        <!-- Quote Stats -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card bg-gradient-primary position-relative">
+                <div class="pattern-overlay"></div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="feather icon-file-text f-30 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="stat-counter text-white animate-counter">{{ total_quotes }}</h2>
+                            <span class="stat-label">Total Quotes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-sm-6 col-lg-3">
+            <div class="card bg-gradient-success position-relative">
+                <div class="pattern-overlay"></div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="feather icon-plus-circle f-30 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="stat-counter text-white animate-counter">{{ quotes_today }}</h2>
+                            <span class="stat-label">New Today</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-sm-6 col-lg-3">
+            <div class="card bg-gradient-warning position-relative">
+                <div class="pattern-overlay"></div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="feather icon-users f-30 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="stat-counter text-white animate-counter">{{ total_customers }}</h2>
+                            <span class="stat-label">Customers</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-sm-6 col-lg-3">
+            <div class="card bg-gradient-info position-relative">
+                <div class="pattern-overlay"></div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="feather icon-shopping-cart f-30 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="stat-counter text-white animate-counter">{{ total_orders }}</h2>
+                            <span class="stat-label">Orders</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Value -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card bg-gradient-danger position-relative">
+                <div class="pattern-overlay"></div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="feather icon-dollar-sign f-30 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="stat-counter text-white animate-counter">
+                                {% if is_admin %}
+                                    ${{ total_order_value|floatformat:2|intcomma }}
+                                {% else %}
+                                    ${{ current_month_value|floatformat:2|intcomma }}
+                                {% endif %}
+                            </h2>
+                            <span class="stat-label">
+                                {% if is_admin %}
+                                    Total Sales Value (All Time)
+                                {% else %}
+                                    Sales Value ({{ current_month }})
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts & Data Section -->
+    <div class="row mt-4">
+        <!-- Quote Status Breakdown -->
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="feather icon-pie-chart text-primary me-2"></i>
+                        Quote Status Breakdown
+                    </h5>
+                    <a href="{% url 'quotes:quote_list' %}" class="btn btn-sm btn-primary">
+                        <i class="feather icon-list me-1"></i> View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div id="quoteStatusChart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Order Status Breakdown -->
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="feather icon-bar-chart-2 text-success me-2"></i>
+                        Order Status Breakdown
+                    </h5>
+                    <a href="{% url 'orders:order_list' %}" class="btn btn-sm btn-success">
+                        <i class="feather icon-list me-1"></i> View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div id="orderStatusChart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="row mt-4">
+        <!-- Recent Quotes -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="feather icon-clipboard text-primary me-2"></i>
+                        Recent Quotes
+                    </h5>
+                    <a href="{% url 'quotes:quote_list' %}" class="btn btn-sm btn-primary">
+                        <i class="feather icon-list me-1"></i> View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Quote #</th>
+                                    <th>Customer</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quote in recent_quotes %}
+                                <tr>
+                                    <td>{{ quote.quote_number }}</td>
+                                    <td>{{ quote.customer.company }}</td>
+                                    <td>
+                                        <span class="status-badge {% if quote.status == 'new' %}bg-info{% elif quote.status == 'claimed' %}bg-warning{% elif quote.status == 'processed' %}bg-primary{% elif quote.status == 'complete' %}bg-success{% else %}bg-secondary{% endif %} text-white">
+                                            {{ quote.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ quote.created_at|date:"d M Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'quotes:quote_detail' quote.pk %}" class="btn btn-sm btn-primary">
+                                            <i class="feather icon-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3">No recent quotes found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Orders -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="feather icon-package text-success me-2"></i>
+                        Recent Orders
+                    </h5>
+                    <a href="{% url 'orders:order_list' %}" class="btn btn-sm btn-success">
+                        <i class="feather icon-list me-1"></i> View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Customer</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                <tr>
+                                    <td>{{ order.order_number }}</td>
+                                    <td>{{ order.customer.company }}</td>
+                                    <td>
+                                        <span class="status-badge {% if order.status == 'new' %}bg-info{% elif order.status == 'processing' %}bg-warning{% elif order.status == 'shipped' %}bg-primary{% elif order.status == 'delivered' %}bg-success{% else %}bg-secondary{% endif %} text-white">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ order.created_at|date:"d M Y" }}</td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-success">
+                                            <i class="feather icon-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3">No recent orders found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quotes Pending Approval Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="feather icon-check-square text-warning me-2"></i>
+                        Quotes Pending Approval
+                    </h5>
+                    <a href="{% url 'quotes:pending_approvals' %}" class="btn btn-sm btn-warning">
+                        <i class="feather icon-list me-1"></i> View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Quote #</th>
+                                    <th>Customer</th>
+                                    <th>Letterhead</th>
+                                    <th>Date</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quote in pending_approval_quotes %}
+                                <tr {% if quote.rep == request.user %}class="table-warning"{% endif %}>
+                                    <td>{{ quote.quote_number }}</td>
+                                    <td>{{ quote.customer.company }}</td>
+                                    <td>
+                                        <span class="badge {% if quote.company_letterhead == 'CNL' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                            {{ quote.company_letterhead }}
+                                        </span>
+                                    </td>
+                                    <td>{{ quote.pdf_generated_at|date:"d M Y" }}</td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <a href="{{ quote.pdf_file.url }}" target="_blank" class="btn btn-info btn-sm" title="View PDF">
+                                                <i class="feather icon-file-text"></i>
+                                            </a>
+                                            <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success btn-sm" title="Approve">
+                                                <i class="feather icon-check"></i>
+                                            </a>
+                                            <a href="{% url 'quotes:reject_quote' quote.pk %}" class="btn btn-danger btn-sm" title="Reject">
+                                                <i class="feather icon-x"></i>
+                                            </a>
+                                        </div>
+                                        {% if is_admin and quote.rep != request.user %}
+                                        <small class="text-muted d-block mt-1">Rep: {{ quote.rep.get_full_name|default:quote.rep.username }}</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3">No quotes pending approval</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Add ApexCharts for beautiful charts -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Quote Status Chart
+    var quoteStatusData = [
+        {% for status in quote_status_counts %}
+            {{ status.count }},
+        {% endfor %}
+    ];
+    
+    var quoteStatusLabels = [
+        {% for status in quote_status_counts %}
+            "{{ status.status|default:'Unknown'|title }}",
+        {% endfor %}
+    ];
+    
+    if (quoteStatusData.length > 0) {
+        var quoteStatusOptions = {
+            chart: {
+                type: 'bar',  // Changed from 'donut' to 'bar'
+                height: 300,
+                fontFamily: 'Nunito, sans-serif',
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800,
+                    animateGradually: {
+                        enabled: true,
+                        delay: 150
+                    },
+                    dynamicAnimation: {
+                        enabled: true,
+                        speed: 350
+                    }
+                }
+            },
+            series: [{
+                name: 'Quotes',
+                data: quoteStatusData
+            }],
+            xaxis: {
+                categories: quoteStatusLabels,
+                labels: {
+                    style: {
+                        fontSize: '14px',
+                        fontWeight: 500
+                    }
+                }
+            },
+            colors: ['#4099ff', '#FFB64D', '#00bcd4', '#2ed8b6', '#ff5370'],
+            plotOptions: {
+                bar: {
+                    borderRadius: 4,
+                    horizontal: false,
+                    columnWidth: '55%',
+                    distributed: true
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function(val) {
+                    return val;
+                },
+                style: {
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                }
+            },
+            legend: {
+                position: 'bottom',
+                fontSize: '14px',
+                fontWeight: 500,
+                markers: {
+                    width: 12,
+                    height: 12,
+                    radius: 6
+                },
+                horizontalAlign: 'center'
+            }
+        };
+        
+        var quoteStatusChart = new ApexCharts(document.querySelector("#quoteStatusChart"), quoteStatusOptions);
+        quoteStatusChart.render();
+    } else {
+        document.querySelector("#quoteStatusChart").innerHTML = '<div class="text-center py-5 text-muted">No quote status data available</div>';
+    }
+    
+    // Order Status Chart
+    var orderStatusData = [
+        {% for status in orders_by_status %}
+            {{ status.count }},
+        {% endfor %}
+    ];
+    
+    var orderStatusLabels = [
+        {% for status in orders_by_status %}
+            "{{ status.status|default:'Unknown'|title }}",
+        {% endfor %}
+    ];
+    
+    if (orderStatusData.length > 0) {
+        var orderStatusOptions = {
+            chart: {
+                type: 'bar',  // Changed from 'donut' to 'bar'
+                height: 300,
+                fontFamily: 'Nunito, sans-serif',
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800,
+                    animateGradually: {
+                        enabled: true,
+                        delay: 150
+                    },
+                    dynamicAnimation: {
+                        enabled: true,
+                        speed: 350
+                    }
+                }
+            },
+            series: [{
+                name: 'Orders',
+                data: orderStatusData
+            }],
+            xaxis: {
+                categories: orderStatusLabels,
+                labels: {
+                    style: {
+                        fontSize: '14px',
+                        fontWeight: 500
+                    }
+                }
+            },
+            colors: ['#4099ff', '#FFB64D', '#00bcd4', '#2ed8b6', '#ff5370'],
+            plotOptions: {
+                bar: {
+                    borderRadius: 4,
+                    horizontal: false,
+                    columnWidth: '55%',
+                    distributed: true
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function(val) {
+                    return val;
+                },
+                style: {
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                }
+            },
+            legend: {
+                position: 'bottom',
+                fontSize: '14px',
+                fontWeight: 500,
+                markers: {
+                    width: 12,
+                    height: 12,
+                    radius: 6
+                },
+                horizontalAlign: 'center'
+            }
+        };
+        
+        var orderStatusChart = new ApexCharts(document.querySelector("#orderStatusChart"), orderStatusOptions);
+        orderStatusChart.render();
+    } else {
+        document.querySelector("#orderStatusChart").innerHTML = '<div class="text-center py-5 text-muted">No order status data available</div>';
+    }
+
+    // Add counter animation
+    document.querySelectorAll('.animate-counter').forEach(function(counter) {
+        counter.classList.add('show');
+    });
+});
+</script>
+{% endblock %}

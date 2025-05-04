@@ -1,0 +1,122 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Email Quote{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="feather icon-mail mr-2"></i> 
+                        Email Quote #{{ quote.quote_number }}
+                        {% if approved %}
+                        <span class="badge bg-success ml-2">Approved</span>
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form id="emailForm" method="post" action="{% url 'quotes:email_quote' quote.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="letterhead" value="{{ quote.company_letterhead }}">
+                        <input type="hidden" name="send_email" value="true">
+                        <input type="hidden" name="update_status" value="true">
+                        
+                        <div class="mb-3">
+                            <label for="emailTo" class="form-label">To:</label>
+                            <input type="email" class="form-control" id="emailTo" name="to" 
+                                   value="{{ email_data.to }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="emailCc" class="form-label">CC:</label>
+                            <input type="email" class="form-control" id="emailCc" name="cc">
+                        </div>
+                        <div class="mb-3">
+                            <label for="emailBcc" class="form-label">BCC:</label>
+                            <input type="email" class="form-control" id="emailBcc" name="bcc" 
+                                   value="{{ email_data.rep_email }}" placeholder="Add additional recipients">
+                        </div>
+                        <div class="mb-3">
+                            <label for="emailSubject" class="form-label">Subject:</label>
+                            <input type="text" class="form-control" id="emailSubject" name="subject" 
+                                   value="{{ email_data.subject }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="emailBody" class="form-label">Message:</label>
+                            <textarea class="form-control" id="emailBody" name="body" rows="6" required>{{ email_data.body }}</textarea>
+                        </div>
+                        
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a href="{% url 'quotes:pending_approvals' %}" class="btn btn-secondary">
+                                <i class="feather icon-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="sendEmailBtn">
+                                <i class="feather icon-send"></i> Send Email
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const emailForm = document.getElementById('emailForm');
+        const sendEmailBtn = document.getElementById('sendEmailBtn');
+        
+        emailForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            sendEmailBtn.innerHTML = '<i class="feather icon-loader" style="animation: spin 1s linear infinite;"></i> Sending...';
+            sendEmailBtn.disabled = true;
+            
+            // Use fetch API to submit the form
+            fetch(emailForm.action, {
+                method: 'POST',
+                body: new FormData(emailForm),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Show success message and redirect
+                    toastr.success('Email sent successfully');
+                    setTimeout(() => {
+                        window.location.href = "{% url 'quotes:pending_approvals' %}";
+                    }, 1500);
+                } else {
+                    // Show error message
+                    toastr.error('Failed to send email: ' + (data.message || 'Unknown error'));
+                    
+                    // Reset button
+                    sendEmailBtn.innerHTML = '<i class="feather icon-send"></i> Send Email';
+                    sendEmailBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error sending email:', error);
+                toastr.error('Error sending email. Please try again.');
+                
+                // Reset button
+                sendEmailBtn.innerHTML = '<i class="feather icon-send"></i> Send Email';
+                sendEmailBtn.disabled = false;
+            });
+        });
+    });
+</script>
+
+<style>
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
