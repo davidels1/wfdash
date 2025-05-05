@@ -101,7 +101,7 @@
                             </table>
                         </div>
 
-                        <!-- Mobile card view (only visible on small screens) -->
+                        <!-- Mobile card view - Updated with smaller buttons -->
                         <div class="d-md-none">
                             {% for quote in quotes %}
                                 <div class="card mb-3 mobile-quote-card" data-rep="{{ quote.rep.username }}">
@@ -136,12 +136,16 @@
                                             </div>
                                         </div>
                                         <div class="d-grid gap-2">
-                                            <a href="{{ quote.pdf_file.url }}" target="_blank" class="btn btn-info btn-mobile-action">
-                                                <i class="feather icon-file-text me-2"></i> View PDF
-                                            </a>
-                                            <a href="{% url 'quotes:quote_detail' quote.pk %}" class="btn btn-primary btn-mobile-action">
-                                                <i class="feather icon-eye me-2"></i> View Details
-                                            </a>
+                                            <!-- View buttons - Changed to side-by-side layout -->
+                                            <div class="d-flex gap-2">
+                                                <a href="{{ quote.pdf_file.url }}" target="_blank" class="btn btn-info flex-grow-1 btn-mobile-action">
+                                                    <i class="feather icon-file-text me-2"></i> View PDF
+                                                </a>
+                                                <a href="{% url 'quotes:quote_detail' quote.pk %}" class="btn btn-primary flex-grow-1 btn-mobile-action">
+                                                    <i class="feather icon-eye me-2"></i> Details
+                                                </a>
+                                            </div>
+                                            
                                             {% if is_admin or is_quoter or is_buyer or quote.rep == request.user %}
                                                 <div class="d-flex gap-2 mt-2">
                                                     <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success flex-grow-1 btn-mobile-action">
