@@ -1,0 +1,54 @@
+{% extends "repairs/base_repairs.html" %}
+
+{% block repairs_content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header pb-0">
+        <h6>Confirm Deletion</h6>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-warning" role="alert">
+          <h4 class="alert-heading">Warning!</h4>
+          <p>Are you sure you want to delete the repair <strong>#{{ repair.repair_number }}</strong> for customer <strong>{{ repair.customer }}</strong>?</p>
+          <p class="mb-0">This action cannot be undone.</p>
+        </div>
+        
+        <div class="mt-4">
+          <h6>Repair Details</h6>
+          <table class="table table-sm">
+            <tbody>
+              <tr>
+                <th>Repair Number:</th>
+                <td>{{ repair.repair_number }}</td>
+              </tr>
+              <tr>
+                <th>Customer:</th>
+                <td>{{ repair.customer }}</td>
+              </tr>
+              <tr>
+                <th>Item Description:</th>
+                <td>{{ repair.item_description }}</td>
+              </tr>
+              <tr>
+                <th>Status:</th>
+                <td>{{ repair.get_status_display }}</td>
+              </tr>
+              <tr>
+                <th>Received Date:</th>
+                <td>{{ repair.received_date|date:"M j, Y" }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <form method="post" class="text-end mt-4">
+          {% csrf_token %}
+          <a href="{% url 'repairs:repair_detail' repair.id %}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock repairs_content %}

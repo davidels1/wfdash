@@ -1,0 +1,136 @@
+{% extends "repairs/base_repairs.html" %}
+
+{% block repairs_content %}
+<div class="row">
+  <div class="col-md-8 mx-auto">
+    <div class="card mb-4">
+      <div class="card-header pb-0">
+        <h6>Create Quote for Repair #{{ repair.repair_number }}</h6>
+      </div>
+      <div class="card-body">
+        <div class="mb-4">
+          <div class="row">
+            <div class="col-md-6">
+              <p class="text-sm mb-1">Customer: <strong>{{ repair.customer }}</strong></p>
+              <p class="text-sm mb-1">Item: <strong>{{ repair.item_description }}</strong></p>
+              <p class="text-sm mb-1">Serial #: <strong>{{ repair.serial_number|default:"Not specified" }}</strong></p>
+            </div>
+            <div class="col-md-6">
+              <p class="text-sm mb-1">Received: <strong>{{ repair.received_date|date:"M j, Y" }}</strong></p>
+              <p class="text-sm mb-1">Status: <strong>{{ repair.get_status_display }}</strong></p>
+              {% if repair.supplier %}
+                <p class="text-sm mb-1">Supplier: <strong>{{ repair.supplier }}</strong></p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group mb-3">
+                <label for="{{ form.quote_number.id_for_label }}" class="form-control-label">Quote Number *</label>
+                {{ form.quote_number }}
+                {% if form.quote_number.errors %}
+                  <div class="invalid-feedback d-block">{{ form.quote_number.errors }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="form-group mb-3">
+                <label for="{{ form.quote_date.id_for_label }}" class="form-control-label">Quote Date *</label>
+                {{ form.quote_date }}
+                {% if form.quote_date.errors %}
+                  <div class="invalid-feedback d-block">{{ form.quote_date.errors }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="form-group mb-3">
+                <label for="{{ form.markup_percentage.id_for_label }}" class="form-control-label">Markup Percentage (%)</label>
+                {{ form.markup_percentage }}
+                {% if form.markup_percentage.errors %}
+                  <div class="invalid-feedback d-block">{{ form.markup_percentage.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group mb-3">
+                <label for="{{ form.supplier_quote_amount.id_for_label }}" class="form-control-label">Supplier Quote Amount *</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  {{ form.supplier_quote_amount }}
+                </div>
+                {% if form.supplier_quote_amount.errors %}
+                  <div class="invalid-feedback d-block">{{ form.supplier_quote_amount.errors }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="form-group mb-3">
+                <label for="{{ form.customer_quote_amount.id_for_label }}" class="form-control-label">Customer Quote Amount *</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  {{ form.customer_quote_amount }}
+                </div>
+                {% if form.customer_quote_amount.errors %}
+                  <div class="invalid-feedback d-block">{{ form.customer_quote_amount.errors }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="form-group mb-3">
+                <label for="{{ form.pdf_file.id_for_label }}" class="form-control-label">Quote PDF (optional)</label>
+                {{ form.pdf_file }}
+                {% if form.pdf_file.errors %}
+                  <div class="invalid-feedback d-block">{{ form.pdf_file.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          
+          <div class="text-end mt-4">
+            <a href="{% url 'repairs:repair_detail' repair.id %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Create Quote</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock repairs_content %}
+
+{% block javascripts %}
+{{ block.super }}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Add Bootstrap styles to form fields
+    const formFields = document.querySelectorAll("input[type=text], input[type=number], input[type=date], textarea, select");
+    formFields.forEach(function(field) {
+      if (!field.classList.contains("form-control") && !field.classList.contains("form-select")) {
+        if (field.tagName.toLowerCase() === "select") {
+          field.classList.add("form-select");
+        } else {
+          field.classList.add("form-control");
+        }
+      }
+    });
+    
+    // Auto-calculate customer quote amount based on supplier amount and markup
+    const supplierAmountField = document.getElementById("{{ form.supplier_quote_amount.id_for_label }}");
+    const markupField = document.getElementById("{{ form.markup_percentage.id_for_label }}");
+    const customerAmountField = document.getElementById("{{ form.customer_quote_amount.id_for_label }}");
+    
+    function calculateCustomerAmount() {
+      if (supplierAmountField.value && markupField.value) {
+        const supplierAmount = parseFloat(supplierAmountField.value);
+        const markup = parseFloat(markupField.value);
+        const customerAmount = supplierAmount * (1 + markup / 100);
+        customerAmountField.value = customerAmount.toFixed(2);
+      }
+    }
+    
+    supplierAmountField.addEventListener("input", calculateCustomerAmount);
+    markupField.addEventListener("input", calculateCustomerAmount);
+  });
+</script>
+{% endblock javascripts %}

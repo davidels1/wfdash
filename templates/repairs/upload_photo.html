@@ -1,0 +1,86 @@
+{% extends "repairs/base_repairs.html" %}
+
+{% block repairs_content %}
+<div class="row">
+  <div class="col-md-8 mx-auto">
+    <div class="card mb-4">
+      <div class="card-header pb-0">
+        <h6>Upload Photo for Repair #{{ repair.repair_number }}</h6>
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          
+          <div class="form-group mb-4">
+            <label for="{{ form.photo.id_for_label }}" class="form-control-label">Photo File *</label>
+            <div class="input-group">
+              {{ form.photo }}
+            </div>
+            {% if form.photo.errors %}
+              <div class="invalid-feedback d-block">{{ form.photo.errors }}</div>
+            {% endif %}
+            <small class="text-muted">Supported formats: JPG, PNG, GIF. Max file size: 5MB.</small>
+          </div>
+          
+          <div class="form-group mb-4">
+            <label for="{{ form.description.id_for_label }}" class="form-control-label">Description</label>
+            {{ form.description }}
+            {% if form.description.errors %}
+              <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
+            {% endif %}
+          </div>
+          
+          <div class="text-end mt-4">
+            <a href="{% url 'repairs:repair_detail' repair.id %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Upload</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock repairs_content %}
+
+{% block javascripts %}
+{{ block.super }}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Add Bootstrap styles to form fields
+    const descriptionField = document.getElementById("{{ form.description.id_for_label }}");
+    if (descriptionField && !descriptionField.classList.contains("form-control")) {
+      descriptionField.classList.add("form-control");
+    }
+    
+    const photoField = document.getElementById("{{ form.photo.id_for_label }}");
+    if (photoField && !photoField.classList.contains("form-control")) {
+      photoField.classList.add("form-control");
+    }
+    
+    // Preview image after selection
+    photoField.addEventListener("change", function() {
+      const preview = document.getElementById("imagePreview");
+      if (preview) {
+        preview.remove();
+      }
+      
+      if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const div = document.createElement("div");
+          div.id = "imagePreview";
+          div.className = "mt-3";
+          
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.className = "img-fluid repair-photo";
+          img.style.maxHeight = "300px";
+          
+          div.appendChild(img);
+          photoField.parentNode.after(div);
+        }
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+  });
+</script>
+{% endblock javascripts %}

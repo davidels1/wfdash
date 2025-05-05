@@ -1,0 +1,214 @@
+{% extends "repairs/base_repairs.html" %}
+{% load replace_value %}
+
+{% block repairs_content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card mb-4">
+      <div class="card-header pb-0">
+        <div class="row">
+          <div class="col-6 d-flex align-items-center">
+            <h6 class="mb-0">Repairs Dashboard</h6>
+          </div>
+          <div class="col-6 text-end">
+            <a href="{% url 'repairs:repair_create' %}" class="btn btn-outline-primary btn-sm mb-0">Add New Repair</a>
+          </div>
+        </div>
+      </div>
+      <div class="card-body px-0 pt-0 pb-2">
+        <div class="row p-3">
+          {% for status_data in status_counts %}
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-primary h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                        {{ status_data.status|title }}
+                      </div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800">{{ status_data.count }}</div>
+                    </div>
+                    <div class="col-auto">
+                      <a href="{% url 'repairs:repair_list' %}?status={{ status_data.status }}" class="btn btn-sm btn-primary">View</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card mb-4">
+      <div class="card-header pb-0">
+        <h6>Repairs Needing Attention</h6>
+        <p class="text-sm mb-0">
+          <i class="fa fa-exclamation-circle text-warning" aria-hidden="true"></i>
+          <span class="font-weight-bold">No updates in 7+ days</span>
+        </p>
+      </div>
+      <div class="card-body px-0 pt-0 pb-2">
+        <div class="table-responsive p-0">
+          <table class="table align-items-center mb-0">
+            <thead>
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Repair #</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Customer</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Status</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Last Update</th>
+                <th class="text-secondary opacity-7"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for repair in need_attention %}
+                <tr>
+                  <td>
+                    <div class="d-flex px-2 py-1">
+                      <div class="d-flex flex-column justify-content-center">
+                        <h6 class="mb-0 text-sm">{{ repair.repair_number }}</h6>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <p class="text-xs font-weight-bold mb-0">{{ repair.customer }}</p>
+                  </td>
+                  <td>
+                    <span class="badge status-badge status-{{ repair.status }}">{{ repair.get_status_display }}</span>
+                  </td>
+                  <td>
+                    <p class="text-xs text-secondary mb-0">{{ repair.updated_at|date:"M j, Y" }}</p>
+                  </td>
+                  <td class="align-middle">
+                    <a href="{% url 'repairs:repair_detail' repair.id %}" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" data-original-title="View repair">
+                      View
+                    </a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center p-3">
+                    <span class="text-sm text-secondary">No repairs need attention at this time</span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-6">
+    <div class="card mb-4">
+      <div class="card-header pb-0">
+        <h6>Pending Quote Approvals</h6>
+      </div>
+      <div class="card-body px-0 pt-0 pb-2">
+        <div class="table-responsive p-0">
+          <table class="table align-items-center mb-0">
+            <thead>
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Repair #</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Customer</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Quote Sent</th>
+                <th class="text-secondary opacity-7"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for repair in pending_quotes %}
+                <tr>
+                  <td>
+                    <div class="d-flex px-2 py-1">
+                      <div class="d-flex flex-column justify-content-center">
+                        <h6 class="mb-0 text-sm">{{ repair.repair_number }}</h6>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <p class="text-xs font-weight-bold mb-0">{{ repair.customer }}</p>
+                  </td>
+                  <td>
+                    <p class="text-xs text-secondary mb-0">{{ repair.quote_sent_date|date:"M j, Y" }}</p>
+                  </td>
+                  <td class="align-middle">
+                    <a href="{% url 'repairs:repair_detail' repair.id %}" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" data-original-title="View repair">
+                      View
+                    </a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center p-3">
+                    <span class="text-sm text-secondary">No pending quote approvals</span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card mb-4">
+      <div class="card-header pb-0">
+        <h6>Repairs In Progress</h6>
+      </div>
+      <div class="card-body px-0 pt-0 pb-2">
+        <div class="table-responsive p-0">
+          <table class="table align-items-center mb-0">
+            <thead>
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Repair #</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Customer</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Expected Completion</th>
+                <th class="text-secondary opacity-7"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for repair in in_progress %}
+                <tr>
+                  <td>
+                    <div class="d-flex px-2 py-1">
+                      <div class="d-flex flex-column justify-content-center">
+                        <h6 class="mb-0 text-sm">{{ repair.repair_number }}</h6>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <p class="text-xs font-weight-bold mb-0">{{ repair.customer }}</p>
+                  </td>
+                  <td>
+                    <p class="text-xs text-secondary mb-0">
+                      {% if repair.expected_completion_date %}
+                        {{ repair.expected_completion_date|date:"M j, Y" }}
+                      {% else %}
+                        Not specified
+                      {% endif %}
+                    </p>
+                  </td>
+                  <td class="align-middle">
+                    <a href="{% url 'repairs:repair_detail' repair.id %}" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" data-original-title="View repair">
+                      View
+                    </a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center p-3">
+                    <span class="text-sm text-secondary">No repairs in progress</span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock repairs_content %}

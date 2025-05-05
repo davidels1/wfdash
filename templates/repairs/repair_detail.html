@@ -1,0 +1,322 @@
+{% extends "repairs/base_repairs.html" %}
+
+{% block repairs_content %}
+<div class="row">
+  <div class="col-12 mb-4">
+    <div class="card">
+      <div class="card-header pb-0">
+        <div class="d-flex justify-content-between align-items-center">
+          <h6>Repair Details - #{{ repair.repair_number }}</h6>
+          <div>
+            <a href="{% url 'repairs:repair_update' repair.id %}" class="btn btn-sm btn-primary">Edit</a>
+            <a href="{% url 'repairs:repair_list' %}" class="btn btn-sm btn-outline-secondary">Back to List</a>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <table class="table">
+              <tbody>
+                <tr>
+                  <th>Customer</th>
+                  <td>{{ repair.customer }}</td>
+                </tr>
+                <tr>
+                  <th>Item Description</th>
+                  <td>{{ repair.item_description }}</td>
+                </tr>
+                <tr>
+                  <th>Serial Number</th>
+                  <td>{{ repair.serial_number|default:"Not specified" }}</td>
+                </tr>
+                <tr>
+                  <th>Problem Description</th>
+                  <td>{{ repair.problem_description }}</td>
+                </tr>
+                <tr>
+                  <th>Supplier</th>
+                  <td>{{ repair.supplier|default:"Not assigned" }}</td>
+                </tr>
+                <tr>
+                  <th>Notes</th>
+                  <td>{{ repair.notes|default:"No notes"|linebreaks }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header pb-0">
+                <h6 class="mb-0">Status & Timeline</h6>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <span class="badge status-badge status-{{ repair.status }} mb-2">
+                    Current Status: {{ repair.get_status_display }}
+                  </span>
+                  
+                  <form action="{% url 'repairs:update_status' repair.id %}" method="post" class="mt-2">
+                    {% csrf_token %}
+                    <div class="input-group">
+                      {{ status_form.status }}
+                      <button type="submit" class="btn btn-primary btn-sm">Update Status</button>
+                    </div>
+                  </form>
+                </div>
+                
+                <div class="timeline">
+                  {% if repair.received_date %}
+                    <div class="timeline-item">
+                      <div class="timeline-item-icon">✓</div>
+                      <div class="timeline-item-content">
+                        <p class="mb-0"><strong>Received</strong></p>
+                        <small>{{ repair.received_date|date:"M j, Y" }}</small>
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  {% if repair.sent_for_quote_date %}
+                    <div class="timeline-item">
+                      <div class="timeline-item-icon">✓</div>
+                      <div class="timeline-item-content">
+                        <p class="mb-0"><strong>Sent for Quote</strong></p>
+                        <small>{{ repair.sent_for_quote_date|date:"M j, Y" }}</small>
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  {% if repair.quote_received_date %}
+                    <div class="timeline-item">
+                      <div class="timeline-item-icon">✓</div>
+                      <div class="timeline-item-content">
+                        <p class="mb-0"><strong>Quote Received</strong></p>
+                        <small>{{ repair.quote_received_date|date:"M j, Y" }}</small>
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  {% if repair.quote_sent_date %}
+                    <div class="timeline-item">
+                      <div class="timeline-item-icon">✓</div>
+                      <div class="timeline-item-content">
+                        <p class="mb-0"><strong>Quote Sent to Customer</strong></p>
+                        <small>{{ repair.quote_sent_date|date:"M j, Y" }}</small>
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  {% if repair.quote_approved_date %}
+                    <div class="timeline-item">
+                      <div class="timeline-item-icon">✓</div>
+                      <div class="timeline-item-content">
+                        <p class="mb-0"><strong>Quote Approved</strong></p>
+                        <small>{{ repair.quote_approved_date|date:"M j, Y" }}</small>
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  {% if repair.repair_ordered_date %}
+                    <div class="timeline-item">
+                      <div class="timeline-item-icon">✓</div>
+                      <div class="timeline-item-content">
+                        <p class="mb-0"><strong>Repair Ordered</strong></p>
+                        <small>{{ repair.repair_ordered_date|date:"M j, Y" }}</small>
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  {% if repair.completed_date %}
+                    <div class="timeline-item">
+                      <div class="timeline-item-icon">✓</div>
+                      <div class="timeline-item-content">
+                        <p class="mb-0"><strong>Repair Completed</strong></p>
+                        <small>{{ repair.completed_date|date:"M j, Y" }}</small>
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  {% if repair.returned_date %}
+                    <div class="timeline-item">
+                      <div class="timeline-item-icon">✓</div>
+                      <div class="timeline-item-content">
+                        <p class="mb-0"><strong>Returned to Customer</strong></p>
+                        <small>{{ repair.returned_date|date:"M j, Y" }}</small>
+                      </div>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header pb-0">
+        <div class="d-flex justify-content-between align-items-center">
+          <h6>Photos</h6>
+          <a href="{% url 'repairs:upload_photo' repair.id %}" class="btn btn-sm btn-primary">Add Photo</a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          {% for photo in photos %}
+            <div class="col-md-6 mb-3">
+              <a href="{{ photo.photo.url }}" target="_blank">
+                <img src="{{ photo.photo.url }}" alt="{{ photo.description }}" class="img-fluid repair-photo">
+              </a>
+              <p class="text-sm">{{ photo.description|default:"No description" }}</p>
+              <p class="text-xs text-secondary">Uploaded on {{ photo.uploaded_at|date:"M j, Y" }}</p>
+            </div>
+          {% empty %}
+            <div class="col-12 text-center py-3">
+              <p class="text-secondary">No photos uploaded yet</p>
+              <a href="{% url 'repairs:upload_photo' repair.id %}" class="btn btn-sm btn-outline-primary">Upload Photo</a>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header pb-0">
+        <div class="d-flex justify-content-between align-items-center">
+          <h6>Quotes</h6>
+          <a href="{% url 'repairs:create_quote' repair.id %}" class="btn btn-sm btn-primary">Add Quote</a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table align-items-center mb-0">
+            <thead>
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Quote #</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Date</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Supplier Amount</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Customer Amount</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Status</th>
+                <th class="text-secondary opacity-7"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for quote in quotes %}
+                <tr>
+                  <td>
+                    <div class="d-flex px-2 py-1">
+                      <div class="d-flex flex-column justify-content-center">
+                        <h6 class="mb-0 text-sm">{{ quote.quote_number }}</h6>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <p class="text-xs text-secondary mb-0">{{ quote.quote_date|date:"M j, Y" }}</p>
+                  </td>
+                  <td>
+                    <p class="text-xs font-weight-bold mb-0">{{ quote.supplier_quote_amount }}</p>
+                  </td>
+                  <td>
+                    <p class="text-xs font-weight-bold mb-0">{{ quote.customer_quote_amount }}</p>
+                  </td>
+                  <td>
+                    {% if quote.approved %}
+                      <span class="badge bg-success">Approved</span>
+                    {% else %}
+                      <span class="badge bg-warning text-dark">Pending</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="dropdown">
+                      <button class="btn btn-link text-secondary mb-0" id="quoteDropdown{{ quote.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa fa-ellipsis-v text-xs"></i>
+                      </button>
+                      <ul class="dropdown-menu" aria-labelledby="quoteDropdown{{ quote.id }}">
+                        {% if not quote.approved %}
+                          <li><a class="dropdown-item" href="{% url 'repairs:approve_quote' repair.id quote.id %}">Approve Quote</a></li>
+                        {% endif %}
+                        {% if quote.pdf_file %}
+                          <li><a class="dropdown-item" href="{{ quote.pdf_file.url }}" target="_blank">View PDF</a></li>
+                        {% endif %}
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center p-3">
+                    <p class="text-secondary">No quotes added yet</p>
+                    <a href="{% url 'repairs:create_quote' repair.id %}" class="btn btn-sm btn-outline-primary">Create Quote</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card mt-4">
+      <div class="card-header pb-0">
+        <div class="d-flex justify-content-between align-items-center">
+          <h6>Repair Orders</h6>
+          <a href="{% url 'repairs:create_order' repair.id %}" class="btn btn-sm btn-primary">Create Order</a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table align-items-center mb-0">
+            <thead>
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Order #</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Supplier</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Date</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Amount</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in orders %}
+                <tr>
+                  <td>
+                    <div class="d-flex px-2 py-1">
+                      <div class="d-flex flex-column justify-content-center">
+                        <h6 class="mb-0 text-sm">{{ order.order_number }}</h6>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <p class="text-xs font-weight-bold mb-0">{{ order.supplier }}</p>
+                  </td>
+                  <td>
+                    <p class="text-xs text-secondary mb-0">{{ order.order_date|date:"M j, Y" }}</p>
+                  </td>
+                  <td>
+                    <p class="text-xs font-weight-bold mb-0">{{ order.amount }}</p>
+                  </td>
+                  <td>
+                    <span class="badge status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center p-3">
+                    <p class="text-secondary">No orders created yet</p>
+                    <a href="{% url 'repairs:create_order' repair.id %}" class="btn btn-sm btn-outline-primary">Create Order</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock repairs_content %}

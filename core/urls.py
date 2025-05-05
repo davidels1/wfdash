@@ -53,6 +53,8 @@ urlpatterns = [
     path('delivery-notes/', include('delivery_notes.urls', namespace='delivery_notes')),
     path("rep/", include("rep_portal.urls", namespace="rep_portal")),
     path("search/", include("search.urls", namespace="search")),
+    
+    path('repairs/', include('repairs.urls', namespace='repairs')),
 
     path(
         "internal_stock/", include("internal_stock.urls", namespace="internal_stock")

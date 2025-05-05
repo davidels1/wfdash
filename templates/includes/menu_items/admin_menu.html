@@ -47,16 +47,48 @@
 </li>
 
 
+<!-- Company Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-briefcase"></i></span>
+        <span class="pcoded-mtext">Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'wfdash:company' %}"><i class="feather icon-plus me-2"></i>Add Company</a></li>
+        <li><a href="{% url 'wfdash:company_list' %}"><i class="feather icon-list me-2"></i>Companies List</a></li>
+    
 
-<!-- Email Tracking -->
+
+  
+        <li><a href="{% url 'wfdash:customers' %}"><i class="feather icon-user-plus me-2"></i>Add Customer</a></li>
+        <li><a href="{% url 'wfdash:customers_list' %}"><i class="feather icon-list me-2"></i>Customer List</a></li>
+    
+
+        
+        <li><a href="{% url 'wfdash:suppliers' %}"><i class="feather icon-plus-square me-2"></i>Add Supplier</a></li>
+        <li><a href="{% url 'wfdash:suppliers_list' %}"><i class="feather icon-list me-2"></i>Supplier List</a></li>
+    
+
+    <li class="nav-item">
+        <a href="{% url 'quotes:email_tracking_dashboard' %}" class="nav-link">
+            <span class="pcoded-micon"><i class="feather icon-bar-chart-2"></i></span>
+            <span class="pcoded-mtext">Email Tracking</span>
+        </a>
+    </li>
+</ul>
+</li>
+
+
+
+<!-- Email Tracking 
 <li class="nav-item">
     <a href="{% url 'quotes:email_tracking_dashboard' %}" class="nav-link">
         <span class="pcoded-micon"><i class="feather icon-bar-chart-2"></i></span>
         <span class="pcoded-mtext">Email Tracking</span>
     </a>
-</li>
+</li>-->
 
-<!-- Company Management -->
+<!-- Company Management 
 <li class="nav-item pcoded-hasmenu">
     <a href="#!" class="nav-link">
         <span class="pcoded-micon"><i class="feather icon-briefcase"></i></span>
@@ -66,9 +98,9 @@
         <li><a href="{% url 'wfdash:company' %}"><i class="feather icon-plus me-2"></i>Add Company</a></li>
         <li><a href="{% url 'wfdash:company_list' %}"><i class="feather icon-list me-2"></i>Companies List</a></li>
     </ul>
-</li>
+</li>-->
 
-<!-- Customer Management -->
+<!-- Customer Management 
 <li class="nav-item pcoded-hasmenu">
     <a href="#!" class="nav-link">
         <span class="pcoded-micon"><i class="feather icon-users"></i></span>
@@ -78,9 +110,9 @@
         <li><a href="{% url 'wfdash:customers' %}"><i class="feather icon-user-plus me-2"></i>Add Customer</a></li>
         <li><a href="{% url 'wfdash:customers_list' %}"><i class="feather icon-list me-2"></i>Customer List</a></li>
     </ul>
-</li>
+</li>-->
 
-<!-- Supplier Management -->
+<!-- Supplier Management 
 <li class="nav-item pcoded-hasmenu">
     <a href="#!" class="nav-link">
         <span class="pcoded-micon"><i class="feather icon-smartphone"></i></span>
@@ -90,7 +122,7 @@
         <li><a href="{% url 'wfdash:suppliers' %}"><i class="feather icon-plus-square me-2"></i>Add Supplier</a></li>
         <li><a href="{% url 'wfdash:suppliers_list' %}"><i class="feather icon-list me-2"></i>Supplier List</a></li>
     </ul>
-</li>
+</li>-->
 
 
 <li class="nav-item pcoded-hasmenu">
@@ -102,7 +134,14 @@
         <li><a href="{% url 'internal_stock:list' %}"><i class="feather icon-box me-2"></i>Internal Stock Items</a></li>
         <li><a href="{% url 'internal_stock:price_list_index' %}"><i class="feather icon-file-text me-2"></i>Supplier Price Lists</a></li>
         <li><a href="{% url 'internal_stock:create_price_list' %}"><i class="feather icon-plus-circle me-2"></i>New Price List</a></li>
+    
+
+        <li><a href="{% url 'stock_orders:create' %}"><i class="feather icon-plus-circle me-2"></i>New Stock Order</a></li>
+        <li><a href="{% url 'stock_orders:list' %}"><i class="feather icon-list me-2"></i>Stock Order List</a></li>
+        <li><a href="{% url 'stock_orders:supplier_list' %}"><i class="feather icon-truck me-2"></i>Suppliers</a></li>
+
     </ul>
+
 </li>
 
 
@@ -123,7 +162,7 @@
 </li>
 
 
-
+<!-- Quote Management 
 {# Example for templates/layouts/base.html or sidebar include #}
 <li class="nav-item pcoded-hasmenu">
     <a href="#!" class="nav-link">
@@ -135,7 +174,7 @@
         <li><a href="{% url 'stock_orders:list' %}"><i class="feather icon-list me-2"></i>Stock Order List</a></li>
         <li><a href="{% url 'stock_orders:supplier_list' %}"><i class="feather icon-truck me-2"></i>Suppliers</a></li>
     </ul>
-</li>
+</li>-->
 
 
 <!-- Order Management -->
@@ -155,7 +194,7 @@
 
 
 
-<!-- Stock Orders Management - Add this after Order Management section -->
+<!-- Stock Orders Management - Add this after Order Management section
 <li class="nav-item pcoded-hasmenu">
     <a href="#!" class="nav-link">
         <span class="pcoded-micon"><i class="feather icon-package"></i></span>
@@ -166,7 +205,7 @@
         <li><a href="{% url 'stock_orders:list' %}"><i class="feather icon-list me-2"></i>Stock Order List</a></li>
 
     </ul>
-</li>
+</li> -->
 
 <!-- Delivery Notes Management -->
 <li class="nav-item pcoded-hasmenu">
@@ -181,7 +220,6 @@
     
     </ul>
 </li>
-
 
 
 <!-- Driver Operations -->
@@ -213,7 +251,18 @@
     </ul>
 </li>
 
-
+<!-- Repairs Management -->
+<li class="nav-item pcoded-hasmenu">
+    <a href="#!" class="nav-link">
+        <span class="pcoded-micon"><i class="feather icon-tool"></i></span>
+        <span class="pcoded-mtext">Repairs Management</span>
+    </a>
+    <ul class="pcoded-submenu">
+        <li><a href="{% url 'repairs:repair_dashboard' %}"><i class="feather icon-grid me-2"></i>Repairs Dashboard</a></li>
+        <li><a href="{% url 'repairs:repair_create' %}"><i class="feather icon-plus-circle me-2"></i>New Repair</a></li>
+        <li><a href="{% url 'repairs:repair_list' %}"><i class="feather icon-list me-2"></i>Repairs List</a></li>
+    </ul>
+</li>
 
 <!-- Reports & Analytics-->
 <li class="nav-item pcoded-hasmenu">

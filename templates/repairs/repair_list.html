@@ -1,0 +1,106 @@
+{% extends "repairs/base_repairs.html" %}
+
+{% block repairs_content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card mb-4">
+      <div class="card-header pb-0">
+        <div class="row">
+          <div class="col-6 d-flex align-items-center">
+            <h6 class="mb-0">Repairs Management</h6>
+          </div>
+          <div class="col-6 text-end">
+            <a href="{% url 'repairs:repair_create' %}" class="btn btn-outline-primary btn-sm mb-0">Add New Repair</a>
+          </div>
+        </div>
+      </div>
+      <div class="card-body px-0 pt-0 pb-2">
+        <div class="p-3">
+          <form method="get" class="row g-3">
+            <div class="col-md-4">
+              <label for="status" class="form-label">Filter by Status</label>
+              <select class="form-select form-select-sm" id="status" name="status">
+                <option value="">All Statuses</option>
+                {% for status_code, status_name in status_choices %}
+                  <option value="{{ status_code }}" {% if request.GET.status == status_code %}selected{% endif %}>{{ status_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="customer" class="form-label">Filter by Customer</label>
+              <select class="form-select form-select-sm" id="customer" name="customer">
+                <option value="">All Customers</option>
+                {% for customer in customers %}
+                  <option value="{{ customer.id }}" {% if request.GET.customer == customer.id|stringformat:"i" %}selected{% endif %}>{{ customer.company }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
+              <a href="{% url 'repairs:repair_list' %}" class="btn btn-outline-secondary btn-sm ms-2">Clear</a>
+            </div>
+          </form>
+        </div>
+        
+        <div class="table-responsive p-0">
+          <table class="table align-items-center mb-0">
+            <thead>
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Repair #</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Customer</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Item</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Status</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Received Date</th>
+                <th class="text-secondary opacity-7"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for repair in repairs %}
+                <tr>
+                  <td>
+                    <div class="d-flex px-2 py-1">
+                      <div class="d-flex flex-column justify-content-center">
+                        <h6 class="mb-0 text-sm">{{ repair.repair_number }}</h6>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <p class="text-xs font-weight-bold mb-0">{{ repair.customer }}</p>
+                  </td>
+                  <td>
+                    <p class="text-xs text-secondary mb-0">{{ repair.item_description|truncatechars:30 }}</p>
+                  </td>
+                  <td>
+                    <span class="badge status-badge status-{{ repair.status }}">{{ repair.get_status_display }}</span>
+                  </td>
+                  <td>
+                    <span class="text-secondary text-xs font-weight-bold">{{ repair.received_date|date:"M j, Y" }}</span>
+                  </td>
+                  <td class="align-middle">
+                    <div class="dropdown">
+                      <button class="btn btn-link text-secondary mb-0" id="dropdownMenuButton{{ repair.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa fa-ellipsis-v text-xs"></i>
+                      </button>
+                      <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ repair.id }}">
+                        <li><a class="dropdown-item" href="{% url 'repairs:repair_detail' repair.id %}">View Details</a></li>
+                        <li><a class="dropdown-item" href="{% url 'repairs:repair_update' repair.id %}">Edit</a></li>
+                        <li><a class="dropdown-item" href="{% url 'repairs:repair_delete' repair.id %}">Delete</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center p-3">
+                    <span class="text-sm text-secondary">No repairs found</span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock repairs_content %}

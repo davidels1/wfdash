@@ -37,3 +37,4 @@ django-datatables-view==1.20.0
 pywebpush
 reportlab
 django-pwa
+qrcode
