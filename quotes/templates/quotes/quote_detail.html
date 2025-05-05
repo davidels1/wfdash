@@ -300,21 +300,19 @@
                         <form method="post" class="d-inline">
                             {% csrf_token %}
                             
-                            <!-- Process Quote button - only show when claimed -->
-                            {% if quote.status == 'claimed' or quote.status == 'rejected'%}
-                                {% if quote.assigned_to == request.user or request.user.is_staff %}
+                            <!-- Process Quote button - only show for the person who claimed the quote -->
+                            {% if quote.status != 'new' %}
+                                {% if quote.assigned_to == request.user %}
                                     <a href="{% url 'quotes:quote_process' quote.pk %}" class="btn btn-primary">
                                         <i class="feather icon-edit"></i> Process Quote
                                     </a>
+                                {% elif request.user.is_staff %}
+                                    <!-- Option for staff that shows they're not the assigned person -->
+                                    <button type="button" class="btn btn-outline-secondary" disabled>
+                                        <i class="feather icon-lock"></i> Claimed by {{ quote.assigned_to.username }}
+                                    </button>
                                 {% endif %}
                             {% endif %}
-                            
-                            <!-- Approve Quote button - only show when pending approval 
-                            {% if quote.status == 'approval_pending' %}
-                                <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success">
-                                    <i class="feather icon-check"></i> Approve Quote
-                                </a>
-                            {% endif %}-->
                             
                             <!-- Original buttons for other statuses -->
                             {% if quote.status == 'new' and not quote.is_assigned %}
