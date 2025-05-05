@@ -299,6 +299,60 @@ body.modal-open {
     position: fixed;
     width: 100%;
 }
+
+/* Mobile card layout improvements */
+.mobile-quote-card {
+    border-left-width: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.mobile-quote-card:hover,
+.mobile-quote-card:active {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+}
+
+.mobile-quote-card .card-header {
+    padding: 0.75rem 1rem;
+    background-color: rgba(0,0,0,0.02);
+}
+
+.btn-mobile-action {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Add active/pressed state for better touch feedback */
+.btn-mobile-action:active {
+    transform: scale(0.97);
+}
+
+/* Make sure modal appears on top of everything on mobile */
+@media (max-width: 767px) {
+    .modal {
+        z-index: 1999 !important;
+    }
+    
+    .modal-backdrop {
+        z-index: 1998 !important;
+    }
+    
+    /* Bigger tap targets for mobile */
+    .modal-footer .btn {
+        padding: 0.65rem 1.25rem;
+        font-size: 1rem;
+    }
+    
+    /* Add space between pagination items on mobile */
+    .pagination .page-item .page-link {
+        padding: 0.5rem 0.75rem;
+        min-width: 38px;
+    }
+}
 </style>
 
 <script>
