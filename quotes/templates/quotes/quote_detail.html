@@ -271,6 +271,16 @@
                                                 {% if item.supplier %}
                                                 <p class="mb-1"><strong>Supplier:</strong> {{ item.supplier.suppliername }}</p>
                                                 {% endif %}
+                                                <p class="mb-1"><strong>Cost Price:</strong> R{{ item.cost_price }}</p>
+                                                <p class="mb-1"><strong>Markup:</strong> 
+                                                    <span class="badge markup-badge
+                                                        {% if item.markup < 15 %}markup-low
+                                                        {% elif item.markup < 25 %}markup-medium
+                                                        {% elif item.markup < 30 %}markup-high
+                                                        {% else %}markup-veryhigh{% endif %}">
+                                                        {{ item.markup|default:"0" }}%
+                                                    </span>
+                                                </p>
                                                 <p class="mb-1"><strong>Selling Price:</strong> R{{ item.selling_price }}</p>
                                                 <p class="mb-1"><strong>Total:</strong> R{{ item.selling_price|multiply:item.quantity }}</p>
                                                 {% if item.notes %}
@@ -811,7 +821,7 @@
     </div>
     {% endif %}
 
-    <!-- Add this at the end of your content block, before the closing div -->
+    <!-- Add this at the end of your content block, before the closing div 
     {% if request.user.is_staff and quote.status == 'approval_pending' %}
     <div class="d-md-none mobile-approval-sticky">
         <div class="row g-2">
@@ -833,7 +843,7 @@
             </div>
         </div>
     </div>
-    {% endif %}
+    {% endif %}-->
 
     <!-- Replace the current mobile-action-buttons div with this conditional version -->
     <div class="d-md-none mobile-action-buttons">
