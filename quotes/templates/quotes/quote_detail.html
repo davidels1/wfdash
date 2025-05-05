@@ -147,8 +147,40 @@
                         </div>
                     </div>
 
+                    <!-- Add this after the customer info section -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="d-md-none">
+                                <div class="d-grid gap-2">
+                                    {% if quote.pdf_file %}
+                                        <a href="{{ quote.pdf_file.url }}" class="btn btn-primary" target="_blank">
+                                            <i class="feather icon-file-text me-1"></i> View Quote PDF
+                                        </a>
+                                    {% endif %}
+                                    
+                                    {% if request.user.is_staff and quote.status == 'approval_pending' %}
+                                    <div class="alert alert-warning py-2">
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <strong><i class="feather icon-alert-circle"></i> Needs approval</strong>
+                                                <div>Overall Markup: <span class="badge
+                                                    {% if overall_markup > 50 %}bg-danger
+                                                    {% elif overall_markup > 30 %}bg-warning
+                                                    {% elif overall_markup > 15 %}bg-info
+                                                    {% else %}bg-success{% endif %}">
+                                                    {{ overall_markup|default:"0" }}%
+                                                </span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Replace the existing QR code section with this more compact version -->
-                    <div class="card mt-3">
+                    <div class="card mt-3 d-none d-md-block">
                         <div class="card-header py-2">
                             <h6 class="m-0"><i class="feather icon-smartphone"></i> Quick Access</h6>
                         </div>
@@ -169,19 +201,20 @@
                         </div>
                     </div>
 
+                    <!-- Replace the existing table with this improved version -->
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
                                 <tr>
                                     <th style="width: 25%">Description</th>
-                                    <th style="width: 8%">Quantity</th>
-                                    <th style="width: 12%">Supplier</th>
-                                    <th style="width: 10%">Cost Price</th>
-                                    <th style="width: 10%">Markup %</th>
-                                    <th style="width: 10%">Selling Price</th>
-                                    <th style="width: 10%">Total</th>
-                                    <th style="width: 15%">Notes</th>
-                                    {% if request.user.is_staff %}<th style="width: 5%">Actions</th>{% endif %}
+                                    <th style="width: 8%">Qty</th>
+                                    <th style="width: 12%" class="d-none d-md-table-cell">Supplier</th>
+                                    <th style="width: 10%">Cost</th>
+                                    <th style="width: 10%">Markup</th>
+                                    <th style="width: 10%" class="d-none d-md-table-cell">Price</th>
+                                    <th style="width: 10%" class="d-none d-md-table-cell">Total</th>
+                                    <th style="width: 15%" class="d-none d-md-table-cell">Notes</th>
+                                    {% if request.user.is_staff %}<th style="width: 5%">Edit</th>{% endif %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -189,12 +222,12 @@
                                 <tr class="{% if item.markup < 15 %}table-markup-low
                                 {% elif item.markup < 25 %}table-markup-medium
                                 {% elif item.markup < 30 %}table-markup-high
-                                {% else %}table-markup-veryhigh{% endif %}">
-                                    <td class="description-cell">{{ item.description }}</td>
+                                {% else %}table-markup-veryhigh{% endif %}" data-item-id="{{ item.id }}">
+                                    <td class="description-cell text-break">{{ item.description }}</td>
                                     <td>{{ item.quantity }}</td>
-                                    <td class="supplier-cell">
+                                    <td class="supplier-cell d-none d-md-table-cell">
                                         {% if item.supplier.suppliername|length > 15 %}
-                                            <span class="d-inline-block" data-bs-toggle="tooltip" title="{{ item.supplier.suppliername }}">
+                                            <span data-bs-toggle="tooltip" title="{{ item.supplier.suppliername }}">
                                                 {{ item.supplier.suppliername|truncatechars:15 }}
                                             </span>
                                         {% else %}
@@ -211,9 +244,9 @@
                                             {{ item.markup|default:"0" }}%
                                         </span>
                                     </td>
-                                    <td>R{{ item.selling_price }}</td>
-                                    <td>R{{ item.selling_price|multiply:item.quantity }}</td>
-                                    <td class="notes-cell">{{ item.notes }}</td>
+                                    <td class="d-none d-md-table-cell">R{{ item.selling_price }}</td>
+                                    <td class="d-none d-md-table-cell">R{{ item.selling_price|multiply:item.quantity }}</td>
+                                    <td class="notes-cell d-none d-md-table-cell">{{ item.notes }}</td>
                                     {% if request.user.is_staff %}
                                     <td>
                                         <button class="btn btn-sm btn-outline-primary edit-item-btn" 
@@ -228,6 +261,23 @@
                                         </button>
                                     </td>
                                     {% endif %}
+                                </tr>
+                                <!-- Mobile expandable item details row -->
+                                <tr class="d-md-none">
+                                    <td colspan="5" class="p-0">
+                                        <div class="collapse" id="itemDetails-{{ item.id }}">
+                                            <div class="p-3 bg-light">
+                                                {% if item.supplier %}
+                                                <p class="mb-1"><strong>Supplier:</strong> {{ item.supplier.suppliername }}</p>
+                                                {% endif %}
+                                                <p class="mb-1"><strong>Selling Price:</strong> R{{ item.selling_price }}</p>
+                                                <p class="mb-1"><strong>Total:</strong> R{{ item.selling_price|multiply:item.quantity }}</p>
+                                                {% if item.notes %}
+                                                <p class="mb-0"><strong>Notes:</strong> {{ item.notes }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -315,10 +365,31 @@
                     </span>
                 </div>
                 <div class="card-body">
+                    <!-- Mobile-friendly approval buttons -->
+                    <div class="d-md-none mb-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <form method="post" class="d-block">
+                                    {% csrf_token %}
+                                    <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success w-100">
+                                        <i class="feather icon-check"></i> Approve
+                                    </a>
+                                </form>
+                            </div>
+                            <div class="col-6">
+                                <form method="post" class="d-block">
+                                    {% csrf_token %}
+                                    <button type="submit" name="reject" class="btn btn-danger w-100">
+                                        <i class="feather icon-x"></i> Reject
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <p class="mb-3">This quote requires admin approval before processing. Please review the pricing information.</p>
                     
-                    
-                    <!-- Add this after your <p> element in the admin approval card: -->
+                    <!-- Mobile-friendly markup summary -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="alert alert-dark p-2 mb-0">
@@ -352,20 +423,13 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end mt-3">
+                    <!-- Desktop-only approval buttons -->
+                    <div class="d-none d-md-flex justify-content-end mt-3">
                         <form method="post" class="d-inline me-2">
                             {% csrf_token %}
-
-
-
-
-                            {% if quote.status == 'approval_pending' %}
                             <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success">
                                 <i class="feather icon-check"></i> Approve Quote
                             </a>
-                        {% endif %}
-
-
                         </form>
                         <form method="post" class="d-inline">
                             {% csrf_token %}
@@ -746,6 +810,30 @@
     </div>
     {% endif %}
 
+    <!-- Add this at the end of your content block, before the closing div -->
+    {% if request.user.is_staff and quote.status == 'approval_pending' %}
+    <div class="d-md-none mobile-approval-sticky">
+        <div class="row g-2">
+            <div class="col-6">
+                <form method="post" class="d-block">
+                    {% csrf_token %}
+                    <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success btn-lg w-100">
+                        <i class="feather icon-check"></i> Approve
+                    </a>
+                </form>
+            </div>
+            <div class="col-6">
+                <form method="post" class="d-block">
+                    {% csrf_token %}
+                    <button type="submit" name="reject" class="btn btn-danger btn-lg w-100">
+                        <i class="feather icon-x"></i> Reject
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
 </div> <!-- This is the closing div for container-fluid -->
 
 <!-- Add JavaScript for the customer dropdown -->
@@ -891,6 +979,48 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 {% endif %}
 
+<!-- Add this at the end of your JS section -->
+<script>
+// Add JavaScript for expandable mobile item rows
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers for rows on mobile to expand/collapse details
+    const itemRows = document.querySelectorAll('.description-cell');
+    itemRows.forEach(cell => {
+        // Only add this behavior on mobile
+        if (window.innerWidth < 768) {
+            const row = cell.closest('tr');
+            const itemId = row.getAttribute('data-item-id');
+            
+            if (itemId) {
+                const detailsId = `itemDetails-${itemId}`;
+                cell.addEventListener('click', () => {
+                    const details = document.getElementById(detailsId);
+                    if (details) {
+                        if (details.classList.contains('show')) {
+                            details.classList.remove('show');
+                        } else {
+                            details.classList.add('show');
+                        }
+                    }
+                });
+                
+                // Add visual cue that it's clickable
+                cell.style.cursor = 'pointer';
+                cell.innerHTML += '<small class="d-md-none text-primary" style="display: block;">Tap for details</small>';
+            }
+        }
+    });
+    
+    // Make markup badges more prominent on mobile
+    if (window.innerWidth < 768) {
+        document.querySelectorAll('.markup-badge').forEach(badge => {
+            badge.style.fontSize = '13px';
+            badge.style.padding = '6px 8px';
+        });
+    }
+});
+</script>
+
 <!-- Add this before the end of the content block -->
 
 <script>
@@ -920,177 +1050,82 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- filepath: c:\###PYTHONANY_WORKING\WFDASH\quotes\templates\quotes\quote_detail.html -->
+<!-- Add this to your style section at the bottom -->
 <style>
-    /* Markup badge styling */
-    .markup-badge {
-        font-size: 14px;
-        font-weight: bold;
-        padding: 6px 10px;
-        width: 80px;
-        text-align: center;
-        display: inline-block;
-        border-radius: 20px;
-    }
+    /* Existing styles... */
     
-    /* New color scheme as requested */
-    .markup-low {
-        background-color: #f8d7da;  /* red background */
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-    
-    .markup-medium {
-        background-color: #fff3cd;  /* orange/yellow background */
-        color: #856404;
-        border: 1px solid #ffeeba;
-    }
-    
-    .markup-high {
-        background-color: #d4edda;  /* green background */
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-    
-    .markup-veryhigh {
-        background-color: #0c5a31;  /* dark green background */
-        color: #ffffff;
-        border: 1px solid #064023;
-    }
-    
-    @keyframes highlight-pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.7; }
-        100% { opacity: 1; }
-    }
-    
-    /* Add pulse animation only to the low markup (it's concerning) */
-    .markup-low {
-        animation: highlight-pulse 2s infinite;
-    }
-    
-    /* Table row highlighting */
-    .table-markup-low td {
-        background-color: rgba(248, 215, 218, 0.4);
-    }
-    .table-markup-medium td {
-        background-color: rgba(255, 243, 205, 0.4);
-    }
-    .table-markup-high td {
-        background-color: rgba(212, 237, 218, 0.4);
-    }
-    .table-markup-veryhigh td {
-        background-color: rgba(12, 90, 49, 0.2);
-    }
-    
-    /* Optional - make table rows have subtle highlighting */
-    .table-markup-low td, .table-markup-medium td, .table-markup-high td, .table-markup-veryhigh td {
-        opacity: 0.9;
-    }
-    
-    .table-markup-low:hover td, .table-markup-medium:hover td, .table-markup-high:hover td, .table-markup-veryhigh:hover td {
-        opacity: 1;
-    }
-    
-    /* Keep your existing styles */
-    .hover-shadow {
-        transition: all 0.3s ease;
-    }
-    
-    .hover-shadow:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    }
-    
-    /* Rest of your existing styles... */
-    
-    /* Description cell styling for better readability */
-    .description-cell {
-        font-size: 0.85rem;
-        max-width: 250px;
-        white-space: normal;
-        word-wrap: break-word;
-        line-height: 1.4;
-    }
-
-    /* Make the description column take less space on larger screens */
-    @media (min-width: 992px) {
+    /* Mobile improvements */
+    @media (max-width: 767px) {
+        /* Make description cells wrap properly */
         .description-cell {
-            max-width: 300px;
-        }
-    }
-
-    /* Improve table responsiveness */
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .table td {
-        vertical-align: middle;
-    }
-
-    /* Supplier cell styling */
-    .supplier-cell {
-        font-size: 0.85rem;
-        max-width: 120px;
-        width: 120px; /* Force fixed width */
-        white-space: normal;
-        word-wrap: break-word;
-        word-break: break-all; /* Break very long words without spaces */
-        overflow-wrap: break-word;
-        hyphens: auto; /* Add hyphens for better readability when breaking words */
-        padding-right: 5px; /* Add a little padding on right */
-    }
-
-    /* Ensure cost price column also has fixed width */
-    .cost-price-cell {
-        width: 100px;
-        min-width: 80px;
-    }
-
-    /* For very long supplier names without spaces, add ellipsis */
-    .supplier-truncate {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: block;
-        max-width: 100%;
-    }
-
-    /* Notes cell styling */
-    .notes-cell {
-        font-size: 0.85rem;
-        max-width: 180px;
-        white-space: normal;
-        word-wrap: break-word;
-        line-height: 1.4;
-        max-height: 80px;
-        overflow-y: auto;
-    }
-
-    /* Responsive adjustments for table cells */
-    @media (max-width: 768px) {
-        .description-cell,
-        .supplier-cell,
-        .notes-cell {
-            max-width: 100px;
-        }
-    }
-
-    /* Make the important cells visible in very small screens */
-    @media (max-width: 576px) {
-        .table th:nth-child(3), /* Supplier */
-        .table td:nth-child(3),
-        .table th:nth-child(8), /* Notes */
-        .table td:nth-child(8) {
-            display: none;
+            max-width: none;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-size: 0.9rem;
+            line-height: 1.3;
         }
         
-        /* Adjust description cell for better visibility on very small screens */
-        .description-cell {
-            font-size: 0.8rem;
-            max-width: 120px;
+        /* Adjust table padding for mobile */
+        .table td, .table th {
+            padding: 0.5rem 0.25rem;
         }
+        
+        /* Make markup badges more visible on mobile */
+        .markup-badge {
+            padding: 5px;
+            font-size: 12px;
+            width: auto;
+            min-width: 60px;
+            display: inline-block;
+        }
+        
+        /* Add bottom margin to items for better separation */
+        .table tbody tr {
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        /* Add expandable item feature */
+        .item-expand-btn {
+            background: none;
+            border: none;
+            color: #007bff;
+            padding: 0;
+            font-size: 0.8rem;
+        }
+        
+        /* Make the approval section sticky on mobile */
+        .mobile-approval-sticky {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            padding: 0.5rem 1rem;
+        }
+    }
+    
+    /* Make PDF view more prominent */
+    .pdf-view-btn {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    /* Improve the visibility of markup statuses */
+    .markup-summary {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    
+    /* Make item details expandable on mobile */
+    .item-details-mobile {
+        background-color: rgba(0,0,0,0.02);
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        margin-top: 0.25rem;
     }
 </style>
 {% endblock content %}
