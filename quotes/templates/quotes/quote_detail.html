@@ -204,17 +204,18 @@
                     <!-- Replace the existing table with this improved version -->
                     <div class="table-responsive">
                         <table class="table">
+                            <!-- Make table headers more compact on mobile -->
                             <thead>
                                 <tr>
-                                    <th style="width: 25%">Description</th>
-                                    <th style="width: 8%">Qty</th>
-                                    <th style="width: 12%" class="d-none d-md-table-cell">Supplier</th>
-                                    <th style="width: 10%">Cost</th>
-                                    <th style="width: 10%">Markup</th>
-                                    <th style="width: 10%" class="d-none d-md-table-cell">Price</th>
-                                    <th style="width: 10%" class="d-none d-md-table-cell">Total</th>
-                                    <th style="width: 15%" class="d-none d-md-table-cell">Notes</th>
-                                    {% if request.user.is_staff %}<th style="width: 5%">Edit</th>{% endif %}
+                                    <th class="w-auto">Description</th>
+                                    <th class="w-auto">Qty</th>
+                                    <th class="d-none d-md-table-cell">Supplier</th>
+                                    <th class="w-auto">Cost</th>
+                                    <th class="w-auto">Markup</th>
+                                    <th class="d-none d-md-table-cell">Price</th>
+                                    <th class="d-none d-md-table-cell">Total</th>
+                                    <th class="d-none d-md-table-cell">Notes</th>
+                                    {% if request.user.is_staff %}<th class="w-auto">Edit</th>{% endif %}
                                 </tr>
                             </thead>
                             <tbody>
