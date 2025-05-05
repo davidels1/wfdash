@@ -267,7 +267,7 @@
                                 <tr class="d-md-none">
                                     <td colspan="5" class="p-0">
                                         <div class="collapse" id="itemDetails-{{ item.id }}">
-                                            <div class="p-3 bg-info">
+                                            <div class="p-3 bg-light">
                                                 {% if item.supplier %}
                                                 <p class="mb-1"><strong>Supplier:</strong> {{ item.supplier.suppliername }}</p>
                                                 {% endif %}
@@ -1216,6 +1216,52 @@ document.addEventListener('DOMContentLoaded', function() {
         padding: 0.5rem;
         border-radius: 0.25rem;
         margin-top: 0.25rem;
+    }
+
+    /* Markup badge colors */
+    .markup-badge {
+        color: white !important;
+        font-weight: 500;
+        padding: 0.35rem 0.5rem;
+    }
+    
+    .markup-low {
+        
+        background-color: #dc3545 !important; /* Red */
+    }
+    
+    .markup-medium {
+        
+        background-color: #ffc107 !important; /* Yellow */
+        color: #212529 !important; /* Dark text for better contrast on yellow */
+    }
+    
+    .markup-high {
+        background-color: #17a2b8 !important; /* Blue */
+    }
+    
+    .markup-veryhigh {
+        background-color: #28a745 !important; /* Green */
+    }
+
+    /* Slight hover effect for better UX */
+    .markup-badge:hover {
+        opacity: 0.9;
+    }
+    
+    /* Mobile-specific sizing */
+    @media (max-width: 767px) {
+        .markup-badge {
+            display: inline-block;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        /* Make the mobile expanded details markup badge stand out more */
+        .collapse .markup-badge {
+            font-size: 14px !important;
+            padding: 3px 8px !important;
+        }
     }
 </style>
 {% endblock content %}
