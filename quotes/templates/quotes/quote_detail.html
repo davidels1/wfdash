@@ -320,14 +320,14 @@
                             {% endif %}
                             
                             <!-- Problem reporting for all statuses -->
-                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#reportProblemModal">
+                            <button type="button" class="btn btn-danger d-none d-md-inline" data-bs-toggle="modal" data-bs-target="#reportProblemModal">
                                 <i class="feather icon-alert-triangle"></i> Report Problem
                             </button>
 
-                            <a href="{% url 'quotes:clone_quote' quote.id %}" class="btn btn-secondary">
+                            <a href="{% url 'quotes:clone_quote' quote.id %}" class="btn btn-secondary d-none d-md-inline">
                                 <i class="feather icon-copy"></i> Clone Quote
                             </a>
-                            <a href="{% url 'quotes:split_quote' quote.id %}" class="btn btn-warning">
+                            <a href="{% url 'quotes:split_quote' quote.id %}" class="btn btn-warning d-none d-md-inline">
                                 <i class="feather icon-scissors"></i> Split Quote
                             </a>
                         </form>
@@ -834,6 +834,44 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- Replace the current mobile-action-buttons div with this conditional version -->
+    <div class="d-md-none mobile-action-buttons">
+        {% if request.user.is_staff and quote.status == 'approval_pending' %}
+        <!-- Approval/Reject actions for staff when quote status is pending approval -->
+        <div class="row g-2">
+            <div class="col-6">
+                <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success btn-sm w-100 h-100">
+                    <i class="feather icon-check d-block mb-1"></i> Approve
+                </a>
+            </div>
+            <div class="col-6">
+                <button type="button" class="btn btn-danger btn-sm w-100 h-100" data-bs-toggle="modal" data-bs-target="#rejectQuoteModal">
+                    <i class="feather icon-x d-block mb-1"></i> Reject
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <!-- Standard actions for other quote statuses -->
+        <div class="row g-2">
+            <div class="col-4">
+                <button type="button" class="btn btn-danger btn-sm w-100 h-100" data-bs-toggle="modal" data-bs-target="#reportProblemModal">
+                    <i class="feather icon-alert-triangle d-block mb-1"></i> Report Problem
+                </button>
+            </div>
+            <div class="col-4">
+                <a href="{% url 'quotes:clone_quote' quote.id %}" class="btn btn-secondary btn-sm w-100 h-100">
+                    <i class="feather icon-copy d-block mb-1"></i> Clone
+                </a>
+            </div>
+            <div class="col-4">
+                <a href="{% url 'quotes:split_quote' quote.id %}" class="btn btn-warning btn-sm w-100 h-100">
+                    <i class="feather icon-scissors d-block mb-1"></i> Split
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 
 </div> <!-- This is the closing div for container-fluid -->
 
