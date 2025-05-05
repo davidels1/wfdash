@@ -38,7 +38,8 @@
                 </div>
                 <div class="card-body">
                     {% if quotes %}
-                        <div class="table-responsive">
+                        <!-- Desktop table view (hidden on mobile) -->
+                        <div class="table-responsive d-none d-md-block">
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
@@ -53,9 +54,7 @@
                                 <tbody>
                                     {% for quote in quotes %}
                                         <tr class="quote-row" data-rep="{{ quote.rep.username }}">
-                                            <td>
-                                                {{ quote.quote_number }}
-                                                <!-- Add rep name in small text below quote number -->
+                                            <td>{{ quote.quote_number }}
                                                 <div class="rep-indicator">
                                                     <small class="text-muted">
                                                         <i class="feather icon-user-check"></i> {{ quote.rep.first_name|default:quote.rep.username }}
@@ -81,58 +80,82 @@
                                             </td>
                                             <td>{{ quote.pdf_generated_at|date:"d M Y" }}</td>
                                             <td>
-                                                <!-- View PDF Button -->
                                                 <a href="{{ quote.pdf_file.url }}" target="_blank" class="btn btn-info btn-sm">
                                                     <i class="feather icon-file-text"></i> View PDF
                                                 </a>
-                                                
-                                                <!-- View Details Button -->
                                                 <a href="{% url 'quotes:quote_detail' quote.pk %}" class="btn btn-primary btn-sm">
                                                     <i class="feather icon-eye"></i> Details
                                                 </a>
-                                                
-                                                <!-- Approval actions - only show for the quote's rep or admins -->
                                                 {% if is_admin or is_quoter or is_buyer or quote.rep == request.user %}
-                                                    <!-- Approve Button with direct link to the approval form -->
                                                     <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success btn-sm">
                                                         <i class="feather icon-check"></i> Approve
                                                     </a>
-                                                    
-                                                    <!-- Reject Button (modal trigger) -->
                                                     <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal{{ quote.pk }}">
                                                         <i class="feather icon-x"></i> Reject
                                                     </button>
-                                                    
-                                                    <!-- Rejection Modal remains unchanged -->
-                                                    <div class="modal fade" id="rejectModal{{ quote.pk }}" tabindex="-1" aria-hidden="true">
-                                                        <div class="modal-dialog">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title">Reject Quote #{{ quote.quote_number }}</h5>
-                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                                </div>
-                                                                <form method="post" action="{% url 'quotes:reject_quote' quote.pk %}">
-                                                                    {% csrf_token %}
-                                                                    <div class="modal-body">
-                                                                        <div class="form-group">
-                                                                            <label>Reason for rejection:</label>
-                                                                            <textarea name="rejection_reason" class="form-control" rows="3" required></textarea>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="modal-footer">
-                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                                        <button type="submit" class="btn btn-danger">Confirm Rejection</button>
-                                                                    </div>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
                                                 {% endif %}
                                             </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Mobile card view (only visible on small screens) -->
+                        <div class="d-md-none">
+                            {% for quote in quotes %}
+                                <div class="card mb-3 mobile-quote-card" data-rep="{{ quote.rep.username }}">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">
+                                            <span class="fw-bold">Quote #{{ quote.quote_number }}</span>
+                                        </h5>
+                                        <span class="badge {% if quote.company_letterhead == 'CNL' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                            {{ quote.company_letterhead }}
+                                        </span>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div class="mb-3">
+                                            <div><strong>Customer:</strong> {{ quote.customer.company }}</div>
+                                            <div><strong>Date:</strong> {{ quote.pdf_generated_at|date:"d M Y" }}</div>
+                                            <div>
+                                                <strong>Claimed By:</strong>
+                                                {% if quote.assigned_to %}
+                                                    <span class="badge {% if quote.assigned_to == request.user %}bg-warning{% else %}bg-info{% endif %}">
+                                                        <i class="feather icon-user"></i> {{ quote.assigned_to.username }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="feather icon-circle"></i> Unclaimed
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="rep-indicator mt-2">
+                                                <small class="text-muted">
+                                                    <i class="feather icon-user-check"></i> REP: {{ quote.rep.first_name|default:quote.rep.username }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <a href="{{ quote.pdf_file.url }}" target="_blank" class="btn btn-info btn-mobile-action">
+                                                <i class="feather icon-file-text me-2"></i> View PDF
+                                            </a>
+                                            <a href="{% url 'quotes:quote_detail' quote.pk %}" class="btn btn-primary btn-mobile-action">
+                                                <i class="feather icon-eye me-2"></i> View Details
+                                            </a>
+                                            {% if is_admin or is_quoter or is_buyer or quote.rep == request.user %}
+                                                <div class="d-flex gap-2 mt-2">
+                                                    <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success flex-grow-1 btn-mobile-action">
+                                                        <i class="feather icon-check me-2"></i> Approve
+                                                    </a>
+                                                    <button type="button" class="btn btn-danger flex-grow-1 btn-mobile-action" data-bs-toggle="modal" data-bs-target="#rejectModal{{ quote.pk }}">
+                                                        <i class="feather icon-x me-2"></i> Reject
+                                                    </button>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
                         </div>
                         
                         <!-- Pagination -->
