@@ -267,7 +267,7 @@
                                 <tr class="d-md-none">
                                     <td colspan="5" class="p-0">
                                         <div class="collapse" id="itemDetails-{{ item.id }}">
-                                            <div class="p-3 bg-light">
+                                            <div class="p-3 bg-info">
                                                 {% if item.supplier %}
                                                 <p class="mb-1"><strong>Supplier:</strong> {{ item.supplier.suppliername }}</p>
                                                 {% endif %}
@@ -359,9 +359,9 @@
         </div>
     </div>
     
-    <!-- Admin Approval Section - Only visible to staff when quote is pending approval -->
+    <!-- Admin Approval Section - Only visible on medium screens and up -->
     {% if request.user.is_staff and quote.status == 'approval_pending' %}
-    <div class="row mt-3">
+    <div class="row mt-3 d-none d-md-block">
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
@@ -376,31 +376,10 @@
                     </span>
                 </div>
                 <div class="card-body">
-                    <!-- Mobile-friendly approval buttons -->
-                    <div class="d-md-none mb-3">
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <form method="post" class="d-block">
-                                    {% csrf_token %}
-                                    <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success w-100">
-                                        <i class="feather icon-check"></i> Approve
-                                    </a>
-                                </form>
-                            </div>
-                            <div class="col-6">
-                                <form method="post" class="d-block">
-                                    {% csrf_token %}
-                                    <button type="submit" name="reject" class="btn btn-danger w-100">
-                                        <i class="feather icon-x"></i> Reject
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
+                    <!-- No need for mobile approval buttons here since they're already in the fixed action bar -->
                     <p class="mb-3">This quote requires admin approval before processing. Please review the pricing information.</p>
                     
-                    <!-- Mobile-friendly markup summary -->
+                    <!-- Markup summary -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="alert alert-dark p-2 mb-0">
@@ -435,19 +414,16 @@
                     </div>
 
                     <!-- Desktop-only approval buttons -->
-                    <div class="d-none d-md-flex justify-content-end mt-3">
+                    <div class="d-flex justify-content-end mt-3">
                         <form method="post" class="d-inline me-2">
                             {% csrf_token %}
                             <a href="{% url 'quotes:approve_quote' quote.pk %}" class="btn btn-success">
                                 <i class="feather icon-check"></i> Approve Quote
                             </a>
                         </form>
-                        <form method="post" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" name="reject" class="btn btn-danger">
-                                <i class="feather icon-x"></i> Reject Quote
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectQuoteModal">
+                            <i class="feather icon-x"></i> Reject Quote
+                        </button>
                     </div>
                 </div>
             </div>
